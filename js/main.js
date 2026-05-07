@@ -131,7 +131,7 @@ function onFilesSelected(e) {
 
 function addPhotos(files) {
   files.forEach(file => {
-    if (file.size > 25 * 1024 * 1024) { alert(`Файл ${file.name} перевищує 25 МБ`); return; }
+    if (file.size > 3 * 1024 * 1024) {alert(`Файл ${file.name} перевищує 3 МБ. Для тесту обери менше фото.`);return;}
     const id = ++photoIdCounter;
     const url = URL.createObjectURL(file);
     state.photos.push({ id, file, previewUrl: url, color: 'color', paper: 'mat', qty: 1 });
@@ -255,22 +255,35 @@ function renderReview() {
   document.getElementById('rv-total-price').textContent = `${totalPrice} ₴`;
 }
 
-// ─── Submit ──────────────────────────────────────────
-// ─── Submit ──────────────────────────────────────────
+/// ─── Submit ──────────────────────────────────────────
 async function submitOrder() {
+  if (!ORDER_EMAIL || ORDER_EMAIL === 'your_work_email@gmail.com') {
+    alert('Спочатку впиши свою робочу пошту в ORDER_EMAIL');
+    return;
+  }
+
   if (!state.photos.length) {
     alert('Додайте хоча б одне фото');
     return;
   }
 
+  const totalFilesSize = state.photos.reduce((sum, ph) => sum + ph.file.size, 0);
+  const totalFilesSizeMb = totalFilesSize / 1024 / 1024;
+
+  if (totalFilesSizeMb > 9) {
+    alert(`Фото важать ${totalFilesSizeMb.toFixed(1)} МБ. Для FormSubmit треба до 10 МБ сумарно. Для тесту обери менші фото.`);
+    return;
+  }
+
   const formData = new FormData();
 
-  // Куди відправляємо
   formData.append('_subject', 'Нове замовлення фото — ПРОЯВ');
   formData.append('_template', 'table');
   formData.append('_captcha', 'false');
 
-  // Дані клієнта
+  // ВАЖЛИВО: це допомагає, якщо тестуєш локально
+  formData.append('_url', window.location.href);
+
   formData.append('Тип ідентифікації', state.identType === 'instagram' ? 'Instagram' : 'Номер замовлення');
   formData.append('Instagram / Замовлення', state.identType === 'instagram' ? `@${state.ident}` : `#${state.ident}`);
   formData.append('Імʼя', state.name);
@@ -279,7 +292,6 @@ async function submitOrder() {
   formData.append('Доставка', state.delivery === 'nova' ? 'Нова Пошта' : 'Самовивіз');
   formData.append('Місто / Відділення', state.delivery === 'nova' ? state.city : 'Самовивіз');
 
-  // Деталі фото текстом
   const orderDetails = state.photos.map((ph, index) => {
     const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
     const paper = ph.paper === 'mat' ? 'Мат' : 'Глянець';
@@ -295,9 +307,8 @@ async function submitOrder() {
   formData.append('Усього відбитків', totalQty);
   formData.append('Орієнтовна вартість', `${totalPrice} грн`);
 
-  // Самі фото як вкладення
   state.photos.forEach((ph, index) => {
-    formData.append(`photo_${index + 1}`, ph.file);
+    formData.append(`attachment_${index + 1}`, ph.file, ph.file.name);
   });
 
   const submitBtn = document.querySelector('#screen-4 .btn-primary');
@@ -307,19 +318,41 @@ async function submitOrder() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Відправляємо...';
 
+    console.log('Відправляємо на:', ORDER_EMAIL);
+    console.log('Кількість фото:', state.photos.length);
+    console.log('Загальний розмір фото:', totalFilesSizeMb.toFixed(2), 'МБ');
+
     const response = await fetch(`https://formsubmit.co/ajax/${ORDER_EMAIL}`, {
       method: 'POST',
       body: formData
     });
 
+    const responseText = await response.text();
+
+    console.log('FormSubmit status:', response.status);
+    console.log('FormSubmit response:', responseText);
+
     if (!response.ok) {
-      throw new Error('Помилка відправки');
+      alert(`Помилка відправки. Status: ${response.status}. Деталі дивись у Console.`);
+      return;
     }
 
+    let data = null;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.warn('Відповідь не JSON:', responseText);
+    }
+
+    console.log('Parsed response:', data);
+
+    alert('Запит відправлено. Тепер перевір пошту, Spam і лист активації від FormSubmit.');
     goTo(5);
+
   } catch (error) {
-    console.error(error);
-    alert('Не вдалося відправити замовлення. Перевір пошту в ORDER_EMAIL або спробуй ще раз.');
+    console.error('Помилка fetch:', error);
+    alert('Fetch не спрацював. Відкрий Console і скинь мені червону помилку.');
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerHTML = oldText;
