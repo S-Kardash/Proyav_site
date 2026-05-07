@@ -14,6 +14,7 @@ const state = {
 
 let photoIdCounter = 0;
 const PRICE_PER_PRINT = 12; // грн орієнтовно
+const ORDER_EMAIL = 'kardashashaa2004@gmail.com'; // для демонстрації, в продакшені - бекенд має обробляти замовлення
 
 // ─── Navigation ───────────────────────────────────────
 function goTo(step) {
@@ -255,9 +256,74 @@ function renderReview() {
 }
 
 // ─── Submit ──────────────────────────────────────────
-function submitOrder() {
-  // In production: POST to backend with FormData
-  goTo(5);
+// ─── Submit ──────────────────────────────────────────
+async function submitOrder() {
+  if (!state.photos.length) {
+    alert('Додайте хоча б одне фото');
+    return;
+  }
+
+  const formData = new FormData();
+
+  // Куди відправляємо
+  formData.append('_subject', 'Нове замовлення фото — ПРОЯВ');
+  formData.append('_template', 'table');
+  formData.append('_captcha', 'false');
+
+  // Дані клієнта
+  formData.append('Тип ідентифікації', state.identType === 'instagram' ? 'Instagram' : 'Номер замовлення');
+  formData.append('Instagram / Замовлення', state.identType === 'instagram' ? `@${state.ident}` : `#${state.ident}`);
+  formData.append('Імʼя', state.name);
+  formData.append('Телефон', state.phone);
+  formData.append('Email клієнта', state.email || 'Не вказано');
+  formData.append('Доставка', state.delivery === 'nova' ? 'Нова Пошта' : 'Самовивіз');
+  formData.append('Місто / Відділення', state.delivery === 'nova' ? state.city : 'Самовивіз');
+
+  // Деталі фото текстом
+  const orderDetails = state.photos.map((ph, index) => {
+    const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+    const paper = ph.paper === 'mat' ? 'Мат' : 'Глянець';
+
+    return `${index + 1}. ${ph.file.name} — ${color}, ${paper}, кількість: ${ph.qty}`;
+  }).join('\n');
+
+  formData.append('Фото в замовленні', orderDetails);
+
+  const totalQty = state.photos.reduce((sum, ph) => sum + ph.qty, 0);
+  const totalPrice = totalQty * PRICE_PER_PRINT;
+
+  formData.append('Усього відбитків', totalQty);
+  formData.append('Орієнтовна вартість', `${totalPrice} грн`);
+
+  // Самі фото як вкладення
+  state.photos.forEach((ph, index) => {
+    formData.append(`photo_${index + 1}`, ph.file);
+  });
+
+  const submitBtn = document.querySelector('#screen-4 .btn-primary');
+  const oldText = submitBtn.innerHTML;
+
+  try {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Відправляємо...';
+
+    const response = await fetch(`https://formsubmit.co/ajax/${ORDER_EMAIL}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Помилка відправки');
+    }
+
+    goTo(5);
+  } catch (error) {
+    console.error(error);
+    alert('Не вдалося відправити замовлення. Перевір пошту в ORDER_EMAIL або спробуй ще раз.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = oldText;
+  }
 }
 
 // ─── Reset ───────────────────────────────────────────
