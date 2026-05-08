@@ -10,10 +10,10 @@
    ║  4. Account → API Keys → Public Key                     ║
    ╚══════════════════════════════════════════════════════════╝ */
 
-const EMAILJS_PUBLIC_KEY  = 'OKVIg2JMHnfpoJMXj';       // <── Public Key з EmailJS
-const EMAILJS_SERVICE_ID  = 'service_kr5v41g';       // <── Service ID
-const EMAILJS_TEMPLATE_ID = 'template_ysrji1b';      // <── Template ID
-const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';  // <── Твоя пошта (в шаблоні: to_email)
+const EMAILJS_PUBLIC_KEY  = 'OKVIg2JMHnfpoJMXj';
+const EMAILJS_SERVICE_ID  = 'service_kr5v41g';
+const EMAILJS_TEMPLATE_ID = 'template_ysrji1b';
+const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
 
 const PRICE = 12; // грн за відбиток
 
@@ -29,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 1600);
   renderStepper();
   setDelivery('nova');
-  if (EMAILJS_PUBLIC_KEY !== 'OKVIg2JMHnfpoJMXj') emailjs.init(EMAILJS_PUBLIC_KEY);
+  emailjs.init(EMAILJS_PUBLIC_KEY);
 });
 
 /* ─ Toast ─ */
@@ -163,82 +163,153 @@ function onDragLeave() { document.getElementById('upload-zone').classList.remove
 function onDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); addPhotos(Array.from(e.dataTransfer.files)); }
 function onFilesSelected(e) { addPhotos(Array.from(e.target.files)); e.target.value=''; }
 
+/* ── Build a single photo card DOM node (called ONCE per photo) ── */
+function buildPhotoCard(ph) {
+  const card = document.createElement('div');
+  card.className = 'photo-card';
+  card.dataset.photoId = ph.id;
+  card.innerHTML = `
+    <div class="photo-preview">
+      <img src="${ph.previewUrl}" alt="фото">
+      <span class="photo-size-badge">10 × 15 см</span>
+      <button class="photo-delete" aria-label="Видалити фото">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+      </button>
+    </div>
+    <div class="photo-controls">
+      <div>
+        <span class="photo-seg-label">Колір</span>
+        <div class="photo-seg" data-group="color">
+          <button class="photo-seg-btn active" data-val="color">Кольорове</button>
+          <button class="photo-seg-btn" data-val="bw">Чорно-біле</button>
+        </div>
+      </div>
+      <div>
+        <span class="photo-seg-label">Папір</span>
+        <div class="photo-seg" data-group="paper">
+          <button class="photo-seg-btn" data-val="gloss">Глянець</button>
+          <button class="photo-seg-btn active" data-val="mat">Мат</button>
+        </div>
+      </div>
+      <div class="qty-row">
+        <span class="qty-label">Кількість</span>
+        <div class="qty-controls">
+          <button class="qty-btn qty-minus" aria-label="Зменшити">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
+          </button>
+          <span class="qty-value">1</span>
+          <button class="qty-btn qty-plus plus" aria-label="Збільшити">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  /* ── Delete ── */
+  card.querySelector('.photo-delete').addEventListener('click', () => removePhoto(ph.id));
+
+  /* ── Segment toggles (color / paper) ── */
+  card.querySelectorAll('.photo-seg').forEach(seg => {
+    const group = seg.dataset.group;
+    seg.querySelectorAll('.photo-seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.val;
+        ph[group] = val;                                         // update state
+        seg.querySelectorAll('.photo-seg-btn').forEach(b => b.classList.toggle('active', b===btn));
+        updateSummary();                                         // just the footer counter
+      });
+    });
+  });
+
+  /* ── Quantity ── */
+  const qtyEl = card.querySelector('.qty-value');
+  card.querySelector('.qty-minus').addEventListener('click', () => {
+    if (ph.qty <= 1) return;
+    ph.qty--;
+    qtyEl.textContent = ph.qty;
+    bumpQty(qtyEl);
+    updateSummary();
+  });
+  card.querySelector('.qty-plus').addEventListener('click', () => {
+    ph.qty++;
+    qtyEl.textContent = ph.qty;
+    bumpQty(qtyEl);
+    updateSummary();
+  });
+
+  return card;
+}
+
+function bumpQty(el) {
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'qtyBump .22s ease';
+}
+
+/* ── Add photos: append new cards, never re-render existing ones ── */
 function addPhotos(files) {
+  const list = document.getElementById('photos-list');
   files.forEach(file => {
     if (!file.type.startsWith('image/') && !file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i)) {
       showToast(`⚠ ${file.name}: непідтримуваний формат`); return;
     }
-    if (file.size > 25*1024*1024) { showToast(`⚠ ${file.name}: файл більше 25 МБ`); return; }
-    const id = ++pid, url = URL.createObjectURL(file);
-    const ph = { id, file, previewUrl:url, color:'color', paper:'mat', qty:1, warn:null };
-    const img = new Image();
-    img.onload = () => renderPhotos();
-    img.onerror = () => { ph.warn='Не вдалось прочитати зображення — файл може бути пошкоджений'; renderPhotos(); };
-    img.src = url;
+    if (file.size > 25 * 1024 * 1024) { showToast(`⚠ ${file.name}: файл більше 25 МБ`); return; }
+
+    const id = ++pid;
+    const url = URL.createObjectURL(file);
+    const ph  = { id, file, previewUrl: url, color: 'color', paper: 'mat', qty: 1 };
     S.photos.push(ph);
+
+    const card = buildPhotoCard(ph);
+    list.appendChild(card);
+
+    /* Check image integrity without touching the card's own <img> */
+    const probe = new Image();
+    probe.onerror = () => {
+      const warn = document.createElement('div');
+      warn.className = 'photo-warn';
+      warn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 2L14.5 14H1.5L8 2z" stroke="#a04000" stroke-width="1.4"/><line x1="8" y1="7" x2="8" y2="11" stroke="#a04000" stroke-width="1.4"/><circle cx="8" cy="12.5" r=".8" fill="#a04000"/></svg><span>Не вдалось прочитати зображення — файл може бути пошкоджений</span>`;
+      card.querySelector('.photo-preview').after(warn);
+    };
+    probe.src = url;
   });
-  renderPhotos();
+
+  updateUploadVisibility();
+  updateSummary();
 }
 
+/* ── Remove: animate out a single card ── */
 function removePhoto(id) {
-  const ph = S.photos.find(p=>p.id===id); if(ph) URL.revokeObjectURL(ph.previewUrl);
-  S.photos = S.photos.filter(p=>p.id!==id); renderPhotos();
-}
-function setOpt(id,k,v) { const p=S.photos.find(p=>p.id===id); if(p){p[k]=v;} renderPhotos(); }
-function changeQty(id,d) {
-  const p=S.photos.find(p=>p.id===id); if(!p) return; p.qty=Math.max(1,p.qty+d);
-  renderPhotos();
-  const el=document.querySelector(`[data-qty="${id}"]`);
-  if(el){ el.style.animation='none'; el.offsetHeight; el.style.animation='qtyBump .25s ease'; }
+  const ph   = S.photos.find(p => p.id === id); if (!ph) return;
+  const card = document.querySelector(`[data-photo-id="${id}"]`);
+  URL.revokeObjectURL(ph.previewUrl);
+  S.photos = S.photos.filter(p => p.id !== id);
+
+  if (card) {
+    card.classList.add('removing');
+    card.addEventListener('animationend', () => card.remove(), { once: true });
+  }
+
+  updateUploadVisibility();
+  updateSummary();
 }
 
-function renderPhotos() {
+/* ── Helpers ── */
+function updateUploadVisibility() {
   const has = S.photos.length > 0;
-  document.getElementById('upload-zone').style.display = has ? 'none' : '';
-  document.getElementById('photos-bottom').style.display = has ? '' : 'none';
-  document.getElementById('photos-list').innerHTML = S.photos.map(ph => `
-    <div class="photo-card">
-      <div class="photo-preview">
-        <img src="${ph.previewUrl}" alt="фото" loading="lazy">
-        <span class="photo-size-badge">10 × 15 см</span>
-        <button class="photo-delete" onclick="removePhoto(${ph.id})">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
-        </button>
-      </div>
-      ${ph.warn?`<div class="photo-warn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 2L14.5 14H1.5L8 2z" stroke="#a04000" stroke-width="1.4"/><line x1="8" y1="7" x2="8" y2="11" stroke="#a04000" stroke-width="1.4"/><circle cx="8" cy="12.5" r=".8" fill="#a04000"/></svg><span>${ph.warn}</span></div>`:''}
-      <div class="photo-controls">
-        <div>
-          <span class="photo-seg-label">Колір</span>
-          <div class="photo-seg">
-            <button class="photo-seg-btn ${ph.color==='color'?'active':''}" onclick="setOpt(${ph.id},'color','color')">Кольорове</button>
-            <button class="photo-seg-btn ${ph.color==='bw'?'active':''}" onclick="setOpt(${ph.id},'color','bw')">Чорно-біле</button>
-          </div>
-        </div>
-        <div>
-          <span class="photo-seg-label">Папір</span>
-          <div class="photo-seg">
-            <button class="photo-seg-btn ${ph.paper==='gloss'?'active':''}" onclick="setOpt(${ph.id},'paper','gloss')">Глянець</button>
-            <button class="photo-seg-btn ${ph.paper==='mat'?'active':''}" onclick="setOpt(${ph.id},'paper','mat')">Мат</button>
-          </div>
-        </div>
-        <div class="qty-row">
-          <span class="qty-label">Кількість</span>
-          <div class="qty-controls">
-            <button class="qty-btn" onclick="changeQty(${ph.id},-1)">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
-            </button>
-            <span class="qty-value" data-qty="${ph.id}">${ph.qty}</span>
-            <button class="qty-btn plus" onclick="changeQty(${ph.id},1)">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-  const totalQty = S.photos.reduce((s,p)=>s+p.qty,0);
+  document.getElementById('upload-zone').style.display    = has ? 'none' : '';
+  document.getElementById('photos-bottom').style.display  = has ? '' : 'none';
+}
+
+function updateSummary() {
+  const totalQty = S.photos.reduce((s, p) => s + p.qty, 0);
   document.getElementById('photos-summary').textContent = `${S.photos.length} фото · ${totalQty} відбитків`;
 }
+
+/* Legacy stubs — safe to call but do nothing harmful now */
+function setOpt() {}
+function changeQty() {}
+function renderPhotos() {}
 
 /* ══ STEP 4 ══ */
 function renderReview() {
@@ -271,7 +342,7 @@ async function submitOrder(e) {
   const photosInfo=S.photos.map((p,i)=>`Фото ${i+1}: ${p.color==='color'?'Кольорове':'Чорно-біле'}, ${p.paper==='mat'?'Мат':'Глянець'}, ${p.qty} відб.`).join('\n');
   const params={to_email:YOUR_EMAIL,order_id:orderId,ident:(S.identType==='instagram'?'@':'')+S.ident,name:S.name,phone:S.phone,email:S.email||'—',delivery:S.delivery==='nova'?'Нова Пошта':'Самовивіз',city:S.city||'—',photos_info:photosInfo,total_qty:tq,total_price:tq*PRICE+' ₴'};
   try {
-    if (EMAILJS_PUBLIC_KEY !== 'OKVIg2JMHnfpoJMXj') await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
     document.getElementById('success-order-num').textContent=orderId;
     celebrate(); goTo(5);
   } catch(err) {
@@ -303,7 +374,9 @@ function resetApp() {
   Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',photos:[]});
   ['ident-input','inp-name','inp-phone','inp-email','inp-city'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
   document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
-  setDelivery('nova'); setIdentType('instagram'); renderPhotos();
+  document.getElementById('photos-list').innerHTML = '';   // clear photo cards DOM
+  setDelivery('nova'); setIdentType('instagram');
+  updateUploadVisibility(); updateSummary();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-1').classList.add('active');
   document.getElementById('btn-step1').disabled=true;

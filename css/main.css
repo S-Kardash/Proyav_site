@@ -66,7 +66,7 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .label{font-size:11px;font-weight:500;letter-spacing:1.3px;text-transform:uppercase;color:var(--d50);margin-bottom:6px;display:block}
 .input-field-wrap{position:relative}
 .input-prefix{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--d30);pointer-events:none}
-.input-field{width:100%;height:56px;border:1.5px solid var(--d15);border-radius:var(--r-md);background:transparent;font-family:'Inter',sans-serif;font-size:15px;color:var(--dark);padding:0 16px;outline:none;transition:border-color .22s,box-shadow .22s,background .2s; -webkit-appearance:none}
+.input-field{width:100%;height:56px;border:1.5px solid var(--d15);border-radius:var(--r-md);background:transparent;font-family:'Inter',sans-serif;font-size:15px;color:var(--dark);padding:0 16px;outline:none;transition:border-color .22s,box-shadow .22s,background .2s;-webkit-appearance:none}
 .input-field.has-prefix{padding-left:34px}
 .input-field::placeholder{color:var(--d30)}
 .input-field:focus{border-color:var(--dark);box-shadow:0 0 0 3px rgba(44,42,40,.07)}
@@ -109,6 +109,8 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .photos-list{display:flex;flex-direction:column;gap:16px}
 .photo-card{background:var(--white);border:1px solid var(--d10);border-radius:var(--r-lg);overflow:hidden;animation:cardIn .38s cubic-bezier(.22,1,.36,1)}
 @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cardOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95) translateY(-6px)}}
+.photo-card.removing{animation:cardOut .22s ease forwards;pointer-events:none}
 .photo-preview{position:relative;height:220px;background:var(--d05)}
 .photo-preview img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-size-badge{position:absolute;bottom:10px;left:10px;background:var(--cr90);border-radius:var(--r-pill);padding:4px 12px;font-size:11px;color:var(--dark)}
