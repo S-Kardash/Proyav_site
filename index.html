@@ -2,83 +2,90 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ПРОЯВ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ПРОЯВ · Замовлення друку</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
 </head>
 <body>
-<div class="app">
 
-  <!-- Header -->
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-letters">
+    <span class="splash-letter">П</span>
+    <span class="splash-letter">Р</span>
+    <span class="splash-letter">О</span>
+    <span class="splash-letter">Я</span>
+    <span class="splash-letter">В</span>
+  </div>
+  <div class="splash-line"></div>
+  <div class="splash-sub">Студія друку</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas class="dots-canvas" id="dotsCanvas" style="display:none"></canvas>
+
+<div class="app">
   <header class="header">
     <div class="logo">
       <span class="logo-text">ПРОЯВ</span>
       <div class="logo-line"></div>
     </div>
-    <div class="stepper" id="stepper">
-      <!-- rendered by JS -->
-    </div>
+    <div class="stepper" id="stepper"></div>
   </header>
 
-  <!-- Main -->
-  <main class="main" id="main">
+  <main class="main">
 
-    <!-- ── Step 1: Identify ── -->
+    <!-- STEP 1 -->
     <div class="screen active" id="screen-1">
       <div class="heading">Як вас знайти?</div>
       <p class="subtext">Вкажіть нікнейм Instagram або номер замовлення, щоб ми зв'язали ваші фото з замовленням.</p>
-
       <div class="segmented">
         <button class="seg-btn active" data-type="instagram" onclick="setIdentType('instagram')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
           Instagram
         </button>
         <button class="seg-btn" data-type="order" onclick="setIdentType('order')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
           Замовлення
         </button>
       </div>
-
       <div class="input-wrap">
         <label class="label" id="ident-label">Нікнейм Instagram</label>
         <div class="input-field-wrap">
           <span class="input-prefix" id="ident-prefix">@</span>
-          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname" oninput="validateStep1()">
+          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname" oninput="onIdentInput()" autocomplete="off" autocorrect="off" spellcheck="false">
         </div>
+        <div class="field-error" id="ident-err">Введіть коректне значення</div>
       </div>
-
-      <button class="btn-primary" id="btn-step1" onclick="goTo(2)" disabled>
-        Продовжити
-      </button>
+      <button class="btn-primary" id="btn-step1" onclick="tryStep1(event)" disabled>Продовжити</button>
     </div>
 
-    <!-- ── Step 2: Contact ── -->
+    <!-- STEP 2 -->
     <div class="screen" id="screen-2">
-      <button class="back-btn" onclick="goTo(1)">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <button class="back-btn" onclick="goTo(1,true)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Назад
       </button>
-
       <div class="heading">Ваші дані</div>
       <p class="subtext">Щоб ми могли надіслати готовий друк саме вам.</p>
-
       <div class="input-wrap">
         <label class="label">Ім'я та прізвище</label>
-        <input class="input-field" id="inp-name" type="text" placeholder="Олена Коваль" oninput="validateStep2()">
+        <input class="input-field" id="inp-name" type="text" placeholder="Олена Коваль" oninput="liveValidate('inp-name','name-err',()=>document.getElementById('inp-name').value.trim().length>=2,'Введіть ім\'я')" autocomplete="name">
+        <div class="field-error" id="name-err">Введіть ім'я (мінімум 2 символи)</div>
       </div>
-
       <div class="input-wrap">
         <label class="label">Телефон</label>
-        <input class="input-field" id="inp-phone" type="tel" placeholder="+380 ..." oninput="validateStep2()">
+        <input class="input-field" id="inp-phone" type="tel" placeholder="+380 67 123 45 67" oninput="liveValidate('inp-phone','phone-err',()=>isPhone(document.getElementById('inp-phone').value),'Некоректний номер')" autocomplete="tel">
+        <div class="field-error" id="phone-err">Введіть коректний номер телефону (+380...)</div>
       </div>
-
       <div class="input-wrap">
         <label class="label">Email (необов'язково)</label>
-        <input class="input-field" id="inp-email" type="email" placeholder="you@email.com">
+        <input class="input-field" id="inp-email" type="email" placeholder="you@email.com" oninput="liveEmailValidate()" autocomplete="email">
+        <div class="field-error" id="email-err">Некоректний email</div>
       </div>
-
       <div class="input-wrap">
         <label class="label">Доставка</label>
         <div class="delivery-row">
@@ -86,142 +93,102 @@
           <button class="del-btn" id="del-self" onclick="setDelivery('self')">Самовивіз</button>
         </div>
       </div>
-
-      <div class="input-wrap" id="city-wrap">
+      <div id="city-wrap" class="input-wrap">
         <label class="label">Місто / Відділення</label>
-        <input class="input-field" id="inp-city" type="text" placeholder="Київ, відділення №12" oninput="validateStep2()">
+        <input class="input-field" id="inp-city" type="text" placeholder="Київ, відділення №12" oninput="liveValidate('inp-city','city-err',()=>document.getElementById('inp-city').value.trim().length>=2,'Вкажіть місто')">
+        <div class="field-error" id="city-err">Вкажіть місто або відділення</div>
       </div>
-
-      <button class="btn-primary" id="btn-step2" onclick="goTo(3)" disabled>
-        Далі — завантажити фото
-      </button>
+      <button class="btn-primary" id="btn-step2" onclick="tryStep2(event)">Далі — завантажити фото</button>
     </div>
 
-    <!-- ── Step 3: Photos ── -->
+    <!-- STEP 3 -->
     <div class="screen" id="screen-3">
-      <button class="back-btn" onclick="goTo(2)">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <button class="back-btn" onclick="goTo(2,true)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Назад
       </button>
-
       <div class="heading">Ваші фото</div>
       <p class="subtext">Розмір друку — 10×15 см. Для кожного фото оберіть колір та тип паперу.</p>
-
-      <!-- Upload zone (empty state) -->
       <div class="upload-zone" id="upload-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-        <input type="file" id="file-input" accept="image/*" multiple onchange="onFilesSelected(event)">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic" multiple onchange="onFilesSelected(event)">
         <div class="upload-icon-circle">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
         <div class="upload-title">Завантажте фото</div>
-        <div class="upload-hint">JPG / PNG · до 25 МБ кожне</div>
+        <div class="upload-hint">JPG / PNG / HEIC · до 25 МБ кожне</div>
       </div>
-
-      <!-- Photos list -->
-      <div class="photos-list section-gap" id="photos-list"></div>
-
-      <!-- Add more + sticky bar — shown when photos added -->
+      <div class="photos-list" id="photos-list" style="margin-top:16px"></div>
       <div id="photos-bottom" style="display:none">
-        <button class="add-more-btn" onclick="document.getElementById('add-more-input').click()">
-          <input type="file" id="add-more-input" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%" onchange="onFilesSelected(event)">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
-          Додати ще фото
-        </button>
-
+        <div style="margin-top:14px">
+          <button class="add-more-btn">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%" onchange="onFilesSelected(event)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+            Додати ще фото
+          </button>
+        </div>
         <div class="bottom-bar">
           <div class="bottom-bar-info">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 6l4.5 3.5L9 7l6 5" stroke="currentColor" stroke-width="1.2"/></svg>
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 9l3-2.5L8 9l3.5-3.5L15 9" stroke="currentColor" stroke-width="1.2"/></svg>
             <span id="photos-summary">0 фото · 0 відбитків</span>
           </div>
-          <button class="btn-primary-sm" onclick="goTo(4)">
-            Перейти до підтвердження
-          </button>
+          <button class="btn-primary-sm" onclick="goTo(4)" id="btn-to-review">Перейти до підтвердження</button>
         </div>
       </div>
     </div>
 
-    <!-- ── Step 4: Review ── -->
+    <!-- STEP 4 -->
     <div class="screen" id="screen-4">
-      <button class="back-btn" onclick="goTo(3)">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <button class="back-btn" onclick="goTo(3,true)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Назад
       </button>
-
       <div class="heading">Підтвердження</div>
       <p class="subtext">Перевірте деталі перед відправкою.</p>
-
-      <!-- Customer card -->
       <div class="review-card">
         <div class="review-section-title">Замовник</div>
-        <div class="review-row">
-          <span class="review-key" id="rv-ident-label">Instagram</span>
-          <span class="review-val" id="rv-ident-val">—</span>
-        </div>
-        <div class="review-row">
-          <span class="review-key">Ім'я</span>
-          <span class="review-val" id="rv-name">—</span>
-        </div>
-        <div class="review-row">
-          <span class="review-key">Телефон</span>
-          <span class="review-val" id="rv-phone">—</span>
-        </div>
-        <div class="review-row" id="rv-email-row" style="display:none">
-          <span class="review-key">Email</span>
-          <span class="review-val" id="rv-email">—</span>
-        </div>
-        <div class="review-row">
-          <span class="review-key">Доставка</span>
-          <span class="review-val" id="rv-delivery">—</span>
-        </div>
-        <div class="review-row" id="rv-city-row">
-          <span class="review-key">Місто / Відд.</span>
-          <span class="review-val" id="rv-city">—</span>
-        </div>
+        <div class="review-row"><span class="review-key" id="rv-ident-label">Instagram</span><span class="review-val" id="rv-ident-val">—</span></div>
+        <div class="review-row"><span class="review-key">Ім'я</span><span class="review-val" id="rv-name">—</span></div>
+        <div class="review-row"><span class="review-key">Телефон</span><span class="review-val" id="rv-phone">—</span></div>
+        <div class="review-row" id="rv-email-row" style="display:none"><span class="review-key">Email</span><span class="review-val" id="rv-email">—</span></div>
+        <div class="review-row"><span class="review-key">Доставка</span><span class="review-val" id="rv-delivery">—</span></div>
+        <div class="review-row" id="rv-city-row"><span class="review-key">Місто / Відд.</span><span class="review-val" id="rv-city">—</span></div>
       </div>
-
-      <!-- Photos card -->
-      <div class="review-card" id="rv-photos-card">
-        <div class="review-section-title">Фото</div>
+      <div class="review-card">
+        <div class="review-section-title" id="rv-photos-title">Фото</div>
         <div class="review-photos-grid" id="rv-photos-grid"></div>
       </div>
-
-      <!-- Total -->
       <div class="total-card">
-        <div class="total-row">
-          <span class="total-key">Усього відбитків</span>
-          <span class="total-val" id="rv-total-qty">0</span>
-        </div>
-        <div class="total-row">
-          <span class="total-key">Орієнтовна вартість</span>
-          <span class="total-price" id="rv-total-price">0 ₴</span>
-        </div>
+        <div class="total-row"><span class="total-key">Усього відбитків</span><span class="total-val" id="rv-total-qty">0</span></div>
+        <div class="total-row"><span class="total-key">Орієнтовна вартість</span><span class="total-price" id="rv-total-price">0 ₴</span></div>
       </div>
-
-      <button class="btn-primary" onclick="submitOrder()" style="margin-top:0">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg>
+      <button class="btn-primary" id="btn-submit" onclick="submitOrder(event)" style="margin-top:0">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg>
         Надіслати замовлення
       </button>
     </div>
 
-    <!-- ── Step 5: Success ── -->
+    <!-- STEP 5 -->
     <div class="screen" id="screen-5">
       <div class="success-screen">
         <div class="success-icon">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="white" stroke-width="2.5"><polyline points="6 18 14 26 30 10"/></svg>
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <polyline class="success-checkmark" points="6,18 14,26 30,10" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
         <div class="success-title">Замовлення надіслано!</div>
-        <p class="success-text">Ми зв'яжемось із вами найближчим часом. Ваш набір буде готовий за 1–2 робочі дні.</p>
-        <button class="btn-primary" onclick="resetApp()" style="margin-top:40px;max-width:300px;margin-left:auto;margin-right:auto">
-          Нове замовлення
-        </button>
+        <p class="success-text">Ми зв'яжемось із вами найближчим часом. Набір буде готовий за 1–2 робочі дні.</p>
+        <div class="success-order-id">
+          <strong id="success-order-num">—</strong>
+          номер замовлення
+        </div>
+        <button class="btn-primary" onclick="resetApp()" style="max-width:280px;margin-left:auto;margin-right:auto">Нове замовлення</button>
       </div>
     </div>
 
   </main>
-
   <footer class="footer">Прояв · Студія друку</footer>
 </div>
 
-<script src="./js/main.js"></script>
+
 </body>
 </html>

@@ -1,393 +1,311 @@
 
-// ─── State ───────────────────────────────────────────
-const state = {
-  step: 1,
-  identType: 'instagram',
-  ident: '',
-  name: '',
-  phone: '',
-  email: '',
-  delivery: 'nova',
-  city: '',
-  photos: []   // { id, file, previewUrl, color, paper, qty }
-};
+/* ╔══════════════════════════════════════════════════════════╗
+   ║            НАЛАШТУВАННЯ EMAILJS                          ║
+   ║  1. Зайди на https://emailjs.com → зареєструйся         ║
+   ║  2. Add Service → підключи Gmail                        ║
+   ║  3. Email Templates → Create Template                   ║
+   ║     Змінні в шаблоні: {{order_id}} {{ident}} {{name}}   ║
+   ║     {{phone}} {{email}} {{delivery}} {{city}}           ║
+   ║     {{photos_info}} {{total_qty}} {{total_price}}        ║
+   ║  4. Account → API Keys → Public Key                     ║
+   ╚══════════════════════════════════════════════════════════╝ */
 
-let photoIdCounter = 0;
-const PRICE_PER_PRINT = 12; // грн орієнтовно
-const ORDER_EMAIL = 'kardashashaa2004@gmail.com'; // для демонстрації, в продакшені - бекенд має обробляти замовлення
+const EMAILJS_PUBLIC_KEY  = 'OKVIg2JMHnfpoJMXj';       // <── Public Key з EmailJS
+const EMAILJS_SERVICE_ID  = 'service_kr5v41g';       // <── Service ID
+const EMAILJS_TEMPLATE_ID = 'template_ysrji1b';      // <── Template ID
+const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';  // <── Твоя пошта (в шаблоні: to_email)
 
-// ─── Navigation ───────────────────────────────────────
-function goTo(step) {
-  const oldScreen = document.getElementById(`screen-${state.step}`);
-  if (oldScreen) oldScreen.classList.remove('active');
+const PRICE = 12; // грн за відбиток
 
-  state.step = step;
+const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', photos:[] };
+let pid = 0;
 
-  const newScreen = document.getElementById(`screen-${step}`);
-  if (newScreen) newScreen.classList.add('active');
+/* ─ Init ─ */
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const s = document.getElementById('splash');
+    s.classList.add('done');
+    setTimeout(() => s.remove(), 800);
+  }, 1600);
+  renderStepper();
+  setDelivery('nova');
+  if (EMAILJS_PUBLIC_KEY !== 'OKVIg2JMHnfpoJMXj') emailjs.init(EMAILJS_PUBLIC_KEY);
+});
 
+/* ─ Toast ─ */
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ─ Navigation ─ */
+function goTo(step, back=false) {
+  document.getElementById(`screen-${S.step}`)?.classList.remove('active');
+  S.step = step;
+  const el = document.getElementById(`screen-${step}`);
+  if (el) {
+    el.classList.add('active');
+    el.style.animation = 'none'; el.offsetHeight;
+    el.style.animation = back ? 'screenInBack .38s cubic-bezier(.22,1,.36,1)' : '';
+  }
   renderStepper();
   if (step === 4) renderReview();
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top:0, behavior:'smooth' });
 }
 
-// ─── Stepper ─────────────────────────────────────────
+/* ─ Stepper ─ */
 function renderStepper() {
-  const el = document.getElementById('stepper');
-  const steps = [1,2,3,4];
-  let html = '';
-  steps.forEach((s, i) => {
-    const done = state.step > s;
-    const active = state.step === s;
-    const bubbleClass = done ? 'done' : active ? 'active' : '';
+  let h = '';
+  [1,2,3,4].forEach((s,i) => {
+    const done = S.step>s, active = S.step===s;
     const inner = done
-      ? `<svg class="check-icon" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.8"><polyline points="2,7 6,11 12,3"/></svg>`
+      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="1,6 5,10 11,2"/></svg>`
       : s;
-    html += `<div class="step-item"><div class="step-bubble ${bubbleClass}">${inner}</div>`;
-    if (i < steps.length - 1) {
-      html += `<div class="step-line ${done ? 'done' : ''}"></div>`;
-    }
-    html += `</div>`;
+    h += `<div class="step-item"><div class="step-bubble ${done?'done':active?'active':''}">${inner}</div>`;
+    if (i<3) h += `<div class="step-line ${done?'done':''}"></div>`;
+    h += `</div>`;
   });
-  el.innerHTML = html;
+  document.getElementById('stepper').innerHTML = h;
 }
 
-// ─── Step 1 logic ────────────────────────────────────
+/* ─ Ripple ─ */
+function ripple(btn, e) {
+  const r = document.createElement('span'); r.className = 'ripple';
+  const rect = btn.getBoundingClientRect(), sz = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${sz}px;height:${sz}px;left:${(e.clientX||rect.width/2)-rect.left-sz/2}px;top:${(e.clientY||rect.height/2)-rect.top-sz/2}px`;
+  btn.appendChild(r); setTimeout(() => r.remove(), 600);
+}
+document.addEventListener('click', e => { const b = e.target.closest('.btn-primary,.btn-primary-sm'); if(b) ripple(b,e); });
+
+/* ══ STEP 1 ══ */
 function setIdentType(type) {
-  state.identType = type;
-  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
-
-  const label = document.getElementById('ident-label');
-  const prefix = document.getElementById('ident-prefix');
-  const input = document.getElementById('ident-input');
-
-  if (type === 'instagram') {
-    label.textContent = 'Нікнейм Instagram';
-    prefix.textContent = '@';
-    prefix.style.display = '';
-    input.classList.add('has-prefix');
-    input.placeholder = 'your_nickname';
-  } else {
-    label.textContent = 'Номер замовлення';
-    prefix.textContent = '#';
-    prefix.style.display = '';
-    input.classList.add('has-prefix');
-    input.placeholder = '000123';
-  }
-  validateStep1();
+  S.identType = type;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type===type));
+  const label = document.getElementById('ident-label'), prefix = document.getElementById('ident-prefix'), inp = document.getElementById('ident-input');
+  if (type==='instagram') { label.textContent='Нікнейм Instagram'; prefix.textContent='@'; inp.placeholder='your_nickname'; }
+  else { label.textContent='Номер замовлення'; prefix.textContent='#'; inp.placeholder='000123'; }
+  clearErr('ident-input','ident-err'); onIdentInput();
 }
 
-function validateStep1() {
-  const val = document.getElementById('ident-input').value.trim();
-  state.ident = val;
-  document.getElementById('btn-step1').disabled = val.length < 2;
+function onIdentInput() {
+  S.ident = document.getElementById('ident-input').value.trim();
+  clearErr('ident-input','ident-err');
+  document.getElementById('btn-step1').disabled = S.ident.length < 2;
 }
 
-// ─── Step 2 logic ────────────────────────────────────
+function tryStep1(e) {
+  if (S.ident.length < 2) { shake('ident-input','ident-err','Введіть коректне значення'); return; }
+  goTo(2);
+}
+
+/* ══ STEP 2 ══ */
+function isPhone(v) { return /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(v.replace(/\s/g,'')); }
+function isEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+function liveValidate(id, errId, test, msg) {
+  const el = document.getElementById(id); const v = el.value.trim();
+  if (!v) { clearErr(id,errId); el.classList.remove('valid'); return; }
+  if (test()) { clearErr(id,errId); el.classList.add('valid'); }
+  else { el.classList.remove('valid'); }
+}
+
+function liveEmailValidate() {
+  const el = document.getElementById('inp-email'); const v = el.value.trim();
+  clearErr('inp-email','email-err'); el.classList.remove('valid','error');
+  if (!v) return;
+  if (isEmail(v)) el.classList.add('valid');
+  else { document.getElementById('email-err').textContent='Некоректний email'; document.getElementById('email-err').classList.add('show'); el.classList.add('error'); }
+}
+
 function setDelivery(type) {
-  state.delivery = type;
-  document.getElementById('del-nova').classList.toggle('active', type === 'nova');
-  document.getElementById('del-self').classList.toggle('active', type === 'self');
-  document.getElementById('city-wrap').style.display = type === 'nova' ? '' : 'none';
-  validateStep2();
+  S.delivery = type;
+  document.getElementById('del-nova').classList.toggle('active', type==='nova');
+  document.getElementById('del-self').classList.toggle('active', type==='self');
+  document.getElementById('city-wrap').style.display = type==='nova' ? '' : 'none';
 }
 
-function validateStep2() {
-  const name = document.getElementById('inp-name').value.trim();
+function tryStep2(e) {
+  const name  = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
-  const city = state.delivery === 'nova' ? document.getElementById('inp-city').value.trim() : 'ok';
-
-  state.name = name;
-  state.phone = phone;
-  state.email = document.getElementById('inp-email').value.trim();
-  state.city = document.getElementById('inp-city').value.trim();
-
-  document.getElementById('btn-step2').disabled = !(name.length > 1 && phone.length > 7 && city.length > 0);
+  const email = document.getElementById('inp-email').value.trim();
+  const city  = document.getElementById('inp-city').value.trim();
+  let ok = true;
+  if (name.length < 2)         { shake('inp-name','name-err','Введіть ім\'я (мінімум 2 символи)'); ok=false; }
+  if (!isPhone(phone))         { shake('inp-phone','phone-err','Введіть коректний номер телефону'); ok=false; }
+  if (email && !isEmail(email)){ shake('inp-email','email-err','Некоректний email'); ok=false; }
+  if (S.delivery==='nova' && city.length<2) { shake('inp-city','city-err','Вкажіть місто або відділення'); ok=false; }
+  if (!ok) return;
+  S.name=name; S.phone=phone; S.email=email; S.city=city;
+  goTo(3);
 }
 
-// ─── Step 3: Photos ───────────────────────────────────
-function onDragOver(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.add('dragover');
+/* ─ Field helpers ─ */
+function shake(id, errId, msg) {
+  const el = document.getElementById(id); if(!el) return;
+  el.classList.add('error'); el.classList.remove('valid');
+  const err = document.getElementById(errId);
+  if (err) { err.textContent=msg; err.classList.add('show'); }
+  el.classList.remove('shake'); el.offsetHeight; el.classList.add('shake');
+  setTimeout(()=>el.classList.remove('shake'),400);
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function clearErr(id, errId) {
+  document.getElementById(id)?.classList.remove('error');
+  document.getElementById(errId)?.classList.remove('show');
 }
 
-function onDragLeave() {
-  document.getElementById('upload-zone').classList.remove('dragover');
-}
-
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('dragover');
-  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-  addPhotos(files);
-}
-
-function onFilesSelected(e) {
-  const files = Array.from(e.target.files);
-  addPhotos(files);
-  e.target.value = '';
-}
+/* ══ STEP 3 ══ */
+function onDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function onDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function onDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('dragover'); addPhotos(Array.from(e.dataTransfer.files)); }
+function onFilesSelected(e) { addPhotos(Array.from(e.target.files)); e.target.value=''; }
 
 function addPhotos(files) {
   files.forEach(file => {
-    if (file.size > 3 * 1024 * 1024) {alert(`Файл ${file.name} перевищує 3 МБ. Для тесту обери менше фото.`);return;}
-    const id = ++photoIdCounter;
-    const url = URL.createObjectURL(file);
-    state.photos.push({ id, file, previewUrl: url, color: 'color', paper: 'mat', qty: 1 });
+    if (!file.type.startsWith('image/') && !file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i)) {
+      showToast(`⚠ ${file.name}: непідтримуваний формат`); return;
+    }
+    if (file.size > 25*1024*1024) { showToast(`⚠ ${file.name}: файл більше 25 МБ`); return; }
+    const id = ++pid, url = URL.createObjectURL(file);
+    const ph = { id, file, previewUrl:url, color:'color', paper:'mat', qty:1, warn:null };
+    const img = new Image();
+    img.onload = () => renderPhotos();
+    img.onerror = () => { ph.warn='Не вдалось прочитати зображення — файл може бути пошкоджений'; renderPhotos(); };
+    img.src = url;
+    S.photos.push(ph);
   });
   renderPhotos();
 }
 
 function removePhoto(id) {
-  const ph = state.photos.find(p => p.id === id);
-  if (ph) URL.revokeObjectURL(ph.previewUrl);
-  state.photos = state.photos.filter(p => p.id !== id);
-  renderPhotos();
+  const ph = S.photos.find(p=>p.id===id); if(ph) URL.revokeObjectURL(ph.previewUrl);
+  S.photos = S.photos.filter(p=>p.id!==id); renderPhotos();
 }
-
-function setPhotoOpt(id, key, val) {
-  const ph = state.photos.find(p => p.id === id);
-  if (ph) ph[key] = val;
+function setOpt(id,k,v) { const p=S.photos.find(p=>p.id===id); if(p){p[k]=v;} renderPhotos(); }
+function changeQty(id,d) {
+  const p=S.photos.find(p=>p.id===id); if(!p) return; p.qty=Math.max(1,p.qty+d);
   renderPhotos();
-}
-
-function changeQty(id, delta) {
-  const ph = state.photos.find(p => p.id === id);
-  if (ph) ph.qty = Math.max(1, ph.qty + delta);
-  renderPhotos();
+  const el=document.querySelector(`[data-qty="${id}"]`);
+  if(el){ el.style.animation='none'; el.offsetHeight; el.style.animation='qtyBump .25s ease'; }
 }
 
 function renderPhotos() {
-  const list = document.getElementById('photos-list');
-  const zone = document.getElementById('upload-zone');
-  const bottom = document.getElementById('photos-bottom');
-  const summary = document.getElementById('photos-summary');
-
-  const hasPhotos = state.photos.length > 0;
-  zone.style.display = hasPhotos ? 'none' : '';
-  bottom.style.display = hasPhotos ? '' : 'none';
-
-  list.innerHTML = state.photos.map(ph => `
-    <div class="photo-card" data-id="${ph.id}">
+  const has = S.photos.length > 0;
+  document.getElementById('upload-zone').style.display = has ? 'none' : '';
+  document.getElementById('photos-bottom').style.display = has ? '' : 'none';
+  document.getElementById('photos-list').innerHTML = S.photos.map(ph => `
+    <div class="photo-card">
       <div class="photo-preview">
-        <img src="${ph.previewUrl}" alt="фото">
+        <img src="${ph.previewUrl}" alt="фото" loading="lazy">
         <span class="photo-size-badge">10 × 15 см</span>
         <button class="photo-delete" onclick="removePhoto(${ph.id})">
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="1.8"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
         </button>
       </div>
+      ${ph.warn?`<div class="photo-warn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 2L14.5 14H1.5L8 2z" stroke="#a04000" stroke-width="1.4"/><line x1="8" y1="7" x2="8" y2="11" stroke="#a04000" stroke-width="1.4"/><circle cx="8" cy="12.5" r=".8" fill="#a04000"/></svg><span>${ph.warn}</span></div>`:''}
       <div class="photo-controls">
         <div>
           <span class="photo-seg-label">Колір</span>
           <div class="photo-seg">
-            <button class="photo-seg-btn ${ph.color==='color'?'active':''}" onclick="setPhotoOpt(${ph.id},'color','color')">Кольорове</button>
-            <button class="photo-seg-btn ${ph.color==='bw'?'active':''}" onclick="setPhotoOpt(${ph.id},'color','bw')">Чорно-біле</button>
+            <button class="photo-seg-btn ${ph.color==='color'?'active':''}" onclick="setOpt(${ph.id},'color','color')">Кольорове</button>
+            <button class="photo-seg-btn ${ph.color==='bw'?'active':''}" onclick="setOpt(${ph.id},'color','bw')">Чорно-біле</button>
           </div>
         </div>
         <div>
           <span class="photo-seg-label">Папір</span>
           <div class="photo-seg">
-            <button class="photo-seg-btn ${ph.paper==='gloss'?'active':''}" onclick="setPhotoOpt(${ph.id},'paper','gloss')">Глянець</button>
-            <button class="photo-seg-btn ${ph.paper==='mat'?'active':''}" onclick="setPhotoOpt(${ph.id},'paper','mat')">Мат</button>
+            <button class="photo-seg-btn ${ph.paper==='gloss'?'active':''}" onclick="setOpt(${ph.id},'paper','gloss')">Глянець</button>
+            <button class="photo-seg-btn ${ph.paper==='mat'?'active':''}" onclick="setOpt(${ph.id},'paper','mat')">Мат</button>
           </div>
         </div>
         <div class="qty-row">
           <span class="qty-label">Кількість</span>
           <div class="qty-controls">
             <button class="qty-btn" onclick="changeQty(${ph.id},-1)">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="7" x2="12" y2="7"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
             </button>
-            <span class="qty-value">${ph.qty}</span>
+            <span class="qty-value" data-qty="${ph.id}">${ph.qty}</span>
             <button class="qty-btn plus" onclick="changeQty(${ph.id},1)">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.8"><line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg>
             </button>
           </div>
         </div>
       </div>
     </div>
   `).join('');
-
-  const totalQty = state.photos.reduce((s, p) => s + p.qty, 0);
-  summary.textContent = `${state.photos.length} фото · ${totalQty} відбитків`;
+  const totalQty = S.photos.reduce((s,p)=>s+p.qty,0);
+  document.getElementById('photos-summary').textContent = `${S.photos.length} фото · ${totalQty} відбитків`;
 }
 
-// ─── Review ─────────────────────────────────────────
+/* ══ STEP 4 ══ */
 function renderReview() {
-  document.getElementById('rv-ident-label').textContent = state.identType === 'instagram' ? 'Instagram' : 'Замовлення';
-  const identVal = state.identType === 'instagram' ? `@${state.ident}` : `#${state.ident}`;
-  document.getElementById('rv-ident-val').textContent = identVal;
-  document.getElementById('rv-name').textContent = state.name;
-  document.getElementById('rv-phone').textContent = state.phone;
-
-  const emailRow = document.getElementById('rv-email-row');
-  if (state.email) {
-    emailRow.style.display = '';
-    document.getElementById('rv-email').textContent = state.email;
-  } else {
-    emailRow.style.display = 'none';
-  }
-
-  document.getElementById('rv-delivery').textContent = state.delivery === 'nova' ? 'Нова Пошта' : 'Самовивіз';
-  const cityRow = document.getElementById('rv-city-row');
-  if (state.delivery === 'nova') {
-    cityRow.style.display = '';
-    document.getElementById('rv-city').textContent = state.city;
-  } else {
-    cityRow.style.display = 'none';
-  }
-
-  const grid = document.getElementById('rv-photos-grid');
-  grid.innerHTML = state.photos.map(ph => {
-    const colorLabel = ph.color === 'color' ? 'Колір' : 'Ч/Б';
-    const paperLabel = ph.paper === 'mat' ? 'Мат' : 'Глянець';
-    return `
-      <div class="review-photo-thumb">
-        <img src="${ph.previewUrl}" alt="">
-        <div class="review-photo-badge">${colorLabel} · ${paperLabel} · ×${ph.qty}</div>
-      </div>
-    `;
-  }).join('');
-
-  const totalQty = state.photos.reduce((s, p) => s + p.qty, 0);
-  const totalPrice = totalQty * PRICE_PER_PRINT;
-  document.getElementById('rv-total-qty').textContent = totalQty;
-  document.getElementById('rv-total-price').textContent = `${totalPrice} ₴`;
+  document.getElementById('rv-ident-label').textContent = S.identType==='instagram'?'Instagram':'Замовлення';
+  document.getElementById('rv-ident-val').textContent = S.identType==='instagram'?`@${S.ident}`:`#${S.ident}`;
+  document.getElementById('rv-name').textContent = S.name;
+  document.getElementById('rv-phone').textContent = S.phone;
+  const er=document.getElementById('rv-email-row');
+  if(S.email){er.style.display='';document.getElementById('rv-email').textContent=S.email;}else er.style.display='none';
+  document.getElementById('rv-delivery').textContent = S.delivery==='nova'?'Нова Пошта':'Самовивіз';
+  const cr=document.getElementById('rv-city-row');
+  if(S.delivery==='nova'){cr.style.display='';document.getElementById('rv-city').textContent=S.city;}else cr.style.display='none';
+  document.getElementById('rv-photos-title').textContent = `Фото · ${S.photos.length}`;
+  document.getElementById('rv-photos-grid').innerHTML = S.photos.map(ph=>`
+    <div class="review-photo-thumb">
+      <img src="${ph.previewUrl}" alt="" loading="lazy">
+      <div class="review-photo-badge">${ph.color==='color'?'Колір':'Ч/Б'} · ${ph.paper==='mat'?'Мат':'Глянець'} · ×${ph.qty}</div>
+    </div>`).join('');
+  const tq=S.photos.reduce((s,p)=>s+p.qty,0);
+  document.getElementById('rv-total-qty').textContent=tq;
+  document.getElementById('rv-total-price').textContent=`${tq*PRICE} ₴`;
 }
 
-/// ─── Submit ──────────────────────────────────────────
-async function submitOrder() {
-  if (!ORDER_EMAIL || ORDER_EMAIL === 'your_work_email@gmail.com') {
-    alert('Спочатку впиши свою робочу пошту в ORDER_EMAIL');
-    return;
-  }
-
-  if (!state.photos.length) {
-    alert('Додайте хоча б одне фото');
-    return;
-  }
-
-  const totalFilesSize = state.photos.reduce((sum, ph) => sum + ph.file.size, 0);
-  const totalFilesSizeMb = totalFilesSize / 1024 / 1024;
-
-  if (totalFilesSizeMb > 9) {
-    alert(`Фото важать ${totalFilesSizeMb.toFixed(1)} МБ. Для FormSubmit треба до 10 МБ сумарно. Для тесту обери менші фото.`);
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append('_subject', 'Нове замовлення фото — ПРОЯВ');
-  formData.append('_template', 'table');
-  formData.append('_captcha', 'false');
-
-  // ВАЖЛИВО: це допомагає, якщо тестуєш локально
-  formData.append('_url', window.location.href);
-
-  formData.append('Тип ідентифікації', state.identType === 'instagram' ? 'Instagram' : 'Номер замовлення');
-  formData.append('Instagram / Замовлення', state.identType === 'instagram' ? `@${state.ident}` : `#${state.ident}`);
-  formData.append('Імʼя', state.name);
-  formData.append('Телефон', state.phone);
-  formData.append('Email клієнта', state.email || 'Не вказано');
-  formData.append('Доставка', state.delivery === 'nova' ? 'Нова Пошта' : 'Самовивіз');
-  formData.append('Місто / Відділення', state.delivery === 'nova' ? state.city : 'Самовивіз');
-
-  const orderDetails = state.photos.map((ph, index) => {
-    const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
-    const paper = ph.paper === 'mat' ? 'Мат' : 'Глянець';
-
-    return `${index + 1}. ${ph.file.name} — ${color}, ${paper}, кількість: ${ph.qty}`;
-  }).join('\n');
-
-  formData.append('Фото в замовленні', orderDetails);
-
-  const totalQty = state.photos.reduce((sum, ph) => sum + ph.qty, 0);
-  const totalPrice = totalQty * PRICE_PER_PRINT;
-
-  formData.append('Усього відбитків', totalQty);
-  formData.append('Орієнтовна вартість', `${totalPrice} грн`);
-
-  state.photos.forEach((ph, index) => {
-    formData.append(`attachment_${index + 1}`, ph.file, ph.file.name);
-  });
-
-  const submitBtn = document.querySelector('#screen-4 .btn-primary');
-  const oldText = submitBtn.innerHTML;
-
+/* ══ SUBMIT ══ */
+async function submitOrder(e) {
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true; btn.innerHTML=`<div class="btn-spinner"></div> Надсилаємо...`;
+  const orderId='ПРЯ-'+Date.now().toString().slice(-6);
+  const tq=S.photos.reduce((s,p)=>s+p.qty,0);
+  const photosInfo=S.photos.map((p,i)=>`Фото ${i+1}: ${p.color==='color'?'Кольорове':'Чорно-біле'}, ${p.paper==='mat'?'Мат':'Глянець'}, ${p.qty} відб.`).join('\n');
+  const params={to_email:YOUR_EMAIL,order_id:orderId,ident:(S.identType==='instagram'?'@':'')+S.ident,name:S.name,phone:S.phone,email:S.email||'—',delivery:S.delivery==='nova'?'Нова Пошта':'Самовивіз',city:S.city||'—',photos_info:photosInfo,total_qty:tq,total_price:tq*PRICE+' ₴'};
   try {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Відправляємо...';
-
-    console.log('Відправляємо на:', ORDER_EMAIL);
-    console.log('Кількість фото:', state.photos.length);
-    console.log('Загальний розмір фото:', totalFilesSizeMb.toFixed(2), 'МБ');
-
-    const response = await fetch(`https://formsubmit.co/ajax/${ORDER_EMAIL}`, {
-      method: 'POST',
-      body: formData
-    });
-
-    const responseText = await response.text();
-
-    console.log('FormSubmit status:', response.status);
-    console.log('FormSubmit response:', responseText);
-
-    if (!response.ok) {
-      alert(`Помилка відправки. Status: ${response.status}. Деталі дивись у Console.`);
-      return;
-    }
-
-    let data = null;
-
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.warn('Відповідь не JSON:', responseText);
-    }
-
-    console.log('Parsed response:', data);
-
-    alert('Запит відправлено. Тепер перевір пошту, Spam і лист активації від FormSubmit.');
-    goTo(5);
-
-  } catch (error) {
-    console.error('Помилка fetch:', error);
-    alert('Fetch не спрацював. Відкрий Console і скинь мені червону помилку.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = oldText;
+    if (EMAILJS_PUBLIC_KEY !== 'ТВІЙ_PUBLIC_KEY') await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
+    document.getElementById('success-order-num').textContent=orderId;
+    celebrate(); goTo(5);
+  } catch(err) {
+    console.error(err);
+    btn.disabled=false; btn.innerHTML=`<svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg> Надіслати замовлення`;
+    showToast('⚠ Помилка відправки. Перевір налаштування EmailJS.');
   }
 }
 
-// ─── Reset ───────────────────────────────────────────
-function resetApp() {
-  state.photos.forEach(ph => URL.revokeObjectURL(ph.previewUrl));
-  state.photos = [];
-  state.step = 1;
-  state.ident = '';
-  state.name = '';
-  state.phone = '';
-  state.email = '';
-  state.city = '';
-  state.delivery = 'nova';
-  state.identType = 'instagram';
-
-  document.getElementById('ident-input').value = '';
-  document.getElementById('inp-name').value = '';
-  document.getElementById('inp-phone').value = '';
-  document.getElementById('inp-email').value = '';
-  document.getElementById('inp-city').value = '';
-
-  setDelivery('nova');
-  setIdentType('instagram');
-  renderPhotos();
-
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-1').classList.add('active');
-  renderStepper();
-  window.scrollTo({ top: 0 });
+/* ─ Confetti ─ */
+function celebrate() {
+  const c=document.getElementById('dotsCanvas'); c.style.display='block';
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  const ctx=c.getContext('2d');
+  const ps=Array.from({length:60},()=>({x:Math.random()*c.width,y:c.height+20,r:Math.random()*5+2,vx:(Math.random()-.5)*3,vy:-(Math.random()*9+5),color:['#2c2a28','#c8b89a','#a89070','#f5efe4','#6e5c4a'][Math.floor(Math.random()*5)],alpha:1}));
+  let f=0;
+  (function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.alpha-=.013;ctx.globalAlpha=Math.max(0,p.alpha);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill()});
+    ctx.globalAlpha=1;
+    if(++f<130) requestAnimationFrame(draw);
+    else{c.style.display='none';ctx.clearRect(0,0,c.width,c.height);}
+  })();
 }
 
-// ─── Init ────────────────────────────────────────────
-renderStepper();
-setDelivery('nova');
+/* ─ Reset ─ */
+function resetApp() {
+  S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
+  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',photos:[]});
+  ['ident-input','inp-name','inp-phone','inp-email','inp-city'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
+  document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
+  setDelivery('nova'); setIdentType('instagram'); renderPhotos();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-1').classList.add('active');
+  document.getElementById('btn-step1').disabled=true;
+  renderStepper(); window.scrollTo({top:0});
+}
