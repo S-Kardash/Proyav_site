@@ -99,11 +99,10 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 /* ═══ UPLOAD ═══ */
 .upload-zone{border:2px dashed var(--d20);border-radius:var(--r-lg);background:var(--d02);min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s,background .2s}
 .upload-zone:hover,.upload-zone.dragover{border-color:var(--dark);background:var(--d05)}
-.upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-icon-circle{width:54px;height:54px;background:var(--dark);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s}
-.upload-zone:hover .upload-icon-circle{transform:scale(1.08) translateY(-2px)}
-.upload-title{font-family:'Cormorant',serif;font-weight:500;font-size:20px;color:var(--dark)}
-.upload-hint{font-size:12px;font-weight:500;color:var(--d50)}
+.upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:1}
+.upload-icon-circle{width:54px;height:54px;background:var(--dark);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;pointer-events:none}
+.upload-title{font-family:'Cormorant',serif;font-weight:500;font-size:20px;color:var(--dark);pointer-events:none}
+.upload-hint{font-size:12px;font-weight:500;color:var(--d50);pointer-events:none}
 
 /* ═══ PHOTO CARDS ═══ */
 .photos-list{display:flex;flex-direction:column;gap:16px}
