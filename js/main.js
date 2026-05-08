@@ -271,7 +271,7 @@ async function submitOrder(e) {
   const photosInfo=S.photos.map((p,i)=>`Фото ${i+1}: ${p.color==='color'?'Кольорове':'Чорно-біле'}, ${p.paper==='mat'?'Мат':'Глянець'}, ${p.qty} відб.`).join('\n');
   const params={to_email:YOUR_EMAIL,order_id:orderId,ident:(S.identType==='instagram'?'@':'')+S.ident,name:S.name,phone:S.phone,email:S.email||'—',delivery:S.delivery==='nova'?'Нова Пошта':'Самовивіз',city:S.city||'—',photos_info:photosInfo,total_qty:tq,total_price:tq*PRICE+' ₴'};
   try {
-    if (EMAILJS_PUBLIC_KEY !== 'ТВІЙ_PUBLIC_KEY') await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
+    if (EMAILJS_PUBLIC_KEY !== 'OKVIg2JMHnfpoJMXj') await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
     document.getElementById('success-order-num').textContent=orderId;
     celebrate(); goTo(5);
   } catch(err) {
