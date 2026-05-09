@@ -55,11 +55,16 @@
       </div>
       <div class="input-wrap">
         <label class="label" id="ident-label">Нікнейм Instagram</label>
-        <div class="input-field-wrap">
+        <div class="input-field-row" id="ident-row">
+          <span class="order-prefix-badge" id="order-badge">ПРЯ-</span>
           <span class="input-prefix" id="ident-prefix">@</span>
-          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname" oninput="onIdentInput()" autocomplete="off" autocorrect="off" spellcheck="false">
+          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname"
+            oninput="onIdentInput()" autocomplete="off" autocorrect="off" spellcheck="false"
+            maxlength="30" inputmode="text">
+          <span class="ident-counter" id="ident-counter">0/30</span>
         </div>
-        <div class="field-error" id="ident-err">Введіть коректне значення</div>
+        <div class="ident-hint" id="ident-hint"></div>
+        <div class="field-error" id="ident-err"></div>
       </div>
       <button class="btn-primary" id="btn-step1" onclick="tryStep1(event)" disabled>Продовжити</button>
     </div>
