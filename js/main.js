@@ -16,6 +16,11 @@ const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
 
 const PRICE = 12; // грн за відбиток
 
+/* ── Telegram Bot config ── */
+const TG_TOKEN   = '8768757962:AAGFzXphrLGoM7EGBmJfuH4aHDO1K0pGTv8';
+const TG_CHAT_ID = '854323999';
+const TG_API     = `https://api.telegram.org/bot${TG_TOKEN}`;
+
 const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', photos:[] };
 let pid = 0;
 
@@ -788,23 +793,192 @@ function renderReview() {
 }
 
 /* ══ SUBMIT ══ */
-async function submitOrder(e) {
-  const btn=document.getElementById('btn-submit');
-  btn.disabled=true; btn.innerHTML=`<div class="btn-spinner"></div> Надсилаємо...`;
-  const orderId='ПРЯ-'+Date.now().toString().slice(-6);
-  const tq=S.photos.reduce((s,p)=>s+p.qty,0);
-  const photosInfo=S.photos.map((p,i)=>`Фото ${i+1}: ${p.color==='color'?'Кольорове':'Чорно-біле'}, ${p.paper==='mat'?'Мат':'Глянець'}, ${p.qty} відб.`).join('\n');
-  const params={to_email:YOUR_EMAIL,order_id:orderId,ident:(S.identType==='instagram'?'@':'')+S.ident,name:S.name,phone:S.phone,email:S.email||'—',delivery:S.delivery==='nova'?'Нова Пошта':'Самовивіз',city:S.city||'—',photos_info:photosInfo,total_qty:tq,total_price:tq*PRICE+' ₴'};
-  try {
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
-    document.getElementById('success-order-num').textContent=orderId;
-    clearDraft();
-    celebrate(); goTo(5);
-  } catch(err) {
-    console.error(err);
-    btn.disabled=false; btn.innerHTML=`<svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg> Надіслати замовлення`;
-    showToast('⚠ Помилка відправки. Перевір налаштування EmailJS.');
+
+/* ── Telegram helpers ── */
+async function tgSendMessage(text) {
+  const res = await fetch(`${TG_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id:    TG_CHAT_ID,
+      text:       text,
+      parse_mode: 'HTML',
+    }),
+  });
+  if (!res.ok) throw new Error(`sendMessage failed: ${res.status}`);
+  return res.json();
+}
+
+async function tgSendPhoto(file, caption) {
+  const form = new FormData();
+  form.append('chat_id', TG_CHAT_ID);
+  form.append('photo',   file, file.name);
+  form.append('caption', caption);
+  const res = await fetch(`${TG_API}/sendPhoto`, {
+    method: 'POST',
+    body:   form,
+  });
+  if (!res.ok) throw new Error(`sendPhoto failed: ${res.status}`);
+  return res.json();
+}
+
+async function tgSendPhotoGroup(photos, orderId) {
+  /* Send up to 10 photos at once as a media group for efficiency.
+     If more than 10 — split into batches.                        */
+  const BATCH = 10;
+  for (let i = 0; i < photos.length; i += BATCH) {
+    const batch = photos.slice(i, i + BATCH);
+
+    if (batch.length === 1) {
+      /* Single photo — sendPhoto with caption */
+      const ph = batch[0];
+      const cap = buildPhotoCaption(ph, i + 1, orderId);
+      try { await tgSendPhoto(ph.file, cap); } catch(e) { console.warn('photo send failed:', e); }
+    } else {
+      /* Multiple — sendMediaGroup */
+      const form    = new FormData();
+      const media   = [];
+      batch.forEach((ph, idx) => {
+        const fieldName = `photo_${i + idx}`;
+        form.append(fieldName, ph.file, ph.file.name);
+        media.push({
+          type:    'photo',
+          media:   `attach://${fieldName}`,
+          caption: buildPhotoCaption(ph, i + idx + 1, orderId),
+        });
+      });
+      form.append('chat_id', TG_CHAT_ID);
+      form.append('media',   JSON.stringify(media));
+      try {
+        const res = await fetch(`${TG_API}/sendMediaGroup`, { method:'POST', body: form });
+        if (!res.ok) {
+          /* Fallback: send one by one if group fails */
+          for (const [idx, ph] of batch.entries()) {
+            try { await tgSendPhoto(ph.file, buildPhotoCaption(ph, i+idx+1, orderId)); }
+            catch(e) { console.warn('fallback photo failed:', e); }
+          }
+        }
+      } catch(e) { console.warn('media group failed:', e); }
+    }
   }
+}
+
+function buildPhotoCaption(ph, num, orderId) {
+  const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+  const paper = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+  const warn  = ph.hasError ? '\n! Є питання по якості' : '';
+  return `${orderId} - Фото ${num}\n${color}, ${paper}, x${ph.qty}${warn}`;
+}
+
+function buildOrderMessage(orderId, tq) {
+  const now      = new Date();
+  const time     = now.toLocaleString('uk-UA', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit',
+  });
+  const identStr  = S.identType === 'instagram'
+    ? 'Instagram: @' + S.ident
+    : 'Zamovlennya: ' + S.ident;
+  const cityLine  = S.delivery === 'nova'
+    ? '\nNova Poshta\n' + S.city
+    : '\nSamovyviz';
+  const photoLines = S.photos.map(function(ph, i) {
+    var color = ph.color === 'color' ? 'Kolyorove' : 'Chorno-bile';
+    var paper = ph.paper === 'mat'   ? 'Mat'       : 'Glyants';
+    var warn  = ph.hasError ? ' (!Yakist)' : '';
+    return '  ' + (i+1) + '. ' + color + ', ' + paper + ' x' + ph.qty + warn;
+  }).join('\n');
+  var errorNote = S.photos.some(function(p){ return p.hasError; })
+    ? '\n! Deyaki foto mayut pytannya yakosti — perevirte' : '';
+
+  return (
+    '[PROYAV] Zamovlennya ' + orderId + errorNote + '\n' +
+    '\n--- Kliyent ---\n' +
+    identStr + '\n' +
+    "Im'ya: " + S.name + '\n' +
+    'Telefon: ' + S.phone + '\n' +
+    (S.email ? 'Email: ' + S.email + '\n' : '') +
+    cityLine + '\n' +
+    '\n--- Foto: ' + S.photos.length + ' sht / ' + tq + ' vidbyt ---\n' +
+    photoLines + '\n' +
+    '\n--- Vartist: ' + (tq * PRICE) + ' grn ---\n' +
+    'Chas: ' + time
+  );
+}
+
+/* ── Main submit ── */
+async function submitOrder(e) {
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="btn-spinner"></div> Надсилаємо...`;
+
+  const orderId = 'ПРЯ-' + Date.now().toString().slice(-6);
+  const tq = S.photos.reduce((s, p) => s + p.qty, 0);
+
+  /* Track results for both channels */
+  let tgOk    = false;
+  let emailOk = false;
+  const errors = [];
+
+  /* ── 1. Telegram: text summary ── */
+  try {
+    await tgSendMessage(buildOrderMessage(orderId, tq));
+    tgOk = true;
+  } catch(e) {
+    errors.push('Telegram: ' + e.message);
+    console.error('TG message error:', e);
+  }
+
+  /* ── 2. Telegram: photos (only if text went through) ── */
+  if (tgOk && S.photos.length > 0) {
+    try {
+      btn.innerHTML = `<div class="btn-spinner"></div> Надсилаємо фото (${S.photos.length})...`;
+      await tgSendPhotoGroup(S.photos, orderId);
+    } catch(e) {
+      errors.push('Фото: ' + e.message);
+      console.error('TG photos error:', e);
+    }
+  }
+
+  /* ── 3. EmailJS: always send as backup receipt ── */
+  try {
+    const photosInfo = S.photos.map((p,i) =>
+      `Фото ${i+1}: ${p.color==='color'?'Кольорове':'Чорно-біле'}, ${p.paper==='mat'?'Мат':'Глянець'}, ×${p.qty}${p.hasError?' ⚠️':''}`
+    ).join('');
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:    YOUR_EMAIL,
+      order_id:    orderId,
+      ident:       (S.identType==='instagram' ? '@' : '') + S.ident,
+      name:        S.name,
+      phone:       S.phone,
+      email:       S.email || '—',
+      delivery:    S.delivery==='nova' ? 'Нова Пошта' : 'Самовивіз',
+      city:        S.city || '—',
+      photos_info: photosInfo,
+      total_qty:   tq,
+      total_price: tq * PRICE + ' ₴',
+    });
+    emailOk = true;
+  } catch(e) {
+    errors.push('Email: ' + e.message);
+    console.error('Email error:', e);
+  }
+
+  /* ── Result handling ── */
+  if (!tgOk && !emailOk) {
+    /* Both channels failed — restore button */
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg> Надіслати замовлення`;
+    showToast('⚠️ Помилка відправки. Перевірте зєднання і спробуйте ще раз.');
+    console.error('All channels failed:', errors);
+    return;
+  }
+
+  /* At least one channel succeeded */
+  document.getElementById('success-order-num').textContent = orderId;
+  clearDraft();
+  celebrate();
+  goTo(5);
 }
 
 /* ─ Confetti ─ */
