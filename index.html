@@ -191,7 +191,8 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 }
 .global-panel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .global-panel-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50);min-width:44px}
-.global-panel .photo-seg{height:36px;flex:1;min-width:140px;background:var(--white)}
+.global-panel .photo-seg{height:36px;flex:1;min-width:0;background:var(--white)}
+.global-panel .photo-seg-btn{font-size:13px}
 .global-auto-row{display:flex;align-items:center;gap:10px;padding-top:4px;border-top:1px solid var(--d10)}
 .global-auto-label{font-size:13px;color:var(--d70);flex:1;cursor:pointer;user-select:none}
 /* toggle switch */
@@ -226,6 +227,9 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 }
 .apply-card-btn:hover{background:var(--d05);color:var(--dark)}
 .apply-card-btn:active{background:var(--d10)}
+.apply-card-icon-only{display:none;font-size:12px;font-weight:500}
+.photos-list.grid-mode .apply-card-text{display:none}
+.photos-list.grid-mode .apply-card-icon-only{display:inline}
 
 /* ═══ APPLY-TO-ALL in bottom bar ═══ */
 .apply-all-btn{
@@ -455,7 +459,7 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
       <div class="global-panel" id="global-panel" style="display:none">
         <div class="global-panel-row">
           <span class="global-panel-label">Колір</span>
-          <div class="photo-seg global-panel .photo-seg" id="g-color" data-group="color">
+          <div class="photo-seg" id="g-color" data-group="color">
             <button class="photo-seg-btn active" data-val="color">Кольорове</button>
             <button class="photo-seg-btn" data-val="bw">Чорно-біле</button>
           </div>
@@ -498,9 +502,15 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 9l3-2.5L8 9l3.5-3.5L15 9" stroke="currentColor" stroke-width="1.2"/></svg>
               <span id="photos-summary">0 фото · 0 відбитків</span>
             </div>
-            <button class="apply-all-btn" onclick="openApplyDropdown()" title="Застосувати налаштування до всіх">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="1,4 7,10 13,4"/></svg>
-              До всіх
+            <button class="apply-all-btn" onclick="openApplyDropdown()" id="apply-all-main-btn"
+              title="Масово змінити колір і тип паперу для всіх фото одночасно">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <rect x="1" y="1" width="5" height="5" rx="1"/>
+                <rect x="8" y="1" width="5" height="5" rx="1"/>
+                <rect x="1" y="8" width="5" height="5" rx="1"/>
+                <rect x="8" y="8" width="5" height="5" rx="1"/>
+              </svg>
+              Стиль для всіх
             </button>
           </div>
           <button class="btn-primary-sm" onclick="goTo(4)" id="btn-to-review">Перейти до підтвердження</button>
@@ -1184,6 +1194,7 @@ function buildPhotoCard(ph) {
       btn.addEventListener('click', () => {
         ph[seg.dataset.group] = btn.dataset.val;
         seg.querySelectorAll('.photo-seg-btn').forEach(b => b.classList.toggle('active', b===btn));
+        if (ph._refreshApplyLabel) ph._refreshApplyLabel();
         updateSummary(); saveDraft();
       });
     });
@@ -1193,21 +1204,34 @@ function buildPhotoCard(ph) {
   const qtyEl = card.querySelector('.qty-value');
   card.querySelector('.qty-minus').addEventListener('click', () => {
     if (ph.qty <= 1) return;
-    ph.qty--; qtyEl.textContent = ph.qty; bumpQty(qtyEl); updateSummary(); saveDraft();
+    ph.qty--; qtyEl.textContent = ph.qty; bumpQty(qtyEl);
+    if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+    updateSummary(); saveDraft();
   });
   card.querySelector('.qty-plus').addEventListener('click', () => {
-    ph.qty++; qtyEl.textContent = ph.qty; bumpQty(qtyEl); updateSummary(); saveDraft();
+    ph.qty++; qtyEl.textContent = ph.qty; bumpQty(qtyEl);
+    if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+    updateSummary(); saveDraft();
   });
 
   /* ── Apply-to-all button at bottom of card ── */
   const applyBtn = document.createElement('button');
   applyBtn.className = 'apply-card-btn';
-  applyBtn.innerHTML = `
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-      <polyline points="1,4 7,10 13,4"/>
-    </svg>
-    <span class="apply-card-text">Застосувати до всіх</span>`;
-  applyBtn.title = 'Застосувати ці налаштування до всіх фото';
+  // Label is rebuilt each time settings change via updateApplyBtnLabel()
+  applyBtn.dataset.photoId2 = ph.id; // used for label updates
+  function refreshApplyLabel() {
+    const colorLabel = ph.color === 'color' ? 'Кольорове' : 'Ч/Б';
+    const paperLabel = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+    applyBtn.innerHTML =
+      '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="flex-shrink:0">' +
+      '<path d="M1 7h10M8 4l3 3-3 3"/></svg>' +
+      '<span class="apply-card-text">Скопіювати ці налаштування всім: ' +
+      colorLabel + ' · ' + paperLabel + ' · ×' + ph.qty + '</span>' +
+      '<span class="apply-card-icon-only">→ Всім</span>';
+  }
+  refreshApplyLabel();
+  ph._refreshApplyLabel = refreshApplyLabel; // store ref for qty/seg updates
+  applyBtn.title = 'Застосувати колір, папір і кількість цього фото до всіх інших';
   applyBtn.addEventListener('click', () => applyCardToAll(ph));
   card.appendChild(applyBtn);
 
@@ -1357,7 +1381,7 @@ function updateSummary() {
 
 /* ═══ VIEW MODE ═══ */
 let viewMode = 'list'; // 'list' | 'grid'
-const AUTO_GRID_THRESHOLD = 5; // below this: grid; at/above: list
+const AUTO_GRID_THRESHOLD = 10; // at/above this: grid (compact); below: list (full)
 
 function setViewMode(mode, manual = true) {
   viewMode = mode;
@@ -1369,8 +1393,8 @@ function setViewMode(mode, manual = true) {
 
 function autoSelectViewMode() {
   if (S.photos.length === 0) return;
-  // Only auto-switch if user hasn't manually changed it recently
-  const auto = S.photos.length < AUTO_GRID_THRESHOLD ? 'grid' : 'list';
+  // 10+ photos → compact grid; fewer → full list
+  const auto = S.photos.length >= AUTO_GRID_THRESHOLD ? 'grid' : 'list';
   setViewMode(auto, false);
 }
 
@@ -1480,39 +1504,44 @@ function openApplyDropdown() {
 
   drop.innerHTML = `
     <div class="apply-dropdown-handle"></div>
-    <div class="apply-dropdown-title">Застосувати до всіх</div>
+    <div class="apply-dropdown-title">Стиль для всіх фото</div>
+    <div style="font-size:12px;color:var(--d50);padding:0 20px 10px;line-height:1.5">
+      Оберіть — і зміна застосується одразу до всіх ${S.photos.length} фото
+    </div>
     <div class="apply-dropdown-row" onclick="applyGlobalToAll();closeApplyDropdown()">
       <div>
-        <div class="apply-dropdown-row-label">Колір + Папір (з панелі)</div>
-        <div class="apply-dropdown-row-sub">${colorLabel} · ${paperLabel}</div>
+        <div class="apply-dropdown-row-label">Застосувати поточні налаштування</div>
+        <div class="apply-dropdown-row-sub">Колір: ${colorLabel} · Папір: ${paperLabel} — для всіх</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
+    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--d40,rgba(44,42,40,.4))">Колір</div>
     <div class="apply-dropdown-row" onclick="applyColorToAll('color');closeApplyDropdown()">
       <div>
-        <div class="apply-dropdown-row-label">Всі → Кольорове</div>
-        <div class="apply-dropdown-row-sub">Змінити тільки колір</div>
+        <div class="apply-dropdown-row-label">Кольорове — для всіх</div>
+        <div class="apply-dropdown-row-sub">Усі фото друкуються у кольорі</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
     <div class="apply-dropdown-row" onclick="applyColorToAll('bw');closeApplyDropdown()">
       <div>
-        <div class="apply-dropdown-row-label">Всі → Чорно-біле</div>
-        <div class="apply-dropdown-row-sub">Змінити тільки колір</div>
+        <div class="apply-dropdown-row-label">Чорно-біле — для всіх</div>
+        <div class="apply-dropdown-row-sub">Усі фото друкуються у ч/б</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
+    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--d40,rgba(44,42,40,.4))">Тип паперу</div>
     <div class="apply-dropdown-row" onclick="applyPaperToAll('mat');closeApplyDropdown()">
       <div>
-        <div class="apply-dropdown-row-label">Всі → Мат</div>
-        <div class="apply-dropdown-row-sub">Змінити тільки папір</div>
+        <div class="apply-dropdown-row-label">Мат — для всіх</div>
+        <div class="apply-dropdown-row-sub">Матовий папір без відблисків</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
     <div class="apply-dropdown-row" onclick="applyPaperToAll('gloss');closeApplyDropdown()">
       <div>
-        <div class="apply-dropdown-row-label">Всі → Глянець</div>
-        <div class="apply-dropdown-row-sub">Змінити тільки папір</div>
+        <div class="apply-dropdown-row-label">Глянець — для всіх</div>
+        <div class="apply-dropdown-row-sub">Глянсовий папір, яскраві кольори</div>
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
