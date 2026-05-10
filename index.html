@@ -174,6 +174,93 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 }
 
 /* ═══ ADD MORE + BOTTOM BAR ═══ */
+/* ═══ VIEW TOGGLE ═══ */
+.view-toggle{display:flex;align-items:center;gap:6px;background:var(--d05);border-radius:var(--r-pill);padding:3px;height:34px}
+.view-btn{width:30px;height:28px;border:none;background:none;border-radius:var(--r-pill);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--d50);transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent}
+.view-btn.active{background:var(--dark);color:var(--cream)}
+
+/* ═══ STEP 3 HEADER ROW ═══ */
+.step3-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.step3-header .heading{margin-bottom:0}
+
+/* ═══ GLOBAL SETTINGS PANEL ═══ */
+.global-panel{
+  background:var(--d05);border:1px solid var(--d10);border-radius:var(--r-lg);
+  padding:14px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px;
+  animation:fadeIn .3s ease;
+}
+.global-panel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.global-panel-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50);min-width:44px}
+.global-panel .photo-seg{height:36px;flex:1;min-width:140px;background:var(--white)}
+.global-auto-row{display:flex;align-items:center;gap:10px;padding-top:4px;border-top:1px solid var(--d10)}
+.global-auto-label{font-size:13px;color:var(--d70);flex:1;cursor:pointer;user-select:none}
+/* toggle switch */
+.toggle-switch{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--d20);border-radius:var(--r-pill);cursor:pointer;transition:background .25s}
+.toggle-track::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;background:var(--white);border-radius:50%;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-switch input:checked + .toggle-track{background:var(--dark)}
+.toggle-switch input:checked + .toggle-track::after{transform:translateX(16px)}
+
+/* ═══ GRID MODE ═══ */
+.photos-list.grid-mode{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photos-list.grid-mode .photo-card{display:flex;flex-direction:column}
+.photos-list.grid-mode .photo-preview{height:160px}
+.photos-list.grid-mode .photo-controls{padding:10px}
+.photos-list.grid-mode .photo-seg-label{font-size:10px}
+.photos-list.grid-mode .photo-seg{height:34px}
+.photos-list.grid-mode .photo-seg-btn{font-size:11px}
+.photos-list.grid-mode .qty-label{font-size:10px}
+.photos-list.grid-mode .qty-value{font-size:14px}
+.photos-list.grid-mode .qty-btn{width:26px;height:26px}
+.photos-list.grid-mode .status-badge{font-size:9px;padding:2px 6px}
+/* hide apply-to-all text in grid, show only icon */
+.photos-list.grid-mode .apply-card-text{display:none}
+
+/* ═══ APPLY-TO-ALL on card ═══ */
+.apply-card-btn{
+  width:100%;height:34px;border:none;border-top:1px solid var(--d10);
+  background:none;cursor:pointer;font-family:"Inter",sans-serif;font-size:12px;
+  font-weight:500;color:var(--d60);display:flex;align-items:center;justify-content:center;
+  gap:6px;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;
+}
+.apply-card-btn:hover{background:var(--d05);color:var(--dark)}
+.apply-card-btn:active{background:var(--d10)}
+
+/* ═══ APPLY-TO-ALL in bottom bar ═══ */
+.apply-all-btn{
+  height:40px;padding:0 16px;border:1.5px solid var(--d20);border-radius:var(--r-pill);
+  background:none;cursor:pointer;font-family:"Inter",sans-serif;font-size:13px;
+  font-weight:500;color:var(--d70);white-space:nowrap;flex-shrink:0;
+  transition:border-color .2s,color .2s,background .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.apply-all-btn:hover{border-color:var(--dark);color:var(--dark)}
+.apply-all-btn:active{background:var(--d05)}
+
+/* Apply-all dropdown */
+.apply-dropdown{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:var(--cream);border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 32px rgba(44,42,40,.15);
+  padding:12px 0 max(20px,env(safe-area-inset-bottom)) 0;
+  animation:slideUp .3s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.apply-dropdown-handle{width:36px;height:4px;background:var(--d20);border-radius:2px;margin:0 auto 14px}
+.apply-dropdown-title{font-family:"Cormorant",serif;font-size:18px;font-weight:500;color:var(--dark);padding:0 20px;margin-bottom:14px}
+.apply-dropdown-row{padding:12px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s}
+.apply-dropdown-row:hover{background:var(--d05)}
+.apply-dropdown-row:active{background:var(--d10)}
+.apply-dropdown-row-label{font-size:15px;color:var(--dark)}
+.apply-dropdown-row-sub{font-size:12px;color:var(--d50);margin-top:2px}
+.apply-dropdown-cancel{width:calc(100% - 40px);height:50px;margin:8px 20px 0;border:1.5px solid var(--d15);border-radius:var(--r-pill);background:none;font-family:"Inter",sans-serif;font-size:15px;color:var(--d60);cursor:pointer}
+.apply-overlay{position:fixed;inset:0;z-index:199;background:rgba(44,42,40,.3);animation:fadeIn .2s ease}
+
+/* ═══ BOTTOM BAR UPDATED ═══ */
+.bottom-bar-row{display:flex;align-items:center;gap:10px}
+.bottom-bar-info{flex:1}
+
 .add-more-btn{width:100%;height:52px;border:1.5px dashed var(--d30);border-radius:var(--r-md);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;font-size:14px;color:var(--d70);display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .2s,color .2s;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .add-more-btn:hover{border-color:var(--dark);color:var(--dark)}
 .bottom-bar{position:sticky;bottom:0;background:var(--cr95);border-top:1px solid var(--d10);padding:14px 24px 28px;display:flex;flex-direction:column;gap:10px;margin:18px -24px 0;width:calc(100% + 48px);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -348,8 +435,46 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Назад
       </button>
-      <div class="heading">Ваші фото</div>
-      <p class="subtext">Розмір друку — 10×15 см. Для кожного фото оберіть колір та тип паперу.</p>
+      <div class="step3-header">
+        <div>
+          <div class="heading">Ваші фото</div>
+          <p class="subtext" style="margin-bottom:0">Розмір друку — 10×15 см.</p>
+        </div>
+        <div class="view-toggle" id="view-toggle" style="display:none;margin-top:6px">
+          <button class="view-btn active" id="btn-list-view" onclick="setViewMode('list')" title="Список">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="1" y1="3" x2="13" y2="3"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg>
+          </button>
+          <button class="view-btn" id="btn-grid-view" onclick="setViewMode('grid')" title="Плитка">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px"></div>
+
+      <!-- Global settings panel -->
+      <div class="global-panel" id="global-panel" style="display:none">
+        <div class="global-panel-row">
+          <span class="global-panel-label">Колір</span>
+          <div class="photo-seg global-panel .photo-seg" id="g-color" data-group="color">
+            <button class="photo-seg-btn active" data-val="color">Кольорове</button>
+            <button class="photo-seg-btn" data-val="bw">Чорно-біле</button>
+          </div>
+        </div>
+        <div class="global-panel-row">
+          <span class="global-panel-label">Папір</span>
+          <div class="photo-seg" id="g-paper" data-group="paper">
+            <button class="photo-seg-btn" data-val="gloss">Глянець</button>
+            <button class="photo-seg-btn active" data-val="mat">Мат</button>
+          </div>
+        </div>
+        <div class="global-auto-row">
+          <label class="global-auto-label" for="g-auto">Застосовувати до нових фото автоматично</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="g-auto" checked onchange="onGlobalAutoChange()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+      </div>
       <div class="upload-zone" id="upload-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
         <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic" multiple onchange="onFilesSelected(event)">
         <div class="upload-icon-circle">
@@ -368,9 +493,15 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
           </button>
         </div>
         <div class="bottom-bar">
-          <div class="bottom-bar-info">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 9l3-2.5L8 9l3.5-3.5L15 9" stroke="currentColor" stroke-width="1.2"/></svg>
-            <span id="photos-summary">0 фото · 0 відбитків</span>
+          <div class="bottom-bar-row">
+            <div class="bottom-bar-info">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 9l3-2.5L8 9l3.5-3.5L15 9" stroke="currentColor" stroke-width="1.2"/></svg>
+              <span id="photos-summary">0 фото · 0 відбитків</span>
+            </div>
+            <button class="apply-all-btn" onclick="openApplyDropdown()" title="Застосувати налаштування до всіх">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="1,4 7,10 13,4"/></svg>
+              До всіх
+            </button>
           </div>
           <button class="btn-primary-sm" onclick="goTo(4)" id="btn-to-review">Перейти до підтвердження</button>
         </div>
@@ -572,6 +703,7 @@ window.addEventListener('DOMContentLoaded', () => {
   emailjs.init(EMAILJS_PUBLIC_KEY);
   renderStepper();
   setDelivery('nova');
+  initGlobalPanel();
 
   // ── Restore draft ──
   const draft = loadDraft();
@@ -1067,6 +1199,18 @@ function buildPhotoCard(ph) {
     ph.qty++; qtyEl.textContent = ph.qty; bumpQty(qtyEl); updateSummary(); saveDraft();
   });
 
+  /* ── Apply-to-all button at bottom of card ── */
+  const applyBtn = document.createElement('button');
+  applyBtn.className = 'apply-card-btn';
+  applyBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <polyline points="1,4 7,10 13,4"/>
+    </svg>
+    <span class="apply-card-text">Застосувати до всіх</span>`;
+  applyBtn.title = 'Застосувати ці налаштування до всіх фото';
+  applyBtn.addEventListener('click', () => applyCardToAll(ph));
+  card.appendChild(applyBtn);
+
   return card;
 }
 
@@ -1142,11 +1286,25 @@ async function addPhotos(files) {
 
     const id  = ++pid;
     const url = URL.createObjectURL(file);
-    const ph  = { id, file, previewUrl: url, color: 'color', paper: 'mat', qty: 1 };
+    // Apply global defaults to new photo if auto-mode is on
+    const ph  = {
+      id, file, previewUrl: url,
+      color: G.auto ? G.color : 'color',
+      paper: G.auto ? G.paper : 'mat',
+      qty: 1,
+    };
     S.photos.push(ph);
 
     const card = buildPhotoCard(ph);
+    // Sync card buttons to actual ph state (in case global differs from defaults)
+    if (G.auto) updateCardControls(ph);
     list.appendChild(card);
+
+    // Show global panel + view toggle once we have photos
+    showGlobalPanel(true);
+    // Auto view mode (only when not manually overridden)
+    autoSelectViewMode();
+
     updateUploadVisibility();
     updateSummary();
 
@@ -1186,6 +1344,7 @@ function updateUploadVisibility() {
   const has = S.photos.length > 0;
   document.getElementById('upload-zone').style.display   = has ? 'none' : '';
   document.getElementById('photos-bottom').style.display = has ? '' : 'none';
+  if (!has) showGlobalPanel(false);
 }
 
 function updateSummary() {
@@ -1195,6 +1354,195 @@ function updateSummary() {
   if (errCount > 0) text += ` · ⚠ ${errCount} з помилками`;
   document.getElementById('photos-summary').textContent = text;
 }
+
+/* ═══ VIEW MODE ═══ */
+let viewMode = 'list'; // 'list' | 'grid'
+const AUTO_GRID_THRESHOLD = 5; // below this: grid; at/above: list
+
+function setViewMode(mode, manual = true) {
+  viewMode = mode;
+  const list = document.getElementById('photos-list');
+  list.classList.toggle('grid-mode', mode === 'grid');
+  document.getElementById('btn-list-view').classList.toggle('active', mode === 'list');
+  document.getElementById('btn-grid-view').classList.toggle('active', mode === 'grid');
+}
+
+function autoSelectViewMode() {
+  if (S.photos.length === 0) return;
+  // Only auto-switch if user hasn't manually changed it recently
+  const auto = S.photos.length < AUTO_GRID_THRESHOLD ? 'grid' : 'list';
+  setViewMode(auto, false);
+}
+
+/* ═══ GLOBAL SETTINGS PANEL ═══ */
+const G = { color: 'color', paper: 'mat', auto: true };
+
+function initGlobalPanel() {
+  // Wire up global color seg
+  document.getElementById('g-color').querySelectorAll('.photo-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      G.color = btn.dataset.val;
+      document.getElementById('g-color').querySelectorAll('.photo-seg-btn')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      if (G.auto) applyGlobalToAll();
+    });
+  });
+  // Wire up global paper seg
+  document.getElementById('g-paper').querySelectorAll('.photo-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      G.paper = btn.dataset.val;
+      document.getElementById('g-paper').querySelectorAll('.photo-seg-btn')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      if (G.auto) applyGlobalToAll();
+    });
+  });
+}
+
+function onGlobalAutoChange() {
+  G.auto = document.getElementById('g-auto').checked;
+  if (G.auto && S.photos.length > 0) applyGlobalToAll();
+}
+
+/* Apply global settings (color + paper only, not qty) to all cards */
+function applyGlobalToAll() {
+  S.photos.forEach(ph => {
+    ph.color = G.color;
+    ph.paper = G.paper;
+    updateCardControls(ph);
+  });
+  updateSummary();
+  saveDraft();
+}
+
+/* Apply ONE card's settings to all other cards */
+function applyCardToAll(sourcePh) {
+  S.photos.forEach(ph => {
+    if (ph.id === sourcePh.id) return;
+    ph.color = sourcePh.color;
+    ph.paper = sourcePh.paper;
+    ph.qty   = sourcePh.qty;
+    updateCardControls(ph);
+  });
+  // Sync global panel to match
+  G.color = sourcePh.color;
+  G.paper = sourcePh.paper;
+  syncGlobalPanelUI();
+  updateSummary();
+  saveDraft();
+  showToast('Налаштування застосовані до всіх фото');
+}
+
+/* Update a card's toggle buttons and qty to match ph state (no DOM rebuild) */
+function updateCardControls(ph) {
+  const card = document.querySelector('[data-photo-id="' + ph.id + '"]');
+  if (!card) return;
+
+  card.querySelectorAll('.photo-seg').forEach(seg => {
+    seg.querySelectorAll('.photo-seg-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === ph[seg.dataset.group]);
+    });
+  });
+
+  const qtyEl = card.querySelector('.qty-value');
+  if (qtyEl) qtyEl.textContent = ph.qty;
+}
+
+function syncGlobalPanelUI() {
+  document.getElementById('g-color').querySelectorAll('.photo-seg-btn')
+    .forEach(b => b.classList.toggle('active', b.dataset.val === G.color));
+  document.getElementById('g-paper').querySelectorAll('.photo-seg-btn')
+    .forEach(b => b.classList.toggle('active', b.dataset.val === G.paper));
+}
+
+function showGlobalPanel(show) {
+  document.getElementById('global-panel').style.display  = show ? '' : 'none';
+  document.getElementById('view-toggle').style.display   = show ? '' : 'none';
+}
+
+/* ═══ APPLY-ALL DROPDOWN ═══ */
+function openApplyDropdown() {
+  if (S.photos.length < 2) {
+    showToast('Додайте хоча б 2 фото'); return;
+  }
+
+  // Build dropdown
+  const overlay = document.createElement('div');
+  overlay.className = 'apply-overlay';
+  overlay.onclick   = closeApplyDropdown;
+
+  const drop = document.createElement('div');
+  drop.id        = 'apply-dropdown';
+  drop.className = 'apply-dropdown';
+
+  // Current global state label
+  const colorLabel = G.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+  const paperLabel = G.paper === 'mat'   ? 'Мат'       : 'Глянець';
+
+  drop.innerHTML = `
+    <div class="apply-dropdown-handle"></div>
+    <div class="apply-dropdown-title">Застосувати до всіх</div>
+    <div class="apply-dropdown-row" onclick="applyGlobalToAll();closeApplyDropdown()">
+      <div>
+        <div class="apply-dropdown-row-label">Колір + Папір (з панелі)</div>
+        <div class="apply-dropdown-row-sub">${colorLabel} · ${paperLabel}</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
+    </div>
+    <div class="apply-dropdown-row" onclick="applyColorToAll('color');closeApplyDropdown()">
+      <div>
+        <div class="apply-dropdown-row-label">Всі → Кольорове</div>
+        <div class="apply-dropdown-row-sub">Змінити тільки колір</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
+    </div>
+    <div class="apply-dropdown-row" onclick="applyColorToAll('bw');closeApplyDropdown()">
+      <div>
+        <div class="apply-dropdown-row-label">Всі → Чорно-біле</div>
+        <div class="apply-dropdown-row-sub">Змінити тільки колір</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
+    </div>
+    <div class="apply-dropdown-row" onclick="applyPaperToAll('mat');closeApplyDropdown()">
+      <div>
+        <div class="apply-dropdown-row-label">Всі → Мат</div>
+        <div class="apply-dropdown-row-sub">Змінити тільки папір</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
+    </div>
+    <div class="apply-dropdown-row" onclick="applyPaperToAll('gloss');closeApplyDropdown()">
+      <div>
+        <div class="apply-dropdown-row-label">Всі → Глянець</div>
+        <div class="apply-dropdown-row-sub">Змінити тільки папір</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
+    </div>
+    <button class="apply-dropdown-cancel" onclick="closeApplyDropdown()">Скасувати</button>`;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(drop);
+}
+
+function closeApplyDropdown() {
+  document.getElementById('apply-dropdown')?.remove();
+  document.querySelector('.apply-overlay')?.remove();
+}
+
+function applyColorToAll(val) {
+  S.photos.forEach(ph => { ph.color = val; updateCardControls(ph); });
+  G.color = val; syncGlobalPanelUI();
+  updateSummary(); saveDraft();
+  showToast(val === 'color' ? 'Всі фото — кольорові' : 'Всі фото — чорно-білі');
+}
+
+function applyPaperToAll(val) {
+  S.photos.forEach(ph => { ph.paper = val; updateCardControls(ph); });
+  G.paper = val; syncGlobalPanelUI();
+  updateSummary(); saveDraft();
+  showToast(val === 'mat' ? 'Всі фото — мат' : 'Всі фото — глянець');
+}
+
+/* ═══ HOOK INTO addPhotos ═══ */
+/* Override buildPhotoCard segment handlers to sync global panel */
 
 /* Legacy stubs — safe to call but do nothing harmful now */
 function setOpt() {}
