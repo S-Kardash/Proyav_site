@@ -128,7 +128,7 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 
 /* ═══ PHOTO CARDS ═══ */
 .photos-list{display:flex;flex-direction:column;gap:16px}
-.photo-card{background:var(--white);border:1px solid var(--d10);border-radius:var(--r-lg);overflow:hidden;animation:cardIn .38s cubic-bezier(.22,1,.36,1)}
+.photo-card{background:var(--white);border:1px solid var(--d10);border-radius:var(--r-lg);overflow:hidden;animation:cardIn .38s cubic-bezier(.22,1,.36,1);min-width:0;word-break:break-word}
 @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes cardOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95) translateY(-6px)}}
 .photo-card.removing{animation:cardOut .22s ease forwards;pointer-events:none}
@@ -137,15 +137,15 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .photo-size-badge{position:absolute;bottom:10px;left:10px;background:var(--cr90);border-radius:var(--r-pill);padding:4px 12px;font-size:11px;color:var(--dark)}
 .photo-delete{position:absolute;top:10px;right:10px;width:30px;height:30px;background:rgba(44,42,40,.65);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,transform .15s;backdrop-filter:blur(4px)}
 .photo-delete:active{transform:scale(.88)}
-.photo-controls{padding:14px;display:flex;flex-direction:column;gap:10px}
+.photo-controls{padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
 .photo-seg-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50);margin-bottom:5px;display:block}
-.photo-seg{background:var(--d05);border-radius:var(--r-pill);padding:4px;display:flex;height:40px}
-.photo-seg-btn{flex:1;border:none;background:none;border-radius:var(--r-pill);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;font-size:13px;color:var(--d60);transition:background .25s,color .25s;-webkit-tap-highlight-color:transparent}
+.photo-seg{background:var(--d05);border-radius:var(--r-pill);padding:4px;display:flex;height:40px;min-width:0;overflow:hidden}
+.photo-seg-btn{flex:1;border:none;background:none;border-radius:var(--r-pill);cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;font-size:13px;color:var(--d60);transition:background .25s,color .25s;-webkit-tap-highlight-color:transparent;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 4px}
 .photo-seg-btn.active{background:var(--dark);color:var(--cream)}
-.qty-row{display:flex;align-items:center;justify-content:space-between}
-.qty-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50)}
-.qty-controls{display:flex;align-items:center;gap:10px}
-.qty-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--d20);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+.qty-row{display:flex;align-items:center;justify-content:space-between;min-width:0;flex-wrap:wrap;gap:6px}
+.qty-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50);flex:1;min-width:0}
+.qty-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.qty-btn{width:34px;height:34px;min-width:34px;border-radius:50%;border:1.5px solid var(--d20);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,transform .15s;-webkit-tap-highlight-color:transparent;flex-shrink:0}
 .qty-btn.plus{background:var(--dark);border-color:var(--dark)}
 .qty-btn:active{transform:scale(.88)}
 .qty-value{font-size:16px;font-weight:500;color:var(--dark);min-width:22px;text-align:center}
@@ -155,8 +155,15 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .photo-warn-item{display:flex;align-items:flex-start;gap:7px;line-height:1.4}
 .photo-warn-item svg{flex-shrink:0;margin-top:1px}
 /* status badges on card */
-.photo-status-bar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 0}
-.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:500;line-height:1.4}
+.photo-status-bar{display:flex;flex-direction:column;gap:4px;padding:10px 12px 2px;overflow:hidden;min-width:0}
+.status-badge{
+  display:flex;align-items:flex-start;gap:6px;
+  padding:8px 12px;border-radius:12px;
+  font-size:12px;font-weight:400;line-height:1.5;
+  width:100%;box-sizing:border-box;
+  word-break:break-word;white-space:normal;
+}
+.status-badge svg{flex-shrink:0;margin-top:2px}
 .status-badge.ok{background:rgba(39,174,96,.1);color:#1a7a42}
 .status-badge.warn{background:rgba(230,126,34,.12);color:#924400}
 .status-badge.err{background:rgba(192,57,43,.1);color:#922}
@@ -204,40 +211,132 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .toggle-switch input:checked + .toggle-track::after{transform:translateX(16px)}
 
 /* ═══ GRID MODE ═══ */
-.photos-list.grid-mode{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.photos-list.grid-mode .photo-card{display:flex;flex-direction:column}
-.photos-list.grid-mode .photo-preview{height:160px}
-.photos-list.grid-mode .photo-controls{padding:10px}
-.photos-list.grid-mode .photo-seg-label{font-size:10px}
-.photos-list.grid-mode .photo-seg{height:34px}
-.photos-list.grid-mode .photo-seg-btn{font-size:11px}
-.photos-list.grid-mode .qty-label{font-size:10px}
-.photos-list.grid-mode .qty-value{font-size:14px}
-.photos-list.grid-mode .qty-btn{width:26px;height:26px}
-.photos-list.grid-mode .status-badge{font-size:9px;padding:2px 6px}
-/* hide apply-to-all text in grid, show only icon */
-.photos-list.grid-mode .apply-card-text{display:none}
+.photos-list.grid-mode{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.photos-list.grid-mode .photo-card{
+  display:flex;flex-direction:column;
+  min-width:0; /* prevent overflow */
+}
+.photos-list.grid-mode .photo-preview{
+  height:clamp(130px, 35vw, 180px);
+}
+/* In grid mode — hide controls, apply btn and status bar text overflow */
+.photos-list.grid-mode .photo-controls{display:none}
+.photos-list.grid-mode .apply-card-btn{display:none}
+.photos-list.grid-mode .photo-status-bar{
+  padding:5px 6px 4px;
+  overflow:hidden;
+}
+/* In grid mode: hide status bar (warnings shown in sheet) */
+.photos-list.grid-mode .photo-status-bar{ display:none }
+/* Warning dot on gear button when photo has issues */
+.grid-settings-btn.has-warn::after{
+  content:'';position:absolute;top:4px;right:4px;
+  width:7px;height:7px;border-radius:50%;
+  background:#e67e22;border:1.5px solid var(--cream);
+}
+/* Grid settings gear button — top left overlay */
+.grid-settings-btn{
+  position:absolute;top:7px;left:7px;
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(245,239,228,.93);border:none;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .2s,transform .15s;
+  z-index:2;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 1px 4px rgba(44,42,40,.15);
+}
+.photos-list.grid-mode .grid-settings-btn{display:flex}
+.grid-settings-btn:active{transform:scale(.88)}
+/* Grid settings badge — bottom right only */
+.grid-settings-badge{
+  position:absolute;bottom:7px;right:7px;
+  background:rgba(44,42,40,.82);border-radius:20px;
+  padding:3px 8px;font-size:10px;color:var(--cream);
+  display:none;align-items:center;gap:3px;
+  pointer-events:none;
+  max-width:calc(100% - 50px); /* don't overlap gear btn */
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  line-height:1.4;
+}
+.photos-list.grid-mode .grid-settings-badge{display:flex}
+/* In grid mode hide the size badge to avoid overlap */
+.photos-list.grid-mode .photo-size-badge{display:none}
 
 /* ═══ APPLY-TO-ALL on card ═══ */
 .apply-card-btn{
-  width:100%;height:34px;border:none;border-top:1px solid var(--d10);
+  width:100%;min-height:38px;height:auto;padding:8px 12px;
+  border:none;border-top:1px solid var(--d10);
   background:none;cursor:pointer;font-family:"Inter",sans-serif;font-size:12px;
-  font-weight:500;color:var(--d60);display:flex;align-items:center;justify-content:center;
+  font-weight:500;color:var(--d50);
+  display:flex;align-items:center;justify-content:center;
   gap:6px;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;
+  text-align:center;line-height:1.4;
 }
 .apply-card-btn:hover{background:var(--d05);color:var(--dark)}
 .apply-card-btn:active{background:var(--d10)}
-.apply-card-icon-only{display:none;font-size:12px;font-weight:500}
-.photos-list.grid-mode .apply-card-text{display:none}
-.photos-list.grid-mode .apply-card-icon-only{display:inline}
+.apply-card-text{
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  text-overflow:ellipsis;
+  white-space:normal;
+  max-width:100%;
+}
+.apply-card-icon-only{display:none;flex-shrink:0}
+/* Individual photo settings sheet */
+.photo-sheet-overlay{position:fixed;inset:0;z-index:300;background:rgba(44,42,40,.35);animation:fadeIn .2s ease}
+.photo-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:301;
+  background:var(--cream);border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 40px rgba(44,42,40,.18);
+  padding:12px 0 max(28px,env(safe-area-inset-bottom)) 0;
+  animation:slideUp .32s cubic-bezier(.22,1,.36,1);
+  max-height:90dvh;overflow-y:auto;
+}
+.photo-sheet-handle{width:36px;height:4px;background:var(--d20);border-radius:2px;margin:0 auto 16px}
+.photo-sheet-header{display:flex;align-items:center;gap:12px;padding:0 20px 16px;border-bottom:1px solid var(--d10)}
+.photo-sheet-thumb{width:52px;height:72px;border-radius:8px;overflow:hidden;flex-shrink:0}
+.photo-sheet-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-sheet-info{flex:1}
+.photo-sheet-title{font-family:"Cormorant",serif;font-size:18px;font-weight:500;color:var(--dark)}
+.photo-sheet-sub{font-size:12px;color:var(--d50);margin-top:2px}
+.photo-sheet-body{padding:16px 20px}
+.photo-sheet-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50);margin-bottom:8px;display:block}
+.photo-sheet-seg{background:var(--d05);border-radius:var(--r-pill);padding:4px;display:flex;height:44px;margin-bottom:16px}
+.photo-sheet-seg-btn{flex:1;border:none;background:none;border-radius:var(--r-pill);cursor:pointer;font-family:"Inter",sans-serif;font-weight:500;font-size:14px;color:var(--d60);transition:background .25s,color .25s}
+.photo-sheet-seg-btn.active{background:var(--dark);color:var(--cream)}
+.photo-sheet-qty{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.photo-sheet-qty-label{font-size:11px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--d50)}
+.photo-sheet-apply-btn{
+  width:100%;min-height:50px;padding:12px 20px;
+  background:var(--dark);color:var(--cream);border:none;
+  border-radius:var(--r-pill);font-family:"Inter",sans-serif;font-weight:500;font-size:15px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;text-align:center;line-height:1.4;
+  margin-top:4px;-webkit-tap-highlight-color:transparent;transition:opacity .2s;
+  box-sizing:border-box;
+}
+.photo-sheet-apply-btn svg{flex-shrink:0;width:16px;height:16px}
+.photo-sheet-apply-btn:hover{opacity:.88}
+.photo-sheet-apply-btn.secondary{
+  background:none;border:1.5px solid var(--d15);color:var(--d70);
+  margin-top:10px;font-size:15px;
+}
 
 /* ═══ APPLY-TO-ALL in bottom bar ═══ */
 .apply-all-btn{
-  height:40px;padding:0 16px;border:1.5px solid var(--d20);border-radius:var(--r-pill);
-  background:none;cursor:pointer;font-family:"Inter",sans-serif;font-size:13px;
+  height:40px;padding:0 12px;border:1.5px solid var(--d20);border-radius:var(--r-pill);
+  background:none;cursor:pointer;font-family:"Inter",sans-serif;font-size:12px;
   font-weight:500;color:var(--d70);white-space:nowrap;flex-shrink:0;
   transition:border-color .2s,color .2s,background .2s;
   -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;gap:5px;
 }
 .apply-all-btn:hover{border-color:var(--dark);color:var(--dark)}
 .apply-all-btn:active{background:var(--d05)}
@@ -262,8 +361,9 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .apply-overlay{position:fixed;inset:0;z-index:199;background:rgba(44,42,40,.3);animation:fadeIn .2s ease}
 
 /* ═══ BOTTOM BAR UPDATED ═══ */
-.bottom-bar-row{display:flex;align-items:center;gap:10px}
-.bottom-bar-info{flex:1}
+.bottom-bar-row{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+.bottom-bar-info{flex:1;min-width:0;overflow:hidden}
+.bottom-bar-info span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 
 .add-more-btn{width:100%;height:52px;border:1.5px dashed var(--d30);border-radius:var(--r-md);background:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;font-size:14px;color:var(--d70);display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color .2s,color .2s;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .add-more-btn:hover{border-color:var(--dark);color:var(--dark)}
@@ -1151,6 +1251,15 @@ function buildPhotoCard(ph) {
     <div class="photo-preview photo-validating">
       <img src="${ph.previewUrl}" alt="фото">
       <span class="photo-size-badge">10 × 15 см</span>
+      <button class="grid-settings-btn" aria-label="Налаштування фото" title="Змінити колір, папір, кількість">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="grid-settings-badge" id="gsb-${ph.id}">
+        <span id="gsb-color-${ph.id}">Колір</span>·<span id="gsb-paper-${ph.id}">Мат</span>·×<span id="gsb-qty-${ph.id}">1</span>
+      </div>
       <button class="photo-delete" aria-label="Видалити фото">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
       </button>
@@ -1188,6 +1297,19 @@ function buildPhotoCard(ph) {
   /* ── Delete ── */
   card.querySelector('.photo-delete').addEventListener('click', () => removePhoto(ph.id));
 
+  /* ── Grid settings button → open photo settings sheet ── */
+  const gearBtn = card.querySelector('.grid-settings-btn');
+  gearBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openPhotoSheet(ph);
+  });
+  // Mark gear with orange dot if photo has warnings
+  validatePhoto(ph.file, ph.previewUrl).then(r => {
+    if (r.warnings && r.warnings.length > 0) gearBtn.classList.add('has-warn');
+    ph._warnings = r.warnings || [];
+    ph._blocking = r.blocking || [];
+  });
+
   /* ── Segment toggles ── */
   card.querySelectorAll('.photo-seg').forEach(seg => {
     seg.querySelectorAll('.photo-seg-btn').forEach(btn => {
@@ -1223,11 +1345,14 @@ function buildPhotoCard(ph) {
     const colorLabel = ph.color === 'color' ? 'Кольорове' : 'Ч/Б';
     const paperLabel = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
     applyBtn.innerHTML =
-      '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="flex-shrink:0">' +
-      '<path d="M1 7h10M8 4l3 3-3 3"/></svg>' +
-      '<span class="apply-card-text">Скопіювати ці налаштування всім: ' +
-      colorLabel + ' · ' + paperLabel + ' · ×' + ph.qty + '</span>' +
-      '<span class="apply-card-icon-only">→ Всім</span>';
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' +
+      '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>' +
+      '<rect x="8" y="2" width="8" height="4" rx="1"/>' +
+      '</svg>' +
+      '<span class="apply-card-text">Застосувати ' +
+      colorLabel + ', ' + paperLabel + ', ×' + ph.qty + ' — до всіх фото</span>';
+    // Update grid badge too
+    updateGridBadge(ph);
   }
   refreshApplyLabel();
   ph._refreshApplyLabel = refreshApplyLabel; // store ref for qty/seg updates
@@ -1247,35 +1372,29 @@ function renderValidation(ph, result) {
   // Remove loading spinner
   preview.classList.remove('photo-validating');
 
+  // Clean crisp icons (Feather-style, rendered sharp at any size)
+  const ICON_ERR  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1.2" fill="currentColor" stroke="none"/></svg>`;
+  const ICON_WARN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg>`;
+  const ICON_OK   = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>`;
+
   if (!result.ok) {
-    // Blocking error — mark card and show error
-    bar.innerHTML = result.blocking.map(msg => `
-      <span class="status-badge err">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="5"/><line x1="6" y1="3.5" x2="6" y2="6.5"/><circle cx="6" cy="8.5" r=".6" fill="currentColor"/></svg>
-        ${msg}
-      </span>`).join('');
-    // Add a "remove" prompt
-    bar.innerHTML += `<span class="status-badge err" style="cursor:pointer" onclick="removePhoto(${ph.id})">Видалити ×</span>`;
+    bar.innerHTML = result.blocking.map(msg =>
+      `<span class="status-badge err">${ICON_ERR}<span>${msg}</span></span>`
+    ).join('');
+    bar.innerHTML += `<span class="status-badge err" style="cursor:pointer;justify-content:center" onclick="removePhoto(${ph.id})">Видалити це фото</span>`;
     return;
   }
 
-  // Warnings
   if (result.warnings.length > 0) {
-    bar.innerHTML = result.warnings.map(msg => `
-      <span class="status-badge warn">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 1.5L11 10H1L6 1.5z"/><line x1="6" y1="5" x2="6" y2="7.5"/><circle cx="6" cy="9" r=".6" fill="currentColor"/></svg>
-        ${msg}
-      </span>`).join('');
+    bar.innerHTML = result.warnings.map(msg =>
+      `<span class="status-badge warn">${ICON_WARN}<span>${msg}</span></span>`
+    ).join('');
     return;
   }
 
-  // All good — show resolution info as a soft ok badge
+  // All good
   const mp = ((result.w * result.h) / 1e6).toFixed(1);
-  bar.innerHTML = `
-    <span class="status-badge ok">
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5,6 4.5,9.5 10.5,2.5"/></svg>
-      ${result.w}×${result.h}px · ${mp} МП
-    </span>`;
+  bar.innerHTML = `<span class="status-badge ok">${ICON_OK}<span>${result.w}×${result.h}px · ${mp} МП</span></span>`;
 }
 
 function bumpQty(el) {
@@ -1456,7 +1575,7 @@ function applyCardToAll(sourcePh) {
   showToast('Налаштування застосовані до всіх фото');
 }
 
-/* Update a card's toggle buttons and qty to match ph state (no DOM rebuild) */
+/* Update a card's toggle buttons, qty and grid badge to match ph state */
 function updateCardControls(ph) {
   const card = document.querySelector('[data-photo-id="' + ph.id + '"]');
   if (!card) return;
@@ -1469,6 +1588,8 @@ function updateCardControls(ph) {
 
   const qtyEl = card.querySelector('.qty-value');
   if (qtyEl) qtyEl.textContent = ph.qty;
+
+  updateGridBadge(ph);
 }
 
 function syncGlobalPanelUI() {
@@ -1572,6 +1693,156 @@ function applyPaperToAll(val) {
 
 /* ═══ HOOK INTO addPhotos ═══ */
 /* Override buildPhotoCard segment handlers to sync global panel */
+
+/* ── Update grid overlay badge ── */
+function updateGridBadge(ph) {
+  const colorEl = document.getElementById('gsb-color-' + ph.id);
+  const paperEl = document.getElementById('gsb-paper-' + ph.id);
+  const qtyEl   = document.getElementById('gsb-qty-'   + ph.id);
+  if (colorEl) colorEl.textContent = ph.color === 'color' ? 'Колір' : 'Ч/Б';
+  if (paperEl) paperEl.textContent = ph.paper === 'mat'   ? 'Мат'   : 'Глянець';
+  if (qtyEl)   qtyEl.textContent   = ph.qty;
+}
+
+/* ── Photo settings bottom sheet (used in grid mode) ── */
+function openPhotoSheet(ph) {
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'photo-sheet-overlay';
+  overlay.onclick   = closePhotoSheet;
+
+  // Sheet
+  const sheet = document.createElement('div');
+  sheet.id        = 'photo-sheet';
+  sheet.className = 'photo-sheet';
+
+  const colorLabel = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+  const paperLabel = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+  const photoIdx   = S.photos.findIndex(p => p.id === ph.id) + 1;
+
+  sheet.innerHTML =
+    '<div class="photo-sheet-handle"></div>' +
+    '<div class="photo-sheet-header">' +
+      '<div class="photo-sheet-thumb"><img src="' + ph.previewUrl + '" alt=""></div>' +
+      '<div class="photo-sheet-info">' +
+        '<div class="photo-sheet-title">Фото ' + photoIdx + '</div>' +
+        '<div class="photo-sheet-sub">' + colorLabel + ' · ' + paperLabel + ' · ' + ph.qty + ' відб.</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="photo-sheet-body">' +
+      // Show warnings inside sheet if any
+      (ph._warnings && ph._warnings.length > 0 ?
+        '<div style="background:rgba(230,126,34,.09);border:1px solid rgba(230,126,34,.28);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#924400;line-height:1.6">' +
+        '<strong style="display:block;margin-bottom:4px">⚠ Увага по якості фото:</strong>' +
+        ph._warnings.map(function(w){ return '• ' + w; }).join('<br>') +
+        '</div>' : '') +
+      (ph._blocking && ph._blocking.length > 0 ?
+        '<div style="background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#922;line-height:1.6">' +
+        '<strong style="display:block;margin-bottom:4px">✕ Проблема з файлом:</strong>' +
+        ph._blocking.map(function(w){ return '• ' + w; }).join('<br>') +
+        '</div>' : '') +
+      '<span class="photo-sheet-label">Колір</span>' +
+      '<div class="photo-sheet-seg" id="ps-color">' +
+        '<button class="photo-sheet-seg-btn ' + (ph.color === 'color' ? 'active' : '') + '" data-val="color">Кольорове</button>' +
+        '<button class="photo-sheet-seg-btn ' + (ph.color === 'bw'    ? 'active' : '') + '" data-val="bw">Чорно-біле</button>' +
+      '</div>' +
+      '<span class="photo-sheet-label">Папір</span>' +
+      '<div class="photo-sheet-seg" id="ps-paper">' +
+        '<button class="photo-sheet-seg-btn ' + (ph.paper === 'gloss' ? 'active' : '') + '" data-val="gloss">Глянець</button>' +
+        '<button class="photo-sheet-seg-btn ' + (ph.paper === 'mat'   ? 'active' : '') + '" data-val="mat">Мат</button>' +
+      '</div>' +
+      '<div class="photo-sheet-qty">' +
+        '<span class="photo-sheet-qty-label">Кількість</span>' +
+        '<div class="qty-controls">' +
+          '<button class="qty-btn" id="ps-minus"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg></button>' +
+          '<span class="qty-value" id="ps-qty">' + ph.qty + '</span>' +
+          '<button class="qty-btn plus" id="ps-plus"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg></button>' +
+        '</div>' +
+      '</div>' +
+      '<button class="photo-sheet-apply-btn" id="ps-apply-all">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>' +
+        '<rect x="8" y="2" width="8" height="4" rx="1"/>' +
+        '</svg>' +
+        'Застосувати до всіх фото' +
+      '</button>' +
+      '<button class="photo-sheet-apply-btn secondary" onclick="closePhotoSheet()">' +
+        'Готово' +
+      '</button>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(sheet);
+
+  // Wire color seg
+  sheet.querySelectorAll('#ps-color .photo-sheet-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ph.color = btn.dataset.val;
+      sheet.querySelectorAll('#ps-color .photo-sheet-seg-btn')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      updateSheetSubtitle(ph, sheet, photoIdx);
+      updateCardControls(ph);
+      if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+      updateGridBadge(ph);
+      updateSummary(); saveDraft();
+    });
+  });
+
+  // Wire paper seg
+  sheet.querySelectorAll('#ps-paper .photo-sheet-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ph.paper = btn.dataset.val;
+      sheet.querySelectorAll('#ps-paper .photo-sheet-seg-btn')
+        .forEach(b => b.classList.toggle('active', b === btn));
+      updateSheetSubtitle(ph, sheet, photoIdx);
+      updateCardControls(ph);
+      if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+      updateGridBadge(ph);
+      updateSummary(); saveDraft();
+    });
+  });
+
+  // Wire qty
+  const qtyDisplay = sheet.querySelector('#ps-qty');
+  sheet.querySelector('#ps-minus').addEventListener('click', () => {
+    if (ph.qty <= 1) return;
+    ph.qty--;
+    qtyDisplay.textContent = ph.qty;
+    updateSheetSubtitle(ph, sheet, photoIdx);
+    updateCardControls(ph);
+    if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+    updateGridBadge(ph);
+    updateSummary(); saveDraft();
+  });
+  sheet.querySelector('#ps-plus').addEventListener('click', () => {
+    ph.qty++;
+    qtyDisplay.textContent = ph.qty;
+    updateSheetSubtitle(ph, sheet, photoIdx);
+    updateCardControls(ph);
+    if (ph._refreshApplyLabel) ph._refreshApplyLabel();
+    updateGridBadge(ph);
+    updateSummary(); saveDraft();
+  });
+
+  // Wire apply-to-all
+  sheet.querySelector('#ps-apply-all').addEventListener('click', () => {
+    applyCardToAll(ph);
+    closePhotoSheet();
+  });
+}
+
+function updateSheetSubtitle(ph, sheet, idx) {
+  const sub = sheet.querySelector('.photo-sheet-sub');
+  if (!sub) return;
+  const c = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+  const p = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+  sub.textContent = c + ' · ' + p + ' · ' + ph.qty + ' відб.';
+}
+
+function closePhotoSheet() {
+  document.getElementById('photo-sheet')?.remove();
+  document.querySelector('.photo-sheet-overlay')?.remove();
+}
 
 /* Legacy stubs — safe to call but do nothing harmful now */
 function setOpt() {}
