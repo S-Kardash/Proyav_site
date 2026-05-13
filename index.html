@@ -232,11 +232,29 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 }
 /* In grid mode: hide status bar (warnings shown in sheet) */
 .photos-list.grid-mode .photo-status-bar{ display:none }
-/* Warning dot on gear button when photo has issues */
+/* Warning dot on gear button */
 .grid-settings-btn.has-warn::after{
-  content:'';position:absolute;top:4px;right:4px;
-  width:7px;height:7px;border-radius:50%;
+  content:'';position:absolute;top:3px;right:3px;
+  width:8px;height:8px;border-radius:50%;
   background:#e67e22;border:1.5px solid var(--cream);
+}
+/* Warning triangle badge -- sits below the gear, never overlaps X or badge */
+.photo-warn-badge{
+  position:absolute;top:44px;left:7px;
+  background:#e67e22;border-radius:20px;
+  padding:4px 8px 4px 6px;
+  font-size:11px;font-weight:600;color:#fff;
+  display:none;align-items:center;gap:4px;
+  z-index:3;pointer-events:none;
+  box-shadow:0 1px 6px rgba(230,126,34,.35);
+  white-space:nowrap;
+  max-width:calc(100% - 14px);
+}
+.photo-warn-badge svg{flex-shrink:0}
+.photos-list.grid-mode .photo-warn-badge{display:flex}
+@media(max-width:400px){
+  .photo-warn-badge span{display:none}
+  .photo-warn-badge{padding:5px;border-radius:50%}
 }
 /* Grid settings gear button — top left overlay */
 .grid-settings-btn{
@@ -265,6 +283,15 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .photos-list.grid-mode .grid-settings-badge{display:flex}
 /* In grid mode hide the size badge to avoid overlap */
 .photos-list.grid-mode .photo-size-badge{display:none}
+/* 320px: shorten badge labels to fit narrow cards */
+@media(max-width:360px){
+  .gsb-label-color,.gsb-label-paper{display:none}
+  .gsb-abbr-color,.gsb-abbr-paper{display:inline}
+  .grid-settings-badge{padding:3px 6px;font-size:9px;gap:2px}
+}
+@media(min-width:361px){
+  .gsb-abbr-color,.gsb-abbr-paper{display:none}
+}
 
 /* ═══ APPLY-TO-ALL on card ═══ */
 .apply-card-btn{
@@ -837,7 +864,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ── Warn before accidental exit on steps 2-4 ──
 window.addEventListener('beforeunload', (e) => {
-  if (S.step >= 2 && S.photos.length > 0) {
+  if (S.step >= 2 && S.step < 5 && S.photos.length > 0) {
     e.preventDefault();
     e.returnValue = ''; // required for Chrome
   }
@@ -1251,6 +1278,10 @@ function buildPhotoCard(ph) {
     <div class="photo-preview photo-validating">
       <img src="${ph.previewUrl}" alt="фото">
       <span class="photo-size-badge">10 × 15 см</span>
+      <div class="photo-warn-badge" id="warn-badge-${ph.id}" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1.2" fill="white" stroke="none"/></svg>
+        <span>Увага</span>
+      </div>
       <button class="grid-settings-btn" aria-label="Налаштування фото" title="Змінити колір, папір, кількість">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
@@ -1258,7 +1289,7 @@ function buildPhotoCard(ph) {
         </svg>
       </button>
       <div class="grid-settings-badge" id="gsb-${ph.id}">
-        <span id="gsb-color-${ph.id}">Колір</span>·<span id="gsb-paper-${ph.id}">Мат</span>·×<span id="gsb-qty-${ph.id}">1</span>
+        <span class="gsb-label-color" id="gsb-color-${ph.id}">Колір</span><span class="gsb-abbr-color" id="gsb-acolor-${ph.id}">К</span>·<span class="gsb-label-paper" id="gsb-paper-${ph.id}">Мат</span><span class="gsb-abbr-paper" id="gsb-apaper-${ph.id}">М</span>·×<span id="gsb-qty-${ph.id}">1</span>
       </div>
       <button class="photo-delete" aria-label="Видалити фото">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
@@ -1303,12 +1334,8 @@ function buildPhotoCard(ph) {
     e.stopPropagation();
     openPhotoSheet(ph);
   });
-  // Mark gear with orange dot if photo has warnings
-  validatePhoto(ph.file, ph.previewUrl).then(r => {
-    if (r.warnings && r.warnings.length > 0) gearBtn.classList.add('has-warn');
-    ph._warnings = r.warnings || [];
-    ph._blocking = r.blocking || [];
-  });
+  // Gear dot + _warnings/_blocking are set from single validatePhoto in addPhotos
+  ph._gearBtn = gearBtn; // ref stored so addPhotos can update the dot after validation
 
   /* ── Segment toggles ── */
   card.querySelectorAll('.photo-seg').forEach(seg => {
@@ -1451,12 +1478,17 @@ async function addPhotos(files) {
     updateUploadVisibility();
     updateSummary();
 
-    // Run async validation — updates card when ready, no UI blocking
+    // Single async validation — sets all flags and updates card + gear dot
     validatePhoto(file, url).then(result => {
       ph.validationResult = result;
-      if (!result.ok) {
-        // Keep in list but mark — user decides whether to remove
-        ph.hasError = true;
+      ph._warnings = result.warnings || [];
+      ph._blocking = result.blocking || [];
+      if (!result.ok) ph.hasError = true;
+      // Update gear dot + warning badge if warnings exist
+      if (result.warnings && result.warnings.length > 0) {
+        if (ph._gearBtn) ph._gearBtn.classList.add('has-warn');
+        const wb = document.getElementById('warn-badge-' + ph.id);
+        if (wb) wb.style.display = '';
       }
       renderValidation(ph, result);
       saveDraft();
@@ -1500,10 +1532,12 @@ function updateSummary() {
 
 /* ═══ VIEW MODE ═══ */
 let viewMode = 'list'; // 'list' | 'grid'
-const AUTO_GRID_THRESHOLD = 10; // at/above this: grid (compact); below: list (full)
+let viewModeManual = false; // true = user manually chose, don't auto-override
+const AUTO_GRID_THRESHOLD = 10; // at/above this: auto grid; below: auto list
 
 function setViewMode(mode, manual = true) {
   viewMode = mode;
+  if (manual) viewModeManual = true;
   const list = document.getElementById('photos-list');
   list.classList.toggle('grid-mode', mode === 'grid');
   document.getElementById('btn-list-view').classList.toggle('active', mode === 'list');
@@ -1512,6 +1546,7 @@ function setViewMode(mode, manual = true) {
 
 function autoSelectViewMode() {
   if (S.photos.length === 0) return;
+  if (viewModeManual) return; // respect user's manual choice
   // 10+ photos → compact grid; fewer → full list
   const auto = S.photos.length >= AUTO_GRID_THRESHOLD ? 'grid' : 'list';
   setViewMode(auto, false);
@@ -1696,12 +1731,20 @@ function applyPaperToAll(val) {
 
 /* ── Update grid overlay badge ── */
 function updateGridBadge(ph) {
-  const colorEl = document.getElementById('gsb-color-' + ph.id);
-  const paperEl = document.getElementById('gsb-paper-' + ph.id);
-  const qtyEl   = document.getElementById('gsb-qty-'   + ph.id);
-  if (colorEl) colorEl.textContent = ph.color === 'color' ? 'Колір' : 'Ч/Б';
-  if (paperEl) paperEl.textContent = ph.paper === 'mat'   ? 'Мат'   : 'Глянець';
-  if (qtyEl)   qtyEl.textContent   = ph.qty;
+  const colorFull  = document.getElementById('gsb-color-'  + ph.id);
+  const colorShort = document.getElementById('gsb-acolor-' + ph.id);
+  const paperFull  = document.getElementById('gsb-paper-'  + ph.id);
+  const paperShort = document.getElementById('gsb-apaper-' + ph.id);
+  const qtyEl      = document.getElementById('gsb-qty-'    + ph.id);
+  const colorFull_t  = ph.color === 'color' ? 'Колір' : 'Ч/Б';
+  const colorShort_t = ph.color === 'color' ? 'К' : 'ЧБ';
+  const paperFull_t  = ph.paper === 'mat' ? 'Мат' : 'Глянець';
+  const paperShort_t = ph.paper === 'mat' ? 'М' : 'Гл';
+  if (colorFull)  colorFull.textContent  = colorFull_t;
+  if (colorShort) colorShort.textContent = colorShort_t;
+  if (paperFull)  paperFull.textContent  = paperFull_t;
+  if (paperShort) paperShort.textContent = paperShort_t;
+  if (qtyEl)      qtyEl.textContent      = ph.qty;
 }
 
 /* ── Photo settings bottom sheet (used in grid mode) ── */
@@ -1918,8 +1961,17 @@ function blobToBase64(blob) {
 }
 
 /* ── Secure API call through Netlify Function ── */
+const API_TIMEOUT_MS = 30000; // 30 seconds per request
+
+function fetchWithTimeout(url, options, ms = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 async function apiPost(payload) {
-  const res = await fetch(ORDER_API, {
+  const res = await fetchWithTimeout(ORDER_API, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(payload),
@@ -1950,10 +2002,10 @@ async function tgSendPhotoSecure(file, caption) {
 }
 
 function buildPhotoCaption(ph, num, orderId) {
-  const color = ph.color === 'color' ? 'Kolyorove' : 'Chorno-bile';
-  const paper = ph.paper === 'mat'   ? 'Mat'       : 'Glyants';
-  const warn  = ph.hasError ? '\n! Ye pytannya po yakosti' : '';
-  return `${orderId} - Foto ${num}\n${color}, ${paper}, x${ph.qty}${warn}`;
+  const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+  const paper = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+  const warn  = ph.hasError ? '\n⚠ Є питання по якості' : '';
+  return `${orderId} — Фото ${num}\n${color}, ${paper}, ї${ph.qty}${warn}`;
 }
 
 function buildOrderMessage(orderId, tq) {
@@ -1964,31 +2016,31 @@ function buildOrderMessage(orderId, tq) {
   });
   const identStr = S.identType === 'instagram'
     ? 'Instagram: @' + S.ident
-    : 'Zamovlennya: ' + S.ident;
+    : 'Замовлення: ' + S.ident;
   const cityLine = S.delivery === 'nova'
-    ? '\nNova Poshta\n' + S.city
-    : '\nSamovyviz';
+    ? '\nНова Пошта: ' + S.city
+    : '\nСамовивіз';
   const photoLines = S.photos.map(function(ph, i) {
-    var color = ph.color === 'color' ? 'Kolyorove' : 'Chorno-bile';
-    var paper = ph.paper === 'mat'   ? 'Mat'       : 'Glyants';
-    var warn  = ph.hasError ? ' (!Yakist)' : '';
-    return '  ' + (i + 1) + '. ' + color + ', ' + paper + ' x' + ph.qty + warn;
+    const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+    const paper = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+    const warn  = ph.hasError ? ' ⚠' : '';
+    return '  ' + (i + 1) + '. ' + color + ', ' + paper + ' ї' + ph.qty + warn;
   }).join('\n');
   const errorNote = S.photos.some(function(p) { return p.hasError; })
-    ? '\n! Deyaki foto mayut pytannya yakosti' : '';
+    ? '\n⚠ Деякі фото мають питання якості' : '';
 
   return (
-    '[PROYAV] Zamovlennya ' + orderId + errorNote + '\n' +
-    '\n--- Kliyent ---\n' +
+    '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
+    '\n👤 <b>Клієнт</b>\n' +
     identStr + '\n' +
-    "Im'ya: " + S.name + '\n' +
-    'Telefon: ' + S.phone + '\n' +
+    'Ім\'\xd1�: ' + S.name + '\n' +
+    'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
-    cityLine + '\n' +
-    '\n--- Foto: ' + S.photos.length + ' sht / ' + tq + ' vidbyt ---\n' +
+    '📦 Доставка: ' + cityLine + '\n' +
+    '\n🖼 <b>Фото: ' + S.photos.length + ' шт / ' + tq + ' відбитків</b>\n' +
     photoLines + '\n' +
-    '\n--- Vartist: ' + (tq * PRICE) + ' grn ---\n' +
-    'Chas: ' + time
+    '\n💰 <b>Вартість: ' + (tq * PRICE) + ' грн</b>\n' +
+    '🕐 ' + time
   );
 }
 
@@ -1998,7 +2050,7 @@ async function submitOrder(e) {
   btn.disabled = true;
   btn.innerHTML = '<div class="btn-spinner"></div> Надсилаємо...';
 
-  const orderId = 'PYA-' + Date.now().toString().slice(-6);
+  const orderId = 'ПРЯ-' + Date.now().toString().slice(-6);
   const tq      = S.photos.reduce((s, p) => s + p.qty, 0);
   let   tgOk    = false;
   let   emailOk = false;
@@ -2097,6 +2149,11 @@ function resetApp() {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-1').classList.add('active');
   document.getElementById('btn-step1').disabled=true;
+  // Reset view mode and global panel state
+  viewMode = 'list'; viewModeManual = false;
+  G.color = 'color'; G.paper = 'mat'; G.auto = true;
+  syncGlobalPanelUI();
+  document.getElementById('g-auto').checked = true;
   renderStepper(); window.scrollTo({top:0});
 }
 </script>
