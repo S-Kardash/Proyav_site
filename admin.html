@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Прояв — Адмінка</title>
+<style>
+:root {
+  --cream:#f5f0ea; --white:#fff; --dark:#3d3530; --mid:#7a6e68;
+  --gold:#c9a96e; --gold-d:#a8834a;
+  --green:#27ae60; --orange:#e67e22; --blue:#2980b9; --red:#e74c3c; --purple:#8e44ad;
+  --radius:14px; --shadow:0 2px 12px rgba(61,53,48,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh}
+
+/* ── Login ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:var(--white);border-radius:var(--radius);padding:40px 36px;max-width:380px;width:100%;box-shadow:var(--shadow);text-align:center}
+.login-logo{font-size:28px;font-weight:700;letter-spacing:.08em;color:var(--dark);margin-bottom:6px}
+.login-sub{color:var(--mid);font-size:14px;margin-bottom:32px}
+.inp{width:100%;border:1.5px solid #e0d8d0;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:.2s}
+.inp:focus{border-color:var(--gold)}
+.btn{width:100%;background:var(--dark);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;transition:.15s}
+.btn:hover{background:var(--gold-d)}
+.err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+
+/* ── App shell ── */
+#app{display:none;min-height:100vh}
+.topbar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:18px;font-weight:700;letter-spacing:.08em}
+.topbar-nav{display:flex;gap:2px;flex:1;margin-left:12px}
+.nav-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:.15s}
+.nav-btn.active,.nav-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+.topbar-logout{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.topbar-logout:hover{border-color:#fff;color:#fff}
+
+.content{padding:24px 20px;max-width:1100px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.stat-val{font-size:28px;font-weight:700;color:var(--dark)}
+.stat-lbl{font-size:12px;color:var(--mid);margin-top:4px}
+
+/* ── Filters + actions ── */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.filter-btn{background:var(--white);border:1.5px solid #e0d8d0;border-radius:20px;padding:6px 16px;font-size:13px;cursor:pointer;transition:.15s;color:var(--mid)}
+.filter-btn.active{border-color:var(--dark);background:var(--dark);color:#fff}
+.search-inp{border:1.5px solid #e0d8d0;border-radius:10px;padding:8px 14px;font-size:14px;outline:none;flex:1;min-width:180px}
+.search-inp:focus{border-color:var(--gold)}
+.action-btn{background:var(--dark);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.action-btn:hover{background:var(--gold-d)}
+.action-btn.secondary{background:var(--white);color:var(--dark);border:1.5px solid #e0d8d0}
+.action-btn.secondary:hover{border-color:var(--dark)}
+
+/* ── Orders table ── */
+.orders-table{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #f0ebe5;white-space:nowrap}
+td{padding:12px 16px;font-size:14px;border-bottom:1px solid #f8f5f2;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fdfaf7;cursor:pointer}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-new{background:#e8f0fe;color:var(--blue)}
+.badge-uploaded{background:#fff3e0;color:var(--orange)}
+.badge-in_progress{background:#fff8e1;color:#f39c12}
+.badge-sent{background:#e8f5e9;color:var(--green)}
+.badge-paid{background:#e8f5e9;color:#1e8449;border:1px solid #a9dfbf}
+.badge-retail{background:#f3e5f5;color:var(--purple)}
+.badge-photographer{background:#e3f2fd;color:var(--blue)}
+.empty{text-align:center;padding:60px 20px;color:var(--mid)}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius);padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:20px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:13px;font-weight:600;color:var(--mid);margin-bottom:5px}
+.form-row .inp,.form-row select,.form-row textarea{width:100%}
+.form-row textarea{height:70px;resize:vertical}
+select{border:1.5px solid #e0d8d0;border-radius:10px;padding:11px 14px;font-size:15px;outline:none;background:#fff;color:var(--dark)}
+select:focus{border-color:var(--gold)}
+.form-actions{display:flex;gap:10px;margin-top:20px}
+.form-actions .btn{margin-top:0;flex:1}
+.form-actions .btn.ghost{background:transparent;color:var(--mid);border:1.5px solid #e0d8d0}
+.form-actions .btn.ghost:hover{background:var(--cream)}
+
+/* Link box */
+.link-box{background:var(--cream);border-radius:10px;padding:14px 16px;margin-top:16px;display:none}
+.link-box.show{display:block}
+.link-url{font-size:13px;color:var(--dark);word-break:break-all;font-family:monospace;margin-bottom:10px}
+.copy-btn{background:var(--dark);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer}
+.copy-btn:hover{background:var(--gold-d)}
+.copy-ok{color:var(--green);font-size:13px;margin-left:8px;display:none}
+
+/* Order detail fields */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.detail-item{background:var(--cream);border-radius:10px;padding:12px 14px}
+.detail-item label{font-size:11px;color:var(--mid);font-weight:600;display:block;margin-bottom:2px}
+.detail-item span{font-size:14px;font-weight:500}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:#fff;padding:12px 24px;border-radius:100px;font-size:14px;z-index:999;transition:transform .25s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Photographers tab */
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.ph-card{background:var(--white);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.ph-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.ph-meta{font-size:13px;color:var(--mid);margin-bottom:12px}
+.ph-stats{display:flex;gap:12px}
+.ph-stat{text-align:center}
+.ph-stat-val{font-size:18px;font-weight:700}
+.ph-stat-lbl{font-size:11px;color:var(--mid)}
+.ph-actions{display:flex;gap:8px;margin-top:14px}
+.ph-actions button{flex:1;padding:8px;border-radius:8px;border:1.5px solid #e0d8d0;background:var(--white);font-size:13px;cursor:pointer;font-weight:500;color:var(--dark)}
+.ph-actions button:hover{border-color:var(--dark)}
+.ph-actions button.danger{color:var(--red);border-color:#fad7d7}
+.ph-actions button.danger:hover{border-color:var(--red);background:#fff5f5}
+
+@media(max-width:600px){
+  .topbar-nav{display:none}
+  .detail-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">ПРОЯВ</div>
+    <div class="login-sub">Панель управління</div>
+    <input class="inp" id="pwd-inp" type="password" placeholder="Пароль" autofocus>
+    <button class="btn" onclick="login()">Увійти</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">ПРОЯВ</div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="showPage('orders')">Замовлення</button>
+      <button class="nav-btn" onclick="showPage('photographers')">Фотографи</button>
+    </div>
+    <button class="topbar-logout" onclick="logout()">Вийти</button>
+  </div>
+
+  <div class="content">
+    <!-- Orders page -->
+    <div class="page active" id="page-orders">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="toolbar">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Всі</button>
+        <button class="filter-btn" onclick="setFilter('new',this)">Нові</button>
+        <button class="filter-btn" onclick="setFilter('uploaded',this)">Фото є</button>
+        <button class="filter-btn" onclick="setFilter('in_progress',this)">В роботі</button>
+        <button class="filter-btn" onclick="setFilter('sent',this)">Відправлено</button>
+        <button class="filter-btn" onclick="setFilter('paid',this)">Оплачено</button>
+        <input class="search-inp" id="search-inp" placeholder="Пошук..." oninput="debounceSearch()">
+        <button class="action-btn" onclick="openCreateOrder()">+ Нове замовлення</button>
+      </div>
+      <div class="orders-table">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Клієнт</th>
+                <th>Продукт</th>
+                <th>Статус</th>
+                <th>Джерело</th>
+                <th>Сума</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photographers page -->
+    <div class="page" id="page-photographers">
+      <div class="toolbar" style="margin-bottom:20px">
+        <button class="action-btn" onclick="openAddPhotographer()">+ Додати фотографа</button>
+      </div>
+      <div class="ph-grid" id="ph-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Order Modal -->
+<div class="modal-bg" id="modal-create">
+  <div class="modal">
+    <div class="modal-title">Нове замовлення</div>
+    <div class="form-row">
+      <label>Ім'я клієнта *</label>
+      <input class="inp" id="co-name" placeholder="Oksana Kovalenko">
+    </div>
+    <div class="form-row">
+      <label>Телефон *</label>
+      <input class="inp" id="co-phone" placeholder="+380">
+    </div>
+    <div class="form-row">
+      <label>Instagram (необов'язково)</label>
+      <input class="inp" id="co-instagram" placeholder="@username">
+    </div>
+    <div class="form-row">
+      <label>Продукт</label>
+      <select id="co-product">
+        <option value="small">Малий набір (10 фото)</option>
+        <option value="medium">Середній набір (20 фото)</option>
+        <option value="large">Великий набір (50 фото)</option>
+        <option value="baby">Спогади малюка</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Фотограф (якщо є)</label>
+      <select id="co-photographer">
+        <option value="">— Прямий клієнт —</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Нотатка</label>
+      <textarea class="inp" id="co-notes" placeholder="Будь-яка додаткова інформація..."></textarea>
+    </div>
+    <div class="link-box" id="create-link-box">
+      <div class="link-url" id="create-link-url"></div>
+      <button class="copy-btn" onclick="copyLink()">Скопіювати посилання</button>
+      <span class="copy-ok" id="copy-ok">Скопійовано ✓</span>
+    </div>
+    <div class="form-actions">
+      <button class="btn ghost" onclick="closeModal('modal-create')">Закрити</button>
+      <button class="btn" id="create-btn" onclick="createOrder()">Створити і отримати посилання</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-bg" id="modal-detail">
+  <div class="modal">
+    <div class="modal-title" id="detail-title">Замовлення</div>
+    <div class="detail-grid" id="detail-grid"></div>
+    <div class="form-row">
+      <label>Статус</label>
+      <select id="detail-status" onchange="markDirty()">
+        <option value="new">Нове</option>
+        <option value="uploaded">Фото отримано</option>
+        <option value="in_progress">В роботі</option>
+        <option value="sent">Відправлено</option>
+        <option value="paid">Оплачено</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>ТТН Нової Пошти</label>
+      <input class="inp" id="detail-ttn" placeholder="20450..." oninput="markDirty()">
+    </div>
+    <div class="form-row">
+      <label>Нотатка</label>
+      <textarea class="inp" id="detail-notes" oninput="markDirty()"></textarea>
+    </div>
+    <div class="link-box show" id="detail-link-box">
+      <div class="link-url" id="detail-link-url"></div>
+      <button class="copy-btn" onclick="copyDetailLink()">Скопіювати посилання</button>
+      <span class="copy-ok" id="copy-ok-detail">Скопійовано ✓</span>
+    </div>
+    <div class="form-actions">
+      <button class="btn ghost" onclick="closeModal('modal-detail')">Закрити</button>
+      <button class="btn" id="detail-save-btn" onclick="saveOrder()" style="display:none">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Photographer Modal -->
+<div class="modal-bg" id="modal-add-ph">
+  <div class="modal">
+    <div class="modal-title" id="ph-modal-title">Додати фотографа</div>
+    <div class="form-row">
+      <label>Ім'я *</label>
+      <input class="inp" id="ph-name" placeholder="Марія Коваль">
+    </div>
+    <div class="form-row">
+      <label>Email *</label>
+      <input class="inp" id="ph-email" placeholder="maria@gmail.com" type="email">
+    </div>
+    <div class="form-row">
+      <label>Телефон</label>
+      <input class="inp" id="ph-phone" placeholder="+380">
+    </div>
+    <div class="form-row">
+      <label>Місто</label>
+      <input class="inp" id="ph-city" placeholder="Дрогобич">
+    </div>
+    <div class="form-row">
+      <label>Комісія (%)</label>
+      <input class="inp" id="ph-commission" type="number" value="12" min="0" max="50">
+    </div>
+    <div class="link-box" id="ph-creds-box">
+      <div style="font-size:13px;color:var(--mid);margin-bottom:8px">Тимчасовий пароль для фотографа:</div>
+      <div class="link-url" id="ph-temp-pwd" style="font-size:16px;font-weight:700;color:var(--dark)"></div>
+      <div style="font-size:12px;color:var(--orange);margin-top:8px">⚠ Збережіть і надішліть фотографу — пароль більше не відображатиметься</div>
+      <button class="copy-btn" style="margin-top:10px" onclick="copyPhCreds()">Скопіювати</button>
+      <span class="copy-ok" id="copy-ok-ph">Скопійовано ✓</span>
+    </div>
+    <div class="form-actions">
+      <button class="btn ghost" onclick="closeModal('modal-add-ph')">Закрити</button>
+      <button class="btn" id="ph-save-btn" onclick="savePhotographer()">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/.netlify/functions';
+const SITE = location.origin;
+
+let TOKEN = sessionStorage.getItem('admin_token');
+let allOrders = [];
+let allPhotographers = [];
+let currentFilter = 'all';
+let currentOrder = null;
+let editingPhId = null;
+let isDirty = false;
+let searchTimer;
+
+const STATUS_LABEL = { new:'Нове', uploaded:'Фото отримано', in_progress:'В роботі', sent:'Відправлено', paid:'Оплачено' };
+const STATUS_CLASS  = { new:'badge-new', uploaded:'badge-uploaded', in_progress:'badge-in_progress', sent:'badge-sent', paid:'badge-paid' };
+const PRODUCT_LABEL = { small:'Малий набір', medium:'Середній набір', large:'Великий набір', baby:'Спогади малюка' };
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function login() {
+  const pwd = document.getElementById('pwd-inp').value.trim();
+  if (!pwd) return;
+  document.getElementById('login-err').textContent = '';
+  try {
+    const r = await fetch(`${API}/api-admin-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Помилка');
+    TOKEN = d.token;
+    sessionStorage.setItem('admin_token', TOKEN);
+    initApp();
+  } catch (e) {
+    document.getElementById('login-err').textContent = e.message;
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('admin_token');
+  location.reload();
+}
+
+document.getElementById('pwd-inp').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadOrders();
+}
+
+if (TOKEN) initApp();
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (name === 'photographers') loadPhotographers();
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const r = await apiFetch(`${API}/api-orders?status=all`);
+    allOrders = r.orders || [];
+    renderStats();
+    renderOrders();
+  } catch (e) {
+    toast('Помилка завантаження: ' + e.message, 'err');
+  }
+}
+
+function renderStats() {
+  const total   = allOrders.length;
+  const newC    = allOrders.filter(o => o.status === 'new').length;
+  const uploaded= allOrders.filter(o => o.status === 'uploaded').length;
+  const revenue = allOrders.filter(o => o.status === 'paid').reduce((s,o) => s+(o.total_amount||0),0);
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Всього замовлень</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${newC}</div><div class="stat-lbl">Нових (без фото)</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--orange)">${uploaded}</div><div class="stat-lbl">Фото є, в обробці</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)">${revenue} грн</div><div class="stat-lbl">Оплачено</div></div>
+  `;
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(renderOrders, 250);
+}
+
+function renderOrders() {
+  const search = document.getElementById('search-inp').value.toLowerCase();
+  let list = allOrders;
+  if (currentFilter !== 'all') list = list.filter(o => o.status === currentFilter);
+  if (search) list = list.filter(o =>
+    (o.client_name||'').toLowerCase().includes(search) ||
+    (o.client_phone||'').includes(search) ||
+    (o.token||'').toLowerCase().includes(search)
+  );
+
+  const tbody = document.getElementById('orders-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Замовлень не знайдено</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(o => {
+    const date = new Date(o.created_at).toLocaleDateString('uk-UA', {day:'2-digit',month:'2-digit'});
+    const src  = o.source === 'photographer'
+      ? `<span class="badge badge-photographer">Фотограф</span>`
+      : `<span class="badge badge-retail">Роздріб</span>`;
+    return `<tr onclick="openDetail('${o.id}')">
+      <td><b>${o.client_name}</b><div style="font-size:12px;color:var(--mid)">${o.client_phone||''}</div></td>
+      <td>${PRODUCT_LABEL[o.product_type]||o.product_type}</td>
+      <td><span class="badge ${STATUS_CLASS[o.status]||''}">${STATUS_LABEL[o.status]||o.status}</span></td>
+      <td>${src}${o.photographers?`<div style="font-size:12px;color:var(--mid)">${o.photographers.name}</div>`:''}</td>
+      <td>${o.total_amount?o.total_amount+' грн':'—'}</td>
+      <td>${date}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Order detail ──────────────────────────────────────────────────────────
+function openDetail(id) {
+  currentOrder = allOrders.find(o => o.id === id);
+  if (!currentOrder) return;
+  isDirty = false;
+
+  document.getElementById('detail-title').textContent =
+    `${currentOrder.client_name} · ${PRODUCT_LABEL[currentOrder.product_type]||''}`;
+
+  const ph = currentOrder.photographers;
+  document.getElementById('detail-grid').innerHTML = `
+    <div class="detail-item"><label>Телефон</label><span>${currentOrder.client_phone||'—'}</span></div>
+    <div class="detail-item"><label>Instagram</label><span>${currentOrder.client_instagram?'@'+currentOrder.client_instagram:'—'}</span></div>
+    <div class="detail-item"><label>Фотографій завантажено</label><span>${currentOrder.photo_count||'—'}</span></div>
+    <div class="detail-item"><label>Відбитків</label><span>${currentOrder.qty_total||'—'}</span></div>
+    <div class="detail-item"><label>Фотограф</label><span>${ph?ph.name+' ('+ph.city+')':'Прямий клієнт'}</span></div>
+    <div class="detail-item"><label>Дата замовлення</label><span>${new Date(currentOrder.created_at).toLocaleString('uk-UA')}</span></div>
+  `;
+
+  document.getElementById('detail-status').value = currentOrder.status || 'new';
+  document.getElementById('detail-ttn').value    = currentOrder.ttn   || '';
+  document.getElementById('detail-notes').value  = currentOrder.notes || '';
+
+  // Magic link
+  const link = `${SITE}/?t=${currentOrder.token}`;
+  document.getElementById('detail-link-url').textContent = link;
+
+  document.getElementById('detail-save-btn').style.display = 'none';
+  openModal('modal-detail');
+}
+
+function markDirty() {
+  isDirty = true;
+  document.getElementById('detail-save-btn').style.display = 'block';
+}
+
+async function saveOrder() {
+  if (!currentOrder) return;
+  try {
+    const r = await apiFetch(`${API}/api-orders`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        id:     currentOrder.id,
+        status: document.getElementById('detail-status').value,
+        ttn:    document.getElementById('detail-ttn').value.trim(),
+        notes:  document.getElementById('detail-notes').value.trim(),
+      }),
+    });
+    // Update local list
+    const idx = allOrders.findIndex(o => o.id === currentOrder.id);
+    if (idx >= 0) allOrders[idx] = { ...allOrders[idx], ...r.order };
+    currentOrder = allOrders[idx];
+    renderStats();
+    renderOrders();
+    isDirty = false;
+    document.getElementById('detail-save-btn').style.display = 'none';
+    toast('Збережено');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+function copyDetailLink() {
+  const url = document.getElementById('detail-link-url').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    document.getElementById('copy-ok-detail').style.display = 'inline';
+    setTimeout(() => { document.getElementById('copy-ok-detail').style.display = 'none'; }, 2000);
+  });
+}
+
+// ── Create order ──────────────────────────────────────────────────────────
+function openCreateOrder() {
+  document.getElementById('co-name').value = '';
+  document.getElementById('co-phone').value = '';
+  document.getElementById('co-instagram').value = '';
+  document.getElementById('co-notes').value = '';
+  document.getElementById('co-product').value = 'small';
+  document.getElementById('create-link-box').classList.remove('show');
+  document.getElementById('create-btn').textContent = 'Створити і отримати посилання';
+
+  // Populate photographers dropdown
+  const sel = document.getElementById('co-photographer');
+  sel.innerHTML = '<option value="">— Прямий клієнт —</option>';
+  allPhotographers.forEach(p => {
+    if (p.active) sel.innerHTML += `<option value="${p.id}">${p.name} (${p.city||'—'})</option>`;
+  });
+
+  openModal('modal-create');
+}
+
+async function createOrder() {
+  const name  = document.getElementById('co-name').value.trim();
+  const phone = document.getElementById('co-phone').value.trim();
+  if (!name)  return toast('Введіть ім\'я клієнта', 'err');
+  if (!phone) return toast('Введіть телефон', 'err');
+
+  document.getElementById('create-btn').textContent = 'Створюємо...';
+  try {
+    const phId = document.getElementById('co-photographer').value;
+    const r = await apiFetch(`${API}/api-orders`, {
+      method: 'POST',
+      body: JSON.stringify({
+        client_name:      name,
+        client_phone:     phone,
+        client_instagram: document.getElementById('co-instagram').value.trim().replace('@',''),
+        product_type:     document.getElementById('co-product').value,
+        photographer_id:  phId || null,
+        source:           phId ? 'photographer' : 'retail',
+        notes:            document.getElementById('co-notes').value.trim(),
+      }),
+    });
+
+    allOrders.unshift({ ...r.order, photographers: allPhotographers.find(p => p.id === phId) || null });
+    renderStats();
+    renderOrders();
+
+    document.getElementById('create-link-url').textContent = r.link;
+    document.getElementById('create-link-box').classList.add('show');
+    document.getElementById('create-btn').textContent = '+ Ще одне замовлення';
+    document.getElementById('co-name').value = '';
+    document.getElementById('co-phone').value = '';
+    document.getElementById('co-instagram').value = '';
+    document.getElementById('co-notes').value = '';
+  } catch (e) {
+    toast(e.message, 'err');
+    document.getElementById('create-btn').textContent = 'Створити і отримати посилання';
+  }
+}
+
+function copyLink() {
+  const url = document.getElementById('create-link-url').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    document.getElementById('copy-ok').style.display = 'inline';
+    setTimeout(() => { document.getElementById('copy-ok').style.display = 'none'; }, 2000);
+  });
+}
+
+// ── Photographers ─────────────────────────────────────────────────────────
+async function loadPhotographers() {
+  try {
+    const r = await apiFetch(`${API}/api-photographers`);
+    allPhotographers = r.photographers || [];
+    renderPhotographers();
+  } catch (e) {
+    toast('Помилка: ' + e.message, 'err');
+  }
+}
+
+function renderPhotographers() {
+  const grid = document.getElementById('ph-grid');
+  if (!allPhotographers.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">Фотографів ще немає</div>';
+    return;
+  }
+  grid.innerHTML = allPhotographers.map(p => `
+    <div class="ph-card">
+      <div class="ph-name">${p.name} ${p.active ? '' : '<span style="color:var(--red);font-size:12px">(неактивний)</span>'}</div>
+      <div class="ph-meta">${p.city||'—'} · ${p.email} · ${p.commission_pct}% комісія</div>
+      <div class="ph-stats">
+        <div class="ph-stat"><div class="ph-stat-val">${p.order_count||0}</div><div class="ph-stat-lbl">Замовлень</div></div>
+      </div>
+      <div class="ph-actions">
+        <button onclick="editPhotographer('${p.id}')">Редагувати</button>
+        <button onclick="resetPassword('${p.id}')">Новий пароль</button>
+        <button class="danger" onclick="togglePhotographer('${p.id}',${!p.active})">${p.active?'Деактивувати':'Активувати'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddPhotographer() {
+  editingPhId = null;
+  document.getElementById('ph-modal-title').textContent = 'Додати фотографа';
+  document.getElementById('ph-name').value = '';
+  document.getElementById('ph-email').value = '';
+  document.getElementById('ph-phone').value = '';
+  document.getElementById('ph-city').value = '';
+  document.getElementById('ph-commission').value = 12;
+  document.getElementById('ph-email').disabled = false;
+  document.getElementById('ph-creds-box').classList.remove('show');
+  document.getElementById('ph-save-btn').textContent = 'Додати і отримати пароль';
+  openModal('modal-add-ph');
+}
+
+function editPhotographer(id) {
+  editingPhId = id;
+  const p = allPhotographers.find(p => p.id === id);
+  if (!p) return;
+  document.getElementById('ph-modal-title').textContent = 'Редагувати фотографа';
+  document.getElementById('ph-name').value = p.name;
+  document.getElementById('ph-email').value = p.email;
+  document.getElementById('ph-email').disabled = true;
+  document.getElementById('ph-phone').value = p.phone || '';
+  document.getElementById('ph-city').value = p.city || '';
+  document.getElementById('ph-commission').value = p.commission_pct;
+  document.getElementById('ph-creds-box').classList.remove('show');
+  document.getElementById('ph-save-btn').textContent = 'Зберегти';
+  openModal('modal-add-ph');
+}
+
+async function savePhotographer() {
+  const name = document.getElementById('ph-name').value.trim();
+  const email = document.getElementById('ph-email').value.trim();
+  if (!name) return toast('Введіть ім\'я', 'err');
+
+  try {
+    if (editingPhId) {
+      const r = await apiFetch(`${API}/api-photographers`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          id: editingPhId,
+          name,
+          phone: document.getElementById('ph-phone').value.trim(),
+          city:  document.getElementById('ph-city').value.trim(),
+          commission_pct: parseInt(document.getElementById('ph-commission').value) || 12,
+        }),
+      });
+      const idx = allPhotographers.findIndex(p => p.id === editingPhId);
+      if (idx >= 0) allPhotographers[idx] = { ...allPhotographers[idx], ...r.photographer };
+    } else {
+      if (!email) return toast('Введіть email', 'err');
+      const r = await apiFetch(`${API}/api-photographers`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name, email,
+          phone: document.getElementById('ph-phone').value.trim(),
+          city:  document.getElementById('ph-city').value.trim(),
+          commission_pct: parseInt(document.getElementById('ph-commission').value) || 12,
+        }),
+      });
+      allPhotographers.unshift({ ...r.photographer, order_count: 0 });
+
+      // Show credentials
+      document.getElementById('ph-temp-pwd').textContent = r.temp_password;
+      document.getElementById('ph-creds-box').classList.add('show');
+      document.getElementById('ph-save-btn').textContent = 'Додати ще';
+      document.getElementById('ph-name').value = '';
+      document.getElementById('ph-email').value = '';
+      document.getElementById('ph-phone').value = '';
+      document.getElementById('ph-city').value = '';
+    }
+    renderPhotographers();
+    if (editingPhId) { toast('Збережено'); closeModal('modal-add-ph'); }
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function resetPassword(id) {
+  if (!confirm('Скинути пароль для цього фотографа?')) return;
+  try {
+    const r = await apiFetch(`${API}/api-photographers`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, reset_password: true }),
+    });
+    alert(`Новий тимчасовий пароль: ${r.temp_password}\n\nЗбережіть і надішліть фотографу.`);
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function togglePhotographer(id, active) {
+  try {
+    await apiFetch(`${API}/api-photographers`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, active }),
+    });
+    const idx = allPhotographers.findIndex(p => p.id === id);
+    if (idx >= 0) allPhotographers[idx].active = active;
+    renderPhotographers();
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+function copyPhCreds() {
+  const pwd = document.getElementById('ph-temp-pwd').textContent;
+  const email = document.getElementById('ph-email').value;
+  navigator.clipboard.writeText(`Email: ${email}\nПароль: ${pwd}\nКабінет: ${SITE}/partner`).then(() => {
+    document.getElementById('copy-ok-ph').style.display = 'inline';
+    setTimeout(() => { document.getElementById('copy-ok-ph').style.display = 'none'; }, 2000);
+  });
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  const r = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers||{}) },
+  });
+  if (r.status === 401) { logout(); throw new Error('Сесія закінчилась'); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Помилка сервера');
+  return d;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? 'var(--red)' : 'var(--dark)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Прояв — Кабінет фотографа</title>
+<style>
+:root{
+  --cream:#f5f0ea;--white:#fff;--dark:#3d3530;--mid:#7a6e68;
+  --gold:#c9a96e;--gold-d:#a8834a;
+  --green:#27ae60;--orange:#e67e22;--blue:#2980b9;--red:#e74c3c;
+  --radius:14px;--shadow:0 2px 12px rgba(61,53,48,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh}
+
+/* Login */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-card{background:var(--white);border-radius:var(--radius);padding:36px;max-width:360px;width:100%;box-shadow:var(--shadow);text-align:center}
+.auth-logo{font-size:26px;font-weight:700;letter-spacing:.08em;margin-bottom:4px}
+.auth-sub{color:var(--mid);font-size:14px;margin-bottom:28px}
+.inp{width:100%;border:1.5px solid #e0d8d0;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:.2s;background:#fff;color:var(--dark)}
+.inp:focus{border-color:var(--gold)}
+.btn{width:100%;background:var(--dark);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;transition:.15s}
+.btn:hover{background:var(--gold-d)}
+.err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+.inp-row{margin-bottom:12px}
+
+/* App */
+#app{display:none;min-height:100vh}
+.topbar{background:var(--dark);color:#fff;padding:0 20px;display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:17px;font-weight:700;letter-spacing:.08em}
+.topbar-name{color:rgba(255,255,255,.7);font-size:14px}
+.topbar-logout{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.topbar-logout:hover{border-color:#fff;color:#fff}
+
+.content{padding:20px;max-width:700px;margin:0 auto}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);text-align:center}
+.stat-val{font-size:24px;font-weight:700}
+.stat-lbl{font-size:12px;color:var(--mid);margin-top:3px}
+
+/* Create order form */
+.section-title{font-size:16px;font-weight:700;margin-bottom:14px}
+.create-card{background:var(--white);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:24px}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:13px;font-weight:600;color:var(--mid);margin-bottom:5px}
+select{width:100%;border:1.5px solid #e0d8d0;border-radius:10px;padding:11px 14px;font-size:15px;outline:none;background:#fff;color:var(--dark)}
+select:focus{border-color:var(--gold)}
+.submit-btn{background:var(--dark);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:.15s;margin-top:4px}
+.submit-btn:hover{background:var(--gold-d)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Link result */
+.link-result{background:var(--cream);border-radius:10px;padding:16px;margin-top:14px;display:none}
+.link-result.show{display:block}
+.link-label{font-size:12px;font-weight:600;color:var(--mid);margin-bottom:6px}
+.link-url{font-size:13px;font-family:monospace;word-break:break-all;color:var(--dark);margin-bottom:10px;padding:8px 10px;background:#fff;border-radius:8px}
+.copy-btn{background:var(--dark);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:600}
+.copy-btn:hover{background:var(--gold-d)}
+.copy-ok{color:var(--green);font-size:13px;margin-left:8px;display:none}
+.wa-btn{background:#25d366;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-weight:600;margin-left:8px}
+.wa-btn:hover{background:#1ebe5d}
+
+/* Orders list */
+.orders-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.order-item{padding:14px 18px;border-bottom:1px solid #f0ebe5;display:flex;align-items:center;gap:12px}
+.order-item:last-child{border-bottom:none}
+.order-info{flex:1}
+.order-name{font-size:14px;font-weight:600}
+.order-meta{font-size:12px;color:var(--mid);margin-top:2px}
+.order-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-new{background:#e8f0fe;color:var(--blue)}
+.badge-uploaded{background:#fff3e0;color:var(--orange)}
+.badge-in_progress{background:#fff8e1;color:#f39c12}
+.badge-sent{background:#e8f5e9;color:var(--green)}
+.badge-paid{background:#e8f5e9;color:#1e8449}
+.order-link{background:none;border:1px solid #e0d8d0;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--mid);white-space:nowrap}
+.order-link:hover{border-color:var(--dark);color:var(--dark)}
+.empty{text-align:center;padding:40px 20px;color:var(--mid);font-size:14px}
+
+/* Commission hint */
+.comm-hint{background:#fffbf0;border:1px solid #f0d88a;border-radius:10px;padding:12px 16px;font-size:13px;color:#7a6010;margin-bottom:20px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:#fff;padding:12px 24px;border-radius:100px;font-size:14px;z-index:999;transition:transform .25s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stats-row .stat-card:last-child{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="auth-card">
+    <div class="auth-logo">ПРОЯВ</div>
+    <div class="auth-sub">Кабінет фотографа</div>
+    <div class="inp-row"><input class="inp" id="email-inp" type="email" placeholder="Email" autocomplete="username"></div>
+    <div class="inp-row"><input class="inp" id="pwd-inp" type="password" placeholder="Пароль" autocomplete="current-password"></div>
+    <button class="btn" onclick="login()">Увійти</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">ПРОЯВ</div>
+    <div class="topbar-name" id="ph-name-display"></div>
+    <button class="topbar-logout" onclick="logout()">Вийти</button>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row"></div>
+
+    <!-- Commission hint -->
+    <div class="comm-hint" id="comm-hint"></div>
+
+    <!-- Create order -->
+    <div class="section-title">Нове замовлення для клієнта</div>
+    <div class="create-card">
+      <div class="form-row">
+        <label>Ім'я клієнта *</label>
+        <input class="inp" id="c-name" placeholder="Оксана Ковальчук">
+      </div>
+      <div class="form-row">
+        <label>Телефон *</label>
+        <input class="inp" id="c-phone" placeholder="+380" type="tel">
+      </div>
+      <div class="form-row">
+        <label>Instagram (необов'язково)</label>
+        <input class="inp" id="c-instagram" placeholder="@username">
+      </div>
+      <div class="form-row">
+        <label>Продукт</label>
+        <select id="c-product">
+          <option value="small">Малий набір — 10 фото (400 грн)</option>
+          <option value="medium">Середній набір — 20 фото (600 грн)</option>
+          <option value="large">Великий набір — 50 фото (900 грн)</option>
+          <option value="baby">Спогади малюка — 10 фото (450 грн)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Нотатка для Прояву</label>
+        <input class="inp" id="c-notes" placeholder="Наприклад: весілля 15 травня...">
+      </div>
+      <button class="submit-btn" id="create-btn" onclick="createOrder()">Створити посилання для клієнта</button>
+
+      <div class="link-result" id="link-result">
+        <div class="link-label">Посилання для клієнта:</div>
+        <div class="link-url" id="result-url"></div>
+        <button class="copy-btn" onclick="copyResultLink()">Скопіювати</button>
+        <button class="wa-btn" onclick="sendToWa()">WhatsApp / Viber</button>
+        <span class="copy-ok" id="copy-ok">Скопійовано ✓</span>
+      </div>
+    </div>
+
+    <!-- Orders list -->
+    <div class="section-title">Мої замовлення</div>
+    <div class="orders-card" id="orders-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/.netlify/functions';
+const SITE = location.origin;
+
+let TOKEN     = localStorage.getItem('partner_token');
+let PH_DATA   = JSON.parse(localStorage.getItem('partner_data') || 'null');
+let allOrders = [];
+let lastLink  = '';
+
+const STATUS_LABEL = { new:'Нове', uploaded:'Фото є', in_progress:'В роботі', sent:'Відправлено', paid:'Оплачено' };
+const STATUS_CLASS  = { new:'badge-new', uploaded:'badge-uploaded', in_progress:'badge-in_progress', sent:'badge-sent', paid:'badge-paid' };
+const PRICE_MAP     = { small:400, medium:600, large:900, baby:450 };
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function login() {
+  const email = document.getElementById('email-inp').value.trim();
+  const pwd   = document.getElementById('pwd-inp').value;
+  if (!email || !pwd) return;
+  document.getElementById('login-err').textContent = '';
+
+  try {
+    const r = await fetch(`${API}/api-partner-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pwd }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Невірні дані');
+    TOKEN   = d.token;
+    PH_DATA = d.photographer;
+    localStorage.setItem('partner_token', TOKEN);
+    localStorage.setItem('partner_data', JSON.stringify(PH_DATA));
+    initApp();
+  } catch (e) {
+    document.getElementById('login-err').textContent = e.message;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('partner_token');
+  localStorage.removeItem('partner_data');
+  location.reload();
+}
+
+['email-inp','pwd-inp'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+});
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('ph-name-display').textContent = PH_DATA?.name || '';
+  loadOrders();
+}
+
+if (TOKEN && PH_DATA) initApp();
+
+// ── Load orders + stats ───────────────────────────────────────────────────
+async function loadOrders() {
+  try {
+    const r = await apiFetch(`${API}/api-partner-orders`);
+    allOrders = r.orders || [];
+    renderStats(r.stats);
+    renderOrders();
+  } catch (e) {
+    toast('Помилка: ' + e.message, 'err');
+  }
+}
+
+function renderStats(s) {
+  const comm = s?.commission_pct || PH_DATA?.commission_pct || 12;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-val">${s?.this_month || 0}</div>
+      <div class="stat-lbl">Замовлень цього місяця</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--green)">${s?.month_commission || 0} грн</div>
+      <div class="stat-lbl">Ваша комісія (місяць)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">${s?.total || 0}</div>
+      <div class="stat-lbl">Всього замовлень</div>
+    </div>
+  `;
+  document.getElementById('comm-hint').textContent =
+    `Ваша комісія: ${comm}% від суми кожного замовлення. При оплаченому замовленні — виплата при зустрічі або на картку.`;
+}
+
+function renderOrders() {
+  const el = document.getElementById('orders-list');
+  if (!allOrders.length) {
+    el.innerHTML = '<div class="empty">Замовлень ще немає.<br>Створіть перше посилання для вашого клієнта ↑</div>';
+    return;
+  }
+  el.innerHTML = allOrders.map(o => {
+    const date = new Date(o.created_at).toLocaleDateString('uk-UA', { day:'2-digit', month:'2-digit' });
+    const link = `${SITE}/?t=${o.token}`;
+    return `<div class="order-item">
+      <div class="order-info">
+        <div class="order-name">${o.client_name}</div>
+        <div class="order-meta">${o.client_phone || ''} · ${date}</div>
+      </div>
+      <span class="order-badge ${STATUS_CLASS[o.status]||''}">${STATUS_LABEL[o.status]||o.status}</span>
+      <button class="order-link" onclick="copyOrderLink('${link}',this)">Скопіювати лінк</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Create order ──────────────────────────────────────────────────────────
+async function createOrder() {
+  const name  = document.getElementById('c-name').value.trim();
+  const phone = document.getElementById('c-phone').value.trim();
+  if (!name)  return toast('Введіть ім\'я клієнта', 'err');
+  if (!phone) return toast('Введіть телефон', 'err');
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true;
+  btn.textContent = 'Створюємо...';
+
+  try {
+    const r = await apiFetch(`${API}/api-partner-orders`, {
+      method: 'POST',
+      body: JSON.stringify({
+        client_name:      name,
+        client_phone:     phone,
+        client_instagram: document.getElementById('c-instagram').value.trim().replace('@',''),
+        product_type:     document.getElementById('c-product').value,
+        notes:            document.getElementById('c-notes').value.trim(),
+      }),
+    });
+
+    lastLink = r.link;
+    document.getElementById('result-url').textContent = r.link;
+    document.getElementById('link-result').classList.add('show');
+
+    allOrders.unshift(r.order);
+    renderOrders();
+
+    // Reset form
+    document.getElementById('c-name').value = '';
+    document.getElementById('c-phone').value = '';
+    document.getElementById('c-instagram').value = '';
+    document.getElementById('c-notes').value = '';
+    btn.textContent = 'Створити ще одне посилання';
+  } catch (e) {
+    toast(e.message, 'err');
+    btn.textContent = 'Створити посилання для клієнта';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function copyResultLink() {
+  navigator.clipboard.writeText(lastLink).then(() => {
+    document.getElementById('copy-ok').style.display = 'inline';
+    setTimeout(() => { document.getElementById('copy-ok').style.display = 'none'; }, 2000);
+  });
+}
+
+function sendToWa() {
+  const name = document.getElementById('c-name').value.trim() || 'клієнт';
+  const text = encodeURIComponent(
+    `Привіт! Ось ваше персональне посилання для замовлення фото-набору Прояв:\n${lastLink}\n\nЗавантажте фото — і ми зробимо все інше 🤍`
+  );
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+function copyOrderLink(link, btn) {
+  navigator.clipboard.writeText(link).then(() => {
+    btn.textContent = 'Скопійовано ✓';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Скопіювати лінк'; btn.style.color = ''; }, 2000);
+  });
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  const r = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers||{}) },
+  });
+  if (r.status === 401) { logout(); throw new Error('Сесія закінчилась'); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Помилка сервера');
+  return d;
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? 'var(--red)' : 'var(--dark)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

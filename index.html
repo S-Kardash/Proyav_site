@@ -461,10 +461,32 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .dots-canvas{position:fixed;inset:0;pointer-events:none;z-index:100}
 
 .footer{padding:16px 24px 20px;text-align:center;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(44,42,40,.35);flex-shrink:0}
+/* Magic link banner */
+.magic-banner{background:linear-gradient(135deg,#3d3530,#5a4e47);color:#fff;padding:14px 20px;text-align:center;font-size:14px;display:none}
+.magic-banner.show{display:block}
+.magic-banner strong{display:block;font-size:16px;margin-bottom:2px}
+.magic-banner .mb-sub{opacity:.8;font-size:13px}
+/* Invalid token screen */
+.token-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center}
+.token-error.show{display:flex}
+.token-error-icon{font-size:48px;margin-bottom:16px}
+.token-error-title{font-size:20px;font-weight:700;margin-bottom:10px}
+.token-error-text{font-size:14px;color:var(--mid);line-height:1.6;max-width:320px}
 </style>
 </head>
 <body>
 
+<!-- MAGIC LINK BANNER -->
+<div class="magic-banner" id="magic-banner">
+  <strong id="magic-greeting"></strong>
+  <span class="mb-sub" id="magic-product"></span>
+</div>
+<!-- TOKEN ERROR -->
+<div class="token-error" id="token-error">
+  <div class="token-error-icon">🔗</div>
+  <div class="token-error-title">Посилання недійсне</div>
+  <div class="token-error-text" id="token-error-text">Це посилання недійсне або вже використане.</div>
+</div>
 <!-- SPLASH -->
 <div id="splash">
   <div class="splash-letters">
@@ -718,7 +740,14 @@ const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
 const PRICE = 12; // грн за відбиток
 
 /* ── Telegram: calls go through Netlify Function (token stays server-side) ── */
-const ORDER_API = '/.netlify/functions/send-order';
+const ORDER_API  = '/.netlify/functions/send-order';
+const TOKEN_API  = '/.netlify/functions/api-token';
+const FINAL_API  = '/.netlify/functions/api-finalize';
+
+// Magic link token from URL
+const MAGIC_TOKEN = new URLSearchParams(location.search).get('t') || null;
+let   MAGIC_ORDER = null; // filled after token validation
+
 
 const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', photos:[] };
 let pid = 0;
@@ -838,6 +867,12 @@ function dismissPhotoBanner() {
 /* ─ Init ─ */
 window.addEventListener('DOMContentLoaded', () => {
   emailjs.init(EMAILJS_PUBLIC_KEY);
+
+  // ── Magic link: validate token from URL ──
+  if (MAGIC_TOKEN) {
+    validateMagicToken();
+  }
+
   renderStepper();
   setDelivery('nova');
   initGlobalPanel();
@@ -2033,7 +2068,7 @@ function buildOrderMessage(orderId, tq) {
     '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
     '\n👤 <b>Клієнт</b>\n' +
     identStr + '\n' +
-    'Ім\'\xd1�: ' + S.name + '\n' +
+    'Ім\'\xd1�: ' + S.name + '\n' +
     'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
     '📦 Доставка: ' + cityLine + '\n' +
@@ -2052,6 +2087,11 @@ async function submitOrder(e) {
 
   const orderId = 'ПРЯ-' + Date.now().toString().slice(-6);
   const tq      = S.photos.reduce((s, p) => s + p.qty, 0);
+  const totalAmt = tq * PRICE;
+
+  // Finalize magic link order in Supabase (non-blocking)
+  finalizeWithToken(S.photos.length, tq, totalAmt);
+
   let   tgOk    = false;
   let   emailOk = false;
 
@@ -2156,6 +2196,80 @@ function resetApp() {
   document.getElementById('g-auto').checked = true;
   renderStepper(); window.scrollTo({top:0});
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   MAGIC LINK SYSTEM
+   ──────────────────────────────────────────────────────────────────────── */
+
+const PRODUCT_DISPLAY = {
+  small:  'Малий набір (10 фото)',
+  medium: 'Середній набір (20 фото)',
+  large:  'Великий набір (50 фото)',
+  baby:   'Спогади малюка',
+};
+
+async function validateMagicToken() {
+  try {
+    const res = await fetchWithTimeout(TOKEN_API + '?t=' + MAGIC_TOKEN, {});
+    const d   = await res.json();
+
+    if (!res.ok) {
+      // Show error screen, hide normal app
+      document.querySelectorAll('.screen, .stepper, #global-panel-wrap').forEach(el => el.style.display = 'none');
+      const errEl = document.getElementById('token-error');
+      errEl.classList.add('show');
+      document.getElementById('token-error-text').textContent = d.error || 'Посилання недійсне.';
+      // Dismiss splash immediately
+      const s = document.getElementById('splash');
+      if (s) { s.classList.add('done'); setTimeout(() => s.remove(), 400); }
+      return;
+    }
+
+    MAGIC_ORDER = d;
+
+    // Pre-fill state with client data from token
+    S.name  = d.client_name  || '';
+    S.phone = d.client_phone || '';
+    if (d.client_instagram) {
+      S.identType = 'instagram';
+      S.ident     = d.client_instagram;
+    }
+
+    // Show personalised banner
+    const banner = document.getElementById('magic-banner');
+    const product = PRODUCT_DISPLAY[d.product_type] || d.product_type || '';
+    document.getElementById('magic-greeting').textContent =
+      'Привіт, ' + d.client_name + '! Завантажте фото для вашого набору';
+    document.getElementById('magic-product').textContent =
+      'Продукт: ' + product + (d.photographer ? '  ·  Фотограф: ' + d.photographer : '');
+    banner.classList.add('show');
+
+    // Skip step 1 (identification) — we already know the client
+    goTo(2);
+
+  } catch (err) {
+    console.error('[magic] token validation failed:', err.message);
+    // Non-fatal: let user proceed normally without token
+  }
+}
+
+async function finalizeWithToken(photoCount, qtyTotal, totalAmount) {
+  if (!MAGIC_TOKEN) return; // no token = old flow, skip
+  try {
+    await fetchWithTimeout(FINAL_API, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token:        MAGIC_TOKEN,
+        photo_count:  photoCount,
+        qty_total:    qtyTotal,
+        total_amount: totalAmount,
+      }),
+    });
+  } catch (e) {
+    console.error('[magic] finalize failed:', e.message);
+    // Non-fatal — order still delivered via TG/email
+  }
+}
+
 </script>
-</body>
-</html>
