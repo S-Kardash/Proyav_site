@@ -5,29 +5,22 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Redirect /admin → admin.html
 [[redirects]]
   from = "/admin"
   to   = "/admin.html"
   status = 200
 
-# Redirect /partner → partner.html
 [[redirects]]
   from = "/partner"
   to   = "/partner.html"
   status = 200
 
-# Redirect /order → order.html
 [[redirects]]
   from = "/order"
   to   = "/order.html"
   status = 200
 
-# SPA fallback: anything else → index.html (keeps ?t= token in URL)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
-
-[functions]
-  node_bundler = "esbuild"
