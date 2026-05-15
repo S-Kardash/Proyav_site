@@ -11,10 +11,16 @@ const CORS = {
 };
 
 function db() {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-    throw new Error('SUPABASE_URL або SUPABASE_SERVICE_KEY не задані');
-  }
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  let url = (process.env.SUPABASE_URL || '').trim();
+  const key = (process.env.SUPABASE_SERVICE_KEY || '').trim();
+
+  if (!url) throw new Error('SUPABASE_URL не задано в Netlify Environment Variables');
+  if (!key) throw new Error('SUPABASE_SERVICE_KEY не задано в Netlify Environment Variables');
+
+  // Auto-fix: remove /rest/v1 or trailing slash if user pasted wrong URL
+  url = url.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+
+  return createClient(url, key);
 }
 
 function ok(body, code = 200) {
@@ -29,15 +35,13 @@ function preflight() {
   return { statusCode: 200, headers: CORS, body: '' };
 }
 
-// Verifies JWT from Authorization header; returns decoded claim or throws
 function auth(event) {
   const h = event.headers['authorization'] || event.headers['Authorization'] || '';
   if (!h.startsWith('Bearer ')) throw new Error('Unauthorized');
-  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not set');
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET не задано в Netlify Environment Variables');
   return jwt.verify(h.slice(7), process.env.JWT_SECRET);
 }
 
-// Append one row to Google Sheets (non-fatal if Sheets not configured)
 async function sheetsAppend(rowValues) {
   if (!process.env.GOOGLE_SA_KEY_B64 || !process.env.GOOGLE_SHEET_ID) return;
   try {
@@ -73,7 +77,6 @@ async function sheetsAppend(rowValues) {
     );
   } catch (e) {
     console.error('[sheets] sync error:', e.message);
-    // Non-fatal — order still processes
   }
 }
 
