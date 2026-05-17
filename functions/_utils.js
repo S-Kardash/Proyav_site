@@ -136,37 +136,49 @@ export async function authRequest(request, env) {
 }
 
 // ── Password hashing (PBKDF2, Web Crypto) ────────────────────────────────
+// 10000 iterations — safe and well within Cloudflare Workers CPU limits
+const PBKDF2_ITERATIONS = 10000;
+
+const toHex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+
 export async function hashPassword(password) {
-  const salt    = crypto.getRandomValues(new Uint8Array(16));
-  const keyMat  = await crypto.subtle.importKey(
+  const salt   = crypto.getRandomValues(new Uint8Array(16));
+  const keyMat = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
   );
-  const bits    = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, keyMat, 256
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }, keyMat, 256
   );
-  const toHex   = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
   return `pbkdf2:${toHex(salt)}:${toHex(bits)}`;
 }
 
 export async function verifyPassword(password, stored) {
-  // Support legacy bcryptjs hashes for backward compat — treat as fail (need reset)
-  if (!stored.startsWith('pbkdf2:')) return false;
-  const [, saltHex, hashHex] = stored.split(':');
-  const salt   = new Uint8Array(saltHex.match(/../g).map(h => parseInt(h, 16)));
-  const keyMat = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
-  );
-  const bits   = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, keyMat, 256
-  );
-  const computed = [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
-  // Constant-time comparison
-  const a = new TextEncoder().encode(computed);
-  const b_ = new TextEncoder().encode(hashHex);
-  if (a.length !== b_.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b_[i];
-  return diff === 0;
+  try {
+    // Non-pbkdf2 hash (e.g. old bcrypt or manual reset) → return false, prompt reset
+    if (!stored || !stored.startsWith('pbkdf2:')) return false;
+    const parts = stored.split(':');
+    if (parts.length !== 3) return false;
+    const [, saltHex, hashHex] = parts;
+    // Validate hex strings before parsing
+    if (!/^[0-9a-f]+$/i.test(saltHex) || !/^[0-9a-f]+$/i.test(hashHex)) return false;
+    const salt   = new Uint8Array(saltHex.match(/../g).map(h => parseInt(h, 16)));
+    const keyMat = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']
+    );
+    const bits   = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }, keyMat, 256
+    );
+    const computed = toHex(bits);
+    // Constant-time comparison
+    const a  = new TextEncoder().encode(computed);
+    const b_ = new TextEncoder().encode(hashHex);
+    if (a.length !== b_.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b_[i];
+    return diff === 0;
+  } catch {
+    return false; // Never crash — just fail auth
+  }
 }
 
 // Random token generator
