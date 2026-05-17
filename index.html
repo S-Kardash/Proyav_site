@@ -462,9 +462,9 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 
 .footer{padding:16px 24px 20px;text-align:center;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(44,42,40,.35);flex-shrink:0}
 /* Magic link banner */
-.magic-banner{background:linear-gradient(135deg,#3d3530,#5a4e47);color:#fff;padding:14px 20px;text-align:center;font-size:14px;display:none}
+.magic-banner{background:linear-gradient(135deg,#3d3530,#5a4e47);color:#fff;padding:12px 20px;text-align:center;font-size:14px;display:none;width:100%;box-sizing:border-box}
 .magic-banner.show{display:block}
-.magic-banner strong{display:block;font-size:16px;margin-bottom:2px}
+.magic-banner strong{display:block;font-size:15px;margin-bottom:2px}
 .magic-banner .mb-sub{opacity:.8;font-size:13px}
 /* Invalid token screen */
 .token-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center}
@@ -739,10 +739,10 @@ const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
 
 const PRICE = 12; // грн за відбиток
 
-/* ── Telegram: calls go through Netlify Function (token stays server-side) ── */
-const ORDER_API  = '/.netlify/functions/send-order';
-const TOKEN_API  = '/.netlify/functions/api-token';
-const FINAL_API  = '/.netlify/functions/api-finalize';
+/* ── Telegram: calls go through Cloudflare Function (token stays server-side) ── */
+const ORDER_API  = '/send-order';
+const TOKEN_API  = '/api-token';
+const FINAL_API  = '/api-finalize';
 
 // Magic link token from URL
 const MAGIC_TOKEN = new URLSearchParams(location.search).get('t') || null;
@@ -1955,7 +1955,7 @@ function renderReview() {
    Image compression helper
    Compresses a File to a JPEG blob under maxKB kilobytes.
    Scales down if image is larger than maxDim on longest side.
-   Used so photos fit within Netlify's 6 MB function body limit.
+   Used so photos fit within Cloudflare's 100 MB function body limit.
    ──────────────────────────────────────────────────────────── */
 function compressImage(file, maxKB = 1400, maxDim = 2400) {
   return new Promise((resolve) => {
@@ -1995,7 +1995,7 @@ function blobToBase64(blob) {
   });
 }
 
-/* ── Secure API call through Netlify Function ── */
+/* ── Secure API call through Cloudflare Function ── */
 const API_TIMEOUT_MS = 30000; // 30 seconds per request
 
 function fetchWithTimeout(url, options, ms = API_TIMEOUT_MS) {
