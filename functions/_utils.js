@@ -85,8 +85,12 @@ export function db(env) {
 
 // ── JWT (HS256) via Web Crypto ────────────────────────────────────────────
 function b64url(obj) {
-  return btoa(typeof obj === 'string' ? obj : JSON.stringify(obj))
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const str = typeof obj === 'string' ? obj : JSON.stringify(obj);
+  // Use TextEncoder to handle Unicode (cyrillic, etc.) correctly
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 function b64decode(str) {
