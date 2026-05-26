@@ -1,0 +1,179 @@
+/* ════════════════════════════════════════════════════════════════
+   ПРОЯВ · DESIGN TOKENS · v.01
+   Витяг з брендбуку. Кожен токен має технічне обґрунтування
+   та емоційну роль. Не додавай токенів від себе.
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ── CORE · 70% ── носій тиші ── */
+  --ink-darkroom: #1A1817;   /* Темна камера · primary dark bg */
+  --ink-graphite: #2C2A28;   /* Графіт · text / structure dark */
+  --paper:        #F3EEE6;   /* Папір · primary light bg */
+
+  /* ── ACCENTS · 5% ── підкреслюють фото ── */
+  --sepia:        #C4956C;   /* Сепія · warm tone, hover, sub-CTA */
+  --safelight:    #B23A2C;   /* Сафлайт · signal, primary CTA, error */
+
+  /* ── NEUTRALS · 25% ── текст і структура ── */
+  --silver-halide:#8A8580;   /* Срібло-галогенід · mid neutral */
+
+  /* ── TONE SCALE · одна лінія від темного до паперу ── */
+  --silver-100: #3A3733;
+  --silver-200: #5A554F;
+  --silver-300: #8A8580;     /* == --silver-halide */
+  --silver-400: #B5AFA6;
+  --silver-500: #D9D3C8;
+  --silver-600: #F3EEE6;     /* == --paper */
+
+  /* ── INK ALPHAS · для надписів на папері ── */
+  --ink-90: rgba(44,42,40,.90);
+  --ink-70: rgba(44,42,40,.70);
+  --ink-60: rgba(44,42,40,.60);
+  --ink-50: rgba(44,42,40,.50);
+  --ink-30: rgba(44,42,40,.30);
+  --ink-15: rgba(44,42,40,.15);
+  --ink-10: rgba(44,42,40,.10);
+  --ink-05: rgba(44,42,40,.05);
+  --ink-02: rgba(44,42,40,.02);
+
+  /* ── PAPER ALPHAS · для надписів на темній кімнаті ── */
+  --paper-90: rgba(243,238,230,.90);
+  --paper-70: rgba(243,238,230,.70);
+  --paper-50: rgba(243,238,230,.50);
+  --paper-30: rgba(243,238,230,.30);
+  --paper-15: rgba(243,238,230,.15);
+  --paper-08: rgba(243,238,230,.08);
+
+  /* ── TYPOGRAPHY ── */
+  --font-display: 'Cormorant', 'Times New Roman', serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+
+  /* Type scale з брендбуку */
+  --t-display: clamp(56px, 9vw, 96px);   /* H1 */
+  --t-title:   clamp(36px, 5.5vw, 56px); /* H2 */
+  --t-subtitle: clamp(24px, 3vw, 32px);  /* H3 */
+  --t-lead:    clamp(18px, 1.8vw, 22px);
+  --t-body:    16px;
+  --t-small:   14px;
+  --t-caption: 12px;
+  --t-micro:   10px;
+
+  /* Line heights */
+  --lh-display: 0.95;
+  --lh-title:   1.05;
+  --lh-lead:    1.45;
+  --lh-body:    1.55;
+  --lh-mono:    1.4;
+
+  /* Letter spacing */
+  --ls-tight:  -0.02em;
+  --ls-normal: 0;
+  --ls-wide:   0.04em;
+  --ls-mono:   0.25em;   /* брендбук вимагає 0.25em + UPPERCASE */
+  --ls-logo:   0.45em;   /* монограма П Р О Я В */
+
+  /* ── SPACING SCALE ── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 144px;
+
+  /* ── RADIUS ── мінімальний, лабораторний підхід ── */
+  --r-0:  0;       /* за замовчуванням — гострі кути */
+  --r-1:  2px;     /* картки документів */
+  --r-2:  4px;     /* інпути */
+  --r-3:  12px;    /* медальні елементи */
+  --r-pill: 999px; /* кнопки (зважено, не за замовчуванням) */
+
+  /* ── BORDERS ── */
+  --bd-hairline: 1px solid var(--ink-10);
+  --bd-thin:     1px solid var(--ink-15);
+  --bd-strong:   1.5px solid var(--ink-graphite);
+  --bd-dark-hairline: 1px solid var(--paper-15);
+
+  /* ── SHADOWS ── майже відсутні; papier не падає ── */
+  --shadow-press: 0 1px 0 var(--ink-05);
+  --shadow-lift:  0 1px 2px var(--ink-05), 0 8px 24px -8px var(--ink-15);
+  --shadow-dark:  0 1px 2px rgba(0,0,0,.4), 0 12px 40px -10px rgba(0,0,0,.6);
+
+  /* ── MOTION ── проявлення повільне, як хімія ── */
+  --ease-emerge: cubic-bezier(.22,1,.36,1);   /* default — вихід в кадр */
+  --ease-fade:   cubic-bezier(.4,0,.2,1);     /* затемнення */
+  --dur-quick:   180ms;
+  --dur-normal:  320ms;
+  --dur-slow:    600ms;
+  --dur-develop: 1200ms;                       /* для появи зображень */
+
+  /* ── LAYOUT ── */
+  --max-w-prose:  680px;   /* читальний рядок */
+  --max-w-page:   1280px;
+  --max-w-wide:   1440px;
+  --gutter:       clamp(20px, 4vw, 64px);
+}
+
+/* ── BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--ink-graphite);
+  background: var(--paper);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Theme switch — applies to <body class="theme-dark"> or [data-theme=dark] */
+.theme-dark, [data-theme="dark"] {
+  color: var(--silver-500);
+  background: var(--ink-darkroom);
+}
+
+/* ── TYPOGRAPHY PRIMITIVES ── */
+.t-display { font-family: var(--font-display); font-weight: 400; font-size: var(--t-display); line-height: var(--lh-display); letter-spacing: var(--ls-tight); }
+.t-title   { font-family: var(--font-display); font-weight: 400; font-size: var(--t-title);   line-height: var(--lh-title); letter-spacing: var(--ls-tight); }
+.t-subtitle{ font-family: var(--font-display); font-weight: 500; font-size: var(--t-subtitle);line-height: 1.15; }
+.t-lead    { font-family: var(--font-body); font-weight: 300; font-size: var(--t-lead); line-height: var(--lh-lead); color: var(--ink-70); }
+.t-body    { font-size: var(--t-body); line-height: var(--lh-body); }
+.t-small   { font-size: var(--t-small); line-height: 1.5; }
+.t-caption { font-size: var(--t-caption); line-height: 1.4; color: var(--ink-50); }
+.t-mono    { font-family: var(--font-mono); font-size: var(--t-caption); font-weight: 400; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-60); }
+.t-mono-sm { font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 400; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+
+/* Italic emphasis — used sparingly, like a curator's aside */
+.t-italic { font-style: italic; font-family: var(--font-display); }
+
+/* Anchor — used as references in audit */
+a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--ink-30); transition: text-decoration-color var(--dur-quick) var(--ease-fade); }
+a:hover { text-decoration-color: var(--ink-graphite); }
+
+/* ── LOGO TYPESET ── */
+.logo-mono {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: var(--ls-logo);
+  text-transform: none; /* П Р О Я В з прописних */
+}
+
+/* ── RULES (separators that breathe) ── */
+hr.rule {
+  border: 0;
+  height: 1px;
+  background: var(--ink-10);
+  margin: var(--s-7) 0;
+}
+hr.rule-dark { background: var(--paper-15); }

@@ -267,7 +267,7 @@ function renderOrders() {
   }
   el.innerHTML = allOrders.map(o => {
     const date = new Date(o.created_at).toLocaleDateString('uk-UA', { day:'2-digit', month:'2-digit' });
-    const link = `${SITE}/?t=${o.token}`;
+    const link = `${SITE}/order?t=${o.token}`;
     return `<div class="order-item">
       <div class="order-info">
         <div class="order-name">${o.client_name}</div>

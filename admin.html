@@ -473,7 +473,7 @@ function openDetail(id) {
   document.getElementById('detail-notes').value  = currentOrder.notes || '';
 
   // Magic link
-  const link = `${SITE}/?t=${currentOrder.token}`;
+  const link = `${SITE}/order?t=${currentOrder.token}`;
   document.getElementById('detail-link-url').textContent = link;
 
   document.getElementById('detail-save-btn').style.display = 'none';

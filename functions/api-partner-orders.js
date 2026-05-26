@@ -76,7 +76,7 @@ export async function onRequest(context) {
     });
 
     const siteUrl = (env.SITE_URL || '').replace(/\/$/, '');
-    return ok({ order: data, link: `${siteUrl}/?t=${token}` }, 201);
+    return ok({ order: data, link: `${siteUrl}/order?t=${token}` }, 201);
   }
 
   return fail('Method not allowed', 405);
