@@ -1,9 +1,4 @@
-import { ok, fail, preflight, db, randomToken } from './_utils.js';
-
-const PRODUCTS = {
-  small: 'Малий набір', medium: 'Середній набір',
-  large: 'Великий набір', baby: 'Спогади малюка',
-};
+import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -13,7 +8,12 @@ export async function onRequest(context) {
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
 
-  const { name, phone, product_type, message } = body;
+  const {
+    name, phone, product_type, message,
+    client_instagram,
+    order_ref, photo_count, qty_total, total_amount,
+  } = body;
+
   if (!name?.trim())  return fail("Ім'я обов'язкове");
   if (!phone?.trim()) return fail('Телефон обов\'язковий');
 
@@ -25,36 +25,69 @@ export async function onRequest(context) {
     single: true,
     body: {
       token,
-      client_name:  name.trim(),
-      client_phone: phone.replace(/\D/g, ''),
-      product_type: product_type || 'small',
-      source:       'retail',
-      status:       'new',
-      notes:        message?.trim() || null,
+      client_name:      name.trim(),
+      client_phone:     phone.replace(/\D/g, ''),
+      client_instagram: client_instagram?.trim().replace('@', '') || null,
+      product_type:     product_type || 'small',
+      source:           'retail',
+      status:           'uploaded',           // photos already sent via TG
+      notes:            message?.trim() || null,
+      photo_count:      photo_count  || null,
+      qty_total:        qty_total    || null,
+      total_amount:     total_amount || null,
+      uploaded_at:      new Date().toISOString(),
     },
   });
 
-  // Telegram notification to admin
+  // ── Telegram notification to admin ──────────────────────────────────
   if (env.TG_TOKEN && env.TG_CHAT_ID) {
-    const product = PRODUCTS[product_type] || 'Не вказано';
+    const product = PRODUCT_NAMES[product_type] || 'Не вказано';
     const text = [
       `🛒 <b>[ПРОЯВ] Нова заявка з сайту</b>`,
       ``,
       `👤 <b>${name.trim()}</b>`,
       `📞 ${phone.trim()}`,
+      client_instagram ? `📸 @${client_instagram.replace('@','')}` : null,
       `📦 ${product}`,
-      message ? `💬 ${message.trim()}` : null,
+      photo_count  ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
+      total_amount ? `💰 Сума: ${total_amount} грн` : null,
+      order_ref    ? `🆔 Ref: ${order_ref}` : null,
+      message      ? `💬 ${message.trim()}` : null,
       ``,
-      `🆔 Токен: <code>${token}</code>`,
-      `🔗 Створи посилання в адмінці → /admin`,
+      `🔗 Токен: <code>${token}</code>`,
+      `📋 /admin → Замовлення`,
     ].filter(Boolean).join('\n');
 
     await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: env.TG_CHAT_ID, text, parse_mode: 'HTML' }),
+      body:    JSON.stringify({ chat_id: env.TG_CHAT_ID, text, parse_mode: 'HTML' }),
     }).catch(e => console.error('[retail] TG:', e.message));
   }
 
-  return ok({ ok: true, message: 'Заявку отримано. Ми надішлемо вам посилання найближчим часом.' });
+  // ── Google Sheets sync (non-fatal) ───────────────────────────────────
+  const date = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' });
+  await sheetsAppend(env, [
+    date,
+    token.toUpperCase(),
+    'Роздріб (сайт)',
+    name.trim(),
+    phone.trim(),
+    client_instagram ? '@' + client_instagram.replace('@','') : '',
+    '',                                        // photographer name — n/a for retail
+    '',                                        // photographer city
+    PRODUCT_NAMES[product_type] || product_type,
+    photo_count  || '',
+    qty_total    || '',
+    total_amount ? `${total_amount} грн` : '',
+    order_ref    || '',
+    'Фото отримано',
+    '',
+  ]);
+
+  return ok({
+    ok:      true,
+    token,
+    message: 'Заявку збережено.',
+  });
 }

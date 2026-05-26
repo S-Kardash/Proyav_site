@@ -462,7 +462,7 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 
 .footer{padding:16px 24px 20px;text-align:center;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(44,42,40,.35);flex-shrink:0}
 /* Magic link banner */
-.magic-banner{background:linear-gradient(135deg,#3d3530,#5a4e47);color:#fff;padding:12px 20px;text-align:center;font-size:14px;display:none;width:100%;box-sizing:border-box}
+.magic-banner{background:linear-gradient(135deg,#3d3530,#5a4e47);color:#fff;padding:12px 20px;text-align:center;font-size:14px;display:none;width:100%;box-sizing:border-box;flex-shrink:0}
 .magic-banner.show{display:block}
 .magic-banner strong{display:block;font-size:15px;margin-bottom:2px}
 .magic-banner .mb-sub{opacity:.8;font-size:13px}
@@ -476,11 +476,6 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 </head>
 <body>
 
-<!-- MAGIC LINK BANNER -->
-<div class="magic-banner" id="magic-banner">
-  <strong id="magic-greeting"></strong>
-  <span class="mb-sub" id="magic-product"></span>
-</div>
 <!-- TOKEN ERROR -->
 <div class="token-error" id="token-error">
   <div class="token-error-icon">🔗</div>
@@ -504,6 +499,11 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 <canvas class="dots-canvas" id="dotsCanvas" style="display:none"></canvas>
 
 <div class="app">
+  <!-- MAGIC LINK BANNER -->
+  <div class="magic-banner" id="magic-banner">
+    <strong id="magic-greeting"></strong>
+    <span class="mb-sub" id="magic-product"></span>
+  </div>
   <header class="header">
     <div class="logo">
       <span class="logo-text">ПРОЯВ</span>
@@ -2068,7 +2068,7 @@ function buildOrderMessage(orderId, tq) {
     '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
     '\n👤 <b>Клієнт</b>\n' +
     identStr + '\n' +
-    'Ім\'\xd1�: ' + S.name + '\n' +
+    'Ім\'\xd1�: ' + S.name + '\n' +
     'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
     '📦 Доставка: ' + cityLine + '\n' +
@@ -2077,6 +2077,44 @@ function buildOrderMessage(orderId, tq) {
     '\n💰 <b>Вартість: ' + (tq * PRICE) + ' грн</b>\n' +
     '🕐 ' + time
   );
+}
+
+/* ── Save retail order to Supabase via /api-retail ── */
+async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
+  // Build a human-readable product guess from photo count
+  let product_type = 'small';
+  const photoCount = S.photos.length;
+  if (photoCount >= 40)      product_type = 'large';
+  else if (photoCount >= 18) product_type = 'medium';
+
+  const identField = S.identType === 'instagram'
+    ? { client_instagram: S.ident }
+    : {};
+
+  const payload = {
+    name:         S.name  || S.ident || 'Клієнт',
+    phone:        S.phone || '',
+    product_type,
+    source:       'retail',
+    order_ref:    orderId,
+    photo_count:  photoCount,
+    qty_total:    qtyTotal,
+    total_amount: totalAmount,
+    message:      `Замовлення ${orderId}. Фото: ${photoCount} шт / ${qtyTotal} відбитків. Доставка: ${S.delivery === 'nova' ? 'Нова Пошта, ' + (S.city || '') : 'Самовивіз'}.`,
+    ...identField,
+  };
+
+  const res = await fetchWithTimeout('/api-retail', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
 }
 
 /* ── Main submit ── */
@@ -2091,6 +2129,13 @@ async function submitOrder(e) {
 
   // Finalize magic link order in Supabase (non-blocking)
   finalizeWithToken(S.photos.length, tq, totalAmt);
+
+  // Save retail order to Supabase (non-blocking, non-fatal)
+  if (!MAGIC_TOKEN) {
+    saveRetailOrderToSupabase(orderId, tq, totalAmt).catch(e =>
+      console.warn('[submit] retail Supabase save failed:', e.message)
+    );
+  }
 
   let   tgOk    = false;
   let   emailOk = false;
