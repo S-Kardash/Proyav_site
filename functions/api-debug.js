@@ -20,6 +20,7 @@ export async function onRequest(context) {
       TG_CHAT_ID_set:            !!env.TG_CHAT_ID,
       GOOGLE_SA_KEY_B64_set:     !!env.GOOGLE_SA_KEY_B64,
       GOOGLE_SHEET_ID:           env.GOOGLE_SHEET_ID || 'ВІДСУТНІЙ',
+      NOVA_POSHTA_KEY_set:       !!env.NOVA_POSHTA_KEY,
     },
   };
 

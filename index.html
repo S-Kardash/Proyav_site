@@ -466,6 +466,63 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 .magic-banner.show{display:block}
 .magic-banner strong{display:block;font-size:15px;margin-bottom:2px}
 .magic-banner .mb-sub{opacity:.8;font-size:13px}
+/* ═══ NOVA POSHTA AUTOCOMPLETE ═══ */
+.np-field{position:relative;margin-bottom:14px}
+.np-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1px solid var(--d15);border-radius:var(--r-md);box-shadow:0 8px 28px rgba(44,42,40,.16);max-height:264px;overflow-y:auto;z-index:50;display:none;-webkit-overflow-scrolling:touch}
+.np-dropdown.show{display:block;animation:npFade .18s ease}
+@keyframes npFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.np-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--d05);transition:background .15s;-webkit-tap-highlight-color:transparent}
+.np-item:last-child{border-bottom:none}
+.np-item:hover,.np-item.active{background:var(--d05)}
+.np-item-main{font-size:14px;color:var(--dark);font-weight:500}
+.np-item-sub{font-size:12px;color:var(--d50);margin-top:1px}
+.np-loading,.np-empty{padding:14px 16px;font-size:13px;color:var(--d50);text-align:center}
+.np-spin{display:inline-block;width:14px;height:14px;border:2px solid var(--d20);border-top-color:var(--dark);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+.input-field:disabled{opacity:.5;cursor:not-allowed;background:var(--d02)}
+.np-picked{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--green);pointer-events:none;display:none}
+.np-picked.show{display:block}
+
+/* ═══ POST-ORDER EMAIL CAPTURE ═══ */
+.post-email{background:var(--d05);border:1px solid var(--d10);border-radius:var(--r-lg);padding:18px;margin-top:24px;text-align:left}
+.post-email-title{font-family:'Cormorant',serif;font-size:19px;font-weight:500;color:var(--dark);margin-bottom:4px}
+.post-email-sub{font-size:13px;color:var(--d60);line-height:1.5;margin-bottom:14px}
+.post-email-row{display:flex;gap:8px}
+.post-email-row .input-field{flex:1;height:48px;margin:0}
+.post-email-send{height:48px;padding:0 18px;border:none;border-radius:var(--r-md);background:var(--dark);color:var(--cream);font-family:'Inter',sans-serif;font-weight:500;font-size:14px;cursor:pointer;flex-shrink:0;transition:opacity .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+.post-email-send:active{transform:scale(.97)}
+.post-email-send:disabled{opacity:.4;cursor:default}
+.post-email-done{font-size:13px;color:var(--green);display:flex;align-items:center;gap:6px;margin-top:4px}
+
+/* ═══ LIGHTBOX (full-size photo view) ═══ */
+.lightbox{position:fixed;inset:0;z-index:1000;background:rgba(20,18,16,.92);display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.lightbox.show{display:flex;animation:lbFade .25s ease}
+@keyframes lbFade{from{opacity:0}to{opacity:1}}
+.lightbox-img{max-width:100%;max-height:88vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:lbZoom .3s cubic-bezier(.22,1,.36,1)}
+@keyframes lbZoom{from{transform:scale(.94);opacity:.6}to{transform:scale(1);opacity:1}}
+.lightbox-close{position:absolute;top:18px;right:18px;width:42px;height:42px;border-radius:50%;background:rgba(245,239,228,.14);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+.lightbox-close:active{transform:scale(.9)}
+.lightbox-close:hover{background:rgba(245,239,228,.24)}
+.lightbox-meta{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:rgba(245,239,228,.7);font-size:13px;letter-spacing:.5px}
+.photo-preview img{cursor:zoom-in}
+.photo-zoom-hint{position:absolute;bottom:10px;right:10px;width:30px;height:30px;background:var(--cr90);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.85}
+
+/* ═══ UNDO TOAST (after delete) ═══ */
+.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);z-index:1001;background:var(--dark);color:var(--cream);border-radius:var(--r-pill);padding:10px 10px 10px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 30px rgba(44,42,40,.28);font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1);max-width:calc(100% - 32px)}
+.undo-toast.show{transform:translateX(-50%) translateY(0)}
+.undo-toast-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.undo-btn{flex-shrink:0;background:rgba(245,239,228,.16);border:none;color:var(--cream);font-family:'Inter',sans-serif;font-weight:600;font-size:13px;letter-spacing:.3px;padding:8px 16px;border-radius:var(--r-pill);cursor:pointer;transition:background .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+.undo-btn:active{transform:scale(.94)}
+.undo-btn:hover{background:rgba(245,239,228,.28)}
+.undo-progress{position:absolute;bottom:0;left:0;height:2px;background:rgba(245,239,228,.5);border-radius:0 0 var(--r-pill) var(--r-pill);animation:undoCountdown 5s linear forwards}
+@keyframes undoCountdown{from{width:100%}to{width:0}}
+
+/* ═══ MAGIC LINK — locked identity chip ═══ */
+.magic-locked{display:flex;align-items:center;gap:10px;background:var(--d05);border:1px solid var(--d10);border-radius:var(--r-md);padding:12px 16px;margin-bottom:18px}
+.magic-locked-ic{width:34px;height:34px;border-radius:50%;background:var(--dark);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.magic-locked-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.magic-locked-txt b{font-size:14px;color:var(--dark)}
+.magic-locked-txt span{font-size:12px;color:var(--d50)}
+
 /* Invalid token screen */
 .token-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center}
 .token-error.show{display:flex}
@@ -475,6 +532,22 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 </style>
 </head>
 <body>
+
+<!-- LIGHTBOX (full-size photo) -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox(event)" aria-label="Закрити">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#f5efe4" stroke-width="2" stroke-linecap="round"><line x1="2" y1="2" x2="16" y2="16"/><line x1="16" y1="2" x2="2" y2="16"/></svg>
+  </button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="фото у повному розмірі">
+  <div class="lightbox-meta" id="lightbox-meta"></div>
+</div>
+
+<!-- UNDO TOAST (after photo delete) -->
+<div class="undo-toast" id="undo-toast">
+  <span class="undo-toast-text" id="undo-toast-text">Фото видалено</span>
+  <button class="undo-btn" onclick="undoDelete()">Скасувати</button>
+  <div class="undo-progress" id="undo-progress"></div>
+</div>
 
 <!-- TOKEN ERROR -->
 <div class="token-error" id="token-error">
@@ -546,12 +619,13 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
 
     <!-- STEP 2 -->
     <div class="screen" id="screen-2">
-      <button class="back-btn" onclick="goTo(1,true)">
+      <button class="back-btn" id="step2-back" onclick="goTo(1,true)">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Назад
       </button>
       <div class="heading">Ваші дані</div>
       <p class="subtext">Щоб ми могли надіслати готовий друк саме вам.</p>
+      <div id="magic-locked-wrap" style="display:none"></div>
       <div class="input-wrap">
         <label class="label">Ім'я та прізвище</label>
         <input class="input-field" id="inp-name" type="text" placeholder="Олена Коваль" oninput="liveValidate('inp-name','name-err',()=>document.getElementById('inp-name').value.trim().length>=2,'Введіть ім\'я')" autocomplete="name">
@@ -574,10 +648,25 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
           <button class="del-btn" id="del-self" onclick="setDelivery('self')">Самовивіз</button>
         </div>
       </div>
-      <div id="city-wrap" class="input-wrap">
-        <label class="label">Місто / Відділення</label>
-        <input class="input-field" id="inp-city" type="text" placeholder="Київ, відділення №12" oninput="liveValidate('inp-city','city-err',()=>document.getElementById('inp-city').value.trim().length>=2,'Вкажіть місто')">
-        <div class="field-error" id="city-err">Вкажіть місто або відділення</div>
+      <div id="city-wrap">
+        <div class="input-wrap np-field" style="margin-bottom:14px">
+          <label class="label">Місто</label>
+          <input class="input-field" id="inp-city" type="text" placeholder="Почніть вводити місто" autocomplete="off" oninput="onCityInput()" onfocus="onCityInput()">
+          <span class="np-picked" id="city-picked">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="np-dropdown" id="city-dropdown"></div>
+          <div class="field-error" id="city-err">Оберіть місто зі списку</div>
+        </div>
+        <div class="input-wrap np-field" style="margin-bottom:0">
+          <label class="label">Відділення / Поштомат</label>
+          <input class="input-field" id="inp-warehouse" type="text" placeholder="Спершу оберіть місто" autocomplete="off" disabled oninput="onWarehouseInput()" onfocus="onWarehouseInput()">
+          <span class="np-picked" id="wh-picked">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="np-dropdown" id="wh-dropdown"></div>
+          <div class="field-error" id="wh-err">Оберіть відділення зі списку</div>
+        </div>
       </div>
       <button class="btn-primary" id="btn-step2" onclick="tryStep2(event)">Далі — завантажити фото</button>
     </div>
@@ -712,7 +801,19 @@ body{display:flex;justify-content:center;align-items:flex-start;min-height:100dv
           <strong id="success-order-num">—</strong>
           номер замовлення
         </div>
-        <button class="btn-primary" onclick="resetApp()" style="max-width:280px;margin-left:auto;margin-right:auto">Нове замовлення</button>
+
+        <!-- Optional email capture as a value-add, not a barrier -->
+        <div class="post-email" id="post-email-block" style="display:none">
+          <div class="post-email-title">Хочете цифрові копії?</div>
+          <div class="post-email-sub">Лишіть пошту — надішлемо ваші фото у високій якості, щоб вони були не лише на папері, а й у надійному місці.</div>
+          <div class="post-email-row">
+            <input class="input-field" id="post-email-input" type="email" placeholder="you@email.com" autocomplete="email">
+            <button class="post-email-send" id="post-email-btn" onclick="submitPostEmail()">Надіслати</button>
+          </div>
+          <div class="field-error" id="post-email-err">Некоректний email</div>
+        </div>
+
+        <button class="btn-primary" onclick="resetApp()" style="max-width:280px;margin-left:auto;margin-right:auto;margin-top:20px">Нове замовлення</button>
       </div>
     </div>
 
@@ -747,9 +848,104 @@ const FINAL_API  = '/api-finalize';
 // Magic link token from URL
 const MAGIC_TOKEN = new URLSearchParams(location.search).get('t') || null;
 let   MAGIC_ORDER = null; // filled after token validation
+const IS_MAGIC    = !!MAGIC_TOKEN;
+
+/* ═══════════════════════════════════════════════════════
+   INDEXEDDB — persistent photo blob storage
+   Survives accidental browser close / refresh, unlike
+   localStorage (which can't hold large image blobs).
+   ═══════════════════════════════════════════════════════ */
+const IDB_NAME = 'proyav_photos_v1';
+const IDB_STORE = 'photos';
+const IDB_OK = (typeof indexedDB !== 'undefined');
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function idbPut(key, blob) {
+  if (!IDB_OK) return;
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(blob, key);
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+async function idbGet(key) {
+  if (!IDB_OK) return null;
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const r  = tx.objectStore(IDB_STORE).get(key);
+    r.onsuccess = () => res(r.result || null);
+    r.onerror   = () => rej(r.error);
+  });
+}
+async function idbDelete(key) {
+  if (!IDB_OK) return;
+  const db = await idbOpen();
+  return new Promise((res) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = () => res();
+    tx.onerror    = () => res(); // non-fatal
+  });
+}
+async function idbClear() {
+  if (!IDB_OK) return;
+  try {
+    const db = await idbOpen();
+    await new Promise((res) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete = () => res();
+      tx.onerror    = () => res();
+    });
+  } catch(e) {}
+}
+
+/* ═══ LIGHTBOX ═══ */
+function openLightbox(url, metaText) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox-meta').textContent = metaText || '';
+  lb.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e) {
+  // Only close when clicking the backdrop or the close button — not the image itself
+  if (e && e.target && e.target.classList.contains('lightbox-img')) return;
+  const lb = document.getElementById('lightbox');
+  lb.classList.remove('show');
+  document.getElementById('lightbox-img').src = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+/* ═══ UNDO DELETE ═══ */
+let pendingDelete = null;   // { ph, card, timer }
+function showUndoToast(text) {
+  const toast = document.getElementById('undo-toast');
+  const prog  = document.getElementById('undo-progress');
+  document.getElementById('undo-toast-text').textContent = text || 'Фото видалено';
+  // restart progress animation
+  prog.style.animation = 'none'; prog.offsetHeight; prog.style.animation = '';
+  toast.classList.add('show');
+}
+function hideUndoToast() {
+  document.getElementById('undo-toast').classList.remove('show');
+}
 
 
-const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', photos:[] };
+const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', cityRef:'', cityName:'', warehouse:'', photos:[] };
 let pid = 0;
 
 /* ═══════════════════════════════════════════════════════
@@ -774,12 +970,18 @@ function saveDraft() {
     email:       S.email,
     delivery:    S.delivery,
     city:        S.city,
+    cityRef:     S.cityRef,
+    cityName:    S.cityName,
+    warehouse:   S.warehouse,
     // store photo metadata so user knows what to re-upload
     photosMeta:  S.photos.map(p => ({
-      id:    p.id,
-      color: p.color,
-      paper: p.paper,
-      qty:   p.qty,
+      id:       p.id,
+      storeKey: p.storeKey || null,
+      name:     p.file?.name || 'photo.jpg',
+      type:     p.file?.type || 'image/jpeg',
+      color:    p.color,
+      paper:    p.paper,
+      qty:      p.qty,
     })),
   };
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
@@ -797,6 +999,7 @@ function loadDraft() {
 
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+  idbClear().catch(() => {});
 }
 
 function applyDraft(d) {
@@ -807,6 +1010,9 @@ function applyDraft(d) {
   S.email     = d.email     || '';
   S.delivery  = d.delivery  || 'nova';
   S.city      = d.city      || '';
+  S.cityRef   = d.cityRef   || '';
+  S.cityName  = d.cityName  || '';
+  S.warehouse = d.warehouse || '';
 
   // Restore form fields
   setIdentType(S.identType);
@@ -823,12 +1029,22 @@ function applyDraft(d) {
   if (S.phone) { document.getElementById('inp-phone').value = S.phone; document.getElementById('inp-phone').classList.add('valid'); }
   if (S.email) { document.getElementById('inp-email').value = S.email; document.getElementById('inp-email').classList.add('valid'); }
   setDelivery(S.delivery);
-  if (S.city)  { document.getElementById('inp-city').value  = S.city;  document.getElementById('inp-city').classList.add('valid'); }
-
-  // Show photo recovery banner if there were photos
-  if (d.photosMeta && d.photosMeta.length > 0) {
-    showPhotoBanner(d.photosMeta);
+  if (S.cityName) {
+    const cityEl = document.getElementById('inp-city');
+    cityEl.value = S.cityName; cityEl.classList.add('valid');
+    document.getElementById('city-picked').classList.add('show');
+    if (S.cityRef) {
+      const whEl = document.getElementById('inp-warehouse');
+      whEl.disabled = false; whEl.placeholder = 'Номер або назва відділення';
+      if (S.warehouse) {
+        whEl.value = S.warehouse; whEl.classList.add('valid');
+        document.getElementById('wh-picked').classList.add('show');
+      }
+    }
   }
+
+  // Photo restoration is handled asynchronously in the init flow
+  // (restorePhotos → falls back to showPhotoBanner only if blobs are gone)
 }
 
 function showPhotoBanner(meta) {
@@ -877,19 +1093,25 @@ window.addEventListener('DOMContentLoaded', () => {
   setDelivery('nova');
   initGlobalPanel();
 
-  // ── Restore draft ──
-  const draft = loadDraft();
+  // ── Restore draft (skip when arriving via magic link — token flow takes over) ──
+  const draft = IS_MAGIC ? null : loadDraft();
   if (draft && draft.step > 1) {
     applyDraft(draft);
-    // Go to the step where user left off (cap at step 3 — photos need re-upload)
+    // Go to the step where user left off
     const resumeStep = Math.min(draft.step, 3);
     goTo(resumeStep);
+    // Restore actual photo blobs from IndexedDB; fall back to re-upload banner if gone
+    if (draft.photosMeta && draft.photosMeta.length > 0) {
+      restorePhotos(draft.photosMeta).then(ok => {
+        if (!ok) showPhotoBanner(draft.photosMeta);
+      });
+    }
     // Show splash only briefly when resuming
     setTimeout(() => {
       const s = document.getElementById('splash');
       if (s) { s.classList.add('done'); setTimeout(() => s.remove(), 700); }
     }, 800);
-  } else {
+  } else if (!IS_MAGIC) {
     setTimeout(() => {
       const s = document.getElementById('splash');
       if (s) { s.classList.add('done'); setTimeout(() => s.remove(), 800); }
@@ -934,7 +1156,7 @@ function goTo(step, back=false) {
 function renderStepper() {
   let h = '';
   [1,2,3,4].forEach((s,i) => {
-    const done = S.step>s, active = S.step===s;
+    const done = S.step>s || (IS_MAGIC && s === 1), active = S.step===s;
     const inner = done
       ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="1,6 5,10 11,2"/></svg>`
       : s;
@@ -1119,6 +1341,124 @@ function liveEmailValidate() {
   else { document.getElementById('email-err').textContent='Некоректний email'; document.getElementById('email-err').classList.add('show'); el.classList.add('error'); }
 }
 
+/* ═══════════════════════════════════════════════════════
+   NOVA POSHTA — city + warehouse autocomplete
+   ═══════════════════════════════════════════════════════ */
+let npCityTimer = null, npWhTimer = null;
+
+function npDebounce(fn, ms) {
+  return function(...args) {
+    clearTimeout(this._t);
+    this._t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+async function onCityInput() {
+  const inp = document.getElementById('inp-city');
+  const dd  = document.getElementById('city-dropdown');
+  const v   = inp.value.trim();
+
+  // typing invalidates a previous pick
+  S.cityRef = ''; S.cityName = '';
+  document.getElementById('city-picked').classList.remove('show');
+  const wh = document.getElementById('inp-warehouse');
+  wh.disabled = true; wh.value = ''; wh.placeholder = 'Спершу оберіть місто';
+  S.warehouse = ''; document.getElementById('wh-picked').classList.remove('show');
+
+  if (v.length < 2) { dd.classList.remove('show'); return; }
+
+  dd.innerHTML = '<div class="np-loading"><span class="np-spin"></span>Пошук міст…</div>';
+  dd.classList.add('show');
+
+  clearTimeout(npCityTimer);
+  npCityTimer = setTimeout(async () => {
+    try {
+      const res  = await fetchWithTimeout('/api-novaposhta?action=cities&q=' + encodeURIComponent(v), {}, 12000);
+      const data = await res.json();
+      if (inp.value.trim() !== v) return; // stale
+      const items = data.items || [];
+      if (!items.length) { dd.innerHTML = '<div class="np-empty">Нічого не знайдено</div>'; return; }
+      dd.innerHTML = items.map(it =>
+        `<div class="np-item" onclick="pickCity('${it.ref}', ${JSON.stringify(it.present).replace(/'/g, "\\'")} )">
+           <div class="np-item-main">${escapeHtml(it.name)}</div>
+           <div class="np-item-sub">${escapeHtml(it.area ? it.area + ' обл.' : it.present)}</div>
+         </div>`).join('');
+    } catch (e) {
+      dd.innerHTML = '<div class="np-empty">Помилка пошуку. Спробуйте ще.</div>';
+    }
+  }, 280);
+}
+
+function pickCity(ref, present) {
+  S.cityRef  = ref;
+  S.cityName = present;
+  document.getElementById('inp-city').value = present;
+  document.getElementById('city-dropdown').classList.remove('show');
+  document.getElementById('city-picked').classList.add('show');
+  clearErr('inp-city', 'city-err');
+  document.getElementById('inp-city').classList.add('valid');
+  // enable warehouse
+  const wh = document.getElementById('inp-warehouse');
+  wh.disabled = false; wh.placeholder = 'Номер або назва відділення'; wh.value = '';
+  S.warehouse = '';
+  saveDraft();
+  wh.focus();
+  onWarehouseInput(); // preload list
+}
+
+async function onWarehouseInput() {
+  const inp = document.getElementById('inp-warehouse');
+  const dd  = document.getElementById('wh-dropdown');
+  if (!S.cityRef) return;
+  const v = inp.value.trim();
+
+  S.warehouse = '';
+  document.getElementById('wh-picked').classList.remove('show');
+  inp.classList.remove('valid');
+
+  dd.innerHTML = '<div class="np-loading"><span class="np-spin"></span>Завантаження відділень…</div>';
+  dd.classList.add('show');
+
+  clearTimeout(npWhTimer);
+  npWhTimer = setTimeout(async () => {
+    try {
+      const res  = await fetchWithTimeout('/api-novaposhta?action=warehouses&ref=' + encodeURIComponent(S.cityRef) + '&q=' + encodeURIComponent(v), {}, 12000);
+      const data = await res.json();
+      const items = data.items || [];
+      if (!items.length) { dd.innerHTML = '<div class="np-empty">Відділень не знайдено</div>'; return; }
+      dd.innerHTML = items.slice(0, 50).map(w =>
+        `<div class="np-item" onclick="pickWarehouse(${JSON.stringify(w.name).replace(/'/g, "\\'")})">
+           <div class="np-item-main">${escapeHtml(w.name)}</div>
+         </div>`).join('');
+    } catch (e) {
+      dd.innerHTML = '<div class="np-empty">Помилка завантаження.</div>';
+    }
+  }, 250);
+}
+
+function pickWarehouse(name) {
+  S.warehouse = name;
+  document.getElementById('inp-warehouse').value = name;
+  document.getElementById('wh-dropdown').classList.remove('show');
+  document.getElementById('wh-picked').classList.add('show');
+  document.getElementById('inp-warehouse').classList.add('valid');
+  clearErr('inp-warehouse', 'wh-err');
+  S.city = S.cityName + ' — ' + name; // combined for order/DB
+  saveDraft();
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Close NP dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.np-field')) {
+    document.querySelectorAll('.np-dropdown').forEach(d => d.classList.remove('show'));
+  }
+});
+
 function setDelivery(type) {
   S.delivery = type;
   document.getElementById('del-nova').classList.toggle('active', type==='nova');
@@ -1131,14 +1471,18 @@ function tryStep2(e) {
   const name  = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
   const email = document.getElementById('inp-email').value.trim();
-  const city  = document.getElementById('inp-city').value.trim();
   let ok = true;
   if (name.length < 2)         { shake('inp-name','name-err','Введіть ім\'я (мінімум 2 символи)'); ok=false; }
   if (!isPhone(phone))         { shake('inp-phone','phone-err','Введіть коректний номер телефону'); ok=false; }
   if (email && !isEmail(email)){ shake('inp-email','email-err','Некоректний email'); ok=false; }
-  if (S.delivery==='nova' && city.length<2) { shake('inp-city','city-err','Вкажіть місто або відділення'); ok=false; }
+  if (S.delivery==='nova') {
+    if (!S.cityRef)   { shake('inp-city','city-err','Оберіть місто зі списку'); ok=false; }
+    if (!S.warehouse) { shake('inp-warehouse','wh-err','Оберіть відділення зі списку'); ok=false; }
+  }
   if (!ok) return;
-  S.name=name; S.phone=phone; S.email=email; S.city=city;
+  S.name=name; S.phone=phone; S.email=email;
+  if (S.delivery==='nova') S.city = S.cityName + ' — ' + S.warehouse;
+  else S.city = '';
   saveDraft();
   goTo(3);
 }
@@ -1313,6 +1657,9 @@ function buildPhotoCard(ph) {
     <div class="photo-preview photo-validating">
       <img src="${ph.previewUrl}" alt="фото">
       <span class="photo-size-badge">10 × 15 см</span>
+      <div class="photo-zoom-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2c2a28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </div>
       <div class="photo-warn-badge" id="warn-badge-${ph.id}" style="display:none">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1.2" fill="white" stroke="none"/></svg>
         <span>Увага</span>
@@ -1362,6 +1709,16 @@ function buildPhotoCard(ph) {
 
   /* ── Delete ── */
   card.querySelector('.photo-delete').addEventListener('click', () => removePhoto(ph.id));
+
+  /* ── Tap photo → open full-size lightbox ── */
+  const previewImg = card.querySelector('.photo-preview img');
+  if (previewImg) {
+    previewImg.addEventListener('click', () => {
+      const c = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
+      const p = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+      openLightbox(ph.previewUrl, `${c} · ${p} · ×${ph.qty}`);
+    });
+  }
 
   /* ── Grid settings button → open photo settings sheet ── */
   const gearBtn = card.querySelector('.grid-settings-btn');
@@ -1491,14 +1848,17 @@ async function addPhotos(files) {
 
     const id  = ++pid;
     const url = URL.createObjectURL(file);
+    const storeKey = `p_${Date.now()}_${id}_${Math.random().toString(36).slice(2,7)}`;
     // Apply global defaults to new photo if auto-mode is on
     const ph  = {
-      id, file, previewUrl: url,
+      id, file, previewUrl: url, storeKey,
       color: G.auto ? G.color : 'color',
       paper: G.auto ? G.paper : 'mat',
       qty: 1,
     };
     S.photos.push(ph);
+    // Persist blob so an accidental refresh/close keeps the photo (non-fatal)
+    idbPut(storeKey, file).catch(e => console.warn('[idb] put failed:', e?.message));
 
     const card = buildPhotoCard(ph);
     // Sync card buttons to actual ph state (in case global differs from defaults)
@@ -1534,15 +1894,106 @@ async function addPhotos(files) {
   updateSummary();
 }
 
-/* ── Remove ── */
+/* ── Restore photos from IndexedDB after refresh/close ── */
+async function restorePhotos(photosMeta) {
+  if (!IDB_OK || !photosMeta || !photosMeta.length) return false;
+  const list = document.getElementById('photos-list');
+  if (!list) return false;
+
+  let restored = 0;
+  for (const meta of photosMeta) {
+    if (!meta.storeKey) continue;
+    let blob = null;
+    try { blob = await idbGet(meta.storeKey); } catch (e) { blob = null; }
+    if (!blob) continue;
+
+    const file = (blob instanceof File)
+      ? blob
+      : new File([blob], meta.name || 'photo.jpg', { type: blob.type || meta.type || 'image/jpeg' });
+    const id  = ++pid;
+    const url = URL.createObjectURL(blob);
+    const ph  = {
+      id, file, previewUrl: url, storeKey: meta.storeKey,
+      color: meta.color || 'color',
+      paper: meta.paper || 'mat',
+      qty:   meta.qty   || 1,
+    };
+    S.photos.push(ph);
+
+    const card = buildPhotoCard(ph);
+    updateCardControls(ph);
+    list.appendChild(card);
+    restored++;
+
+    validatePhoto(file, url).then(result => {
+      ph.validationResult = result;
+      ph._warnings = result.warnings || [];
+      ph._blocking = result.blocking || [];
+      if (!result.ok) ph.hasError = true;
+      if (result.warnings && result.warnings.length > 0) {
+        if (ph._gearBtn) ph._gearBtn.classList.add('has-warn');
+        const wb = document.getElementById('warn-badge-' + ph.id);
+        if (wb) wb.style.display = '';
+      }
+      renderValidation(ph, result);
+    });
+  }
+
+  if (restored > 0) {
+    showGlobalPanel(true);
+    autoSelectViewMode();
+    updateUploadVisibility();
+    updateSummary();
+  }
+  return restored > 0;
+}
+
+/* ── Remove (soft delete + 5s undo window) ── */
 function removePhoto(id) {
   const ph   = S.photos.find(p => p.id === id); if (!ph) return;
   const card = document.querySelector(`[data-photo-id="${id}"]`);
-  URL.revokeObjectURL(ph.previewUrl);
+  const index = S.photos.indexOf(ph);
+
+  // If another delete is pending, finalize it first
+  if (pendingDelete) finalizePendingDelete();
+
+  // Remove from state + hide card (but keep blob + objectURL alive for undo)
   S.photos = S.photos.filter(p => p.id !== id);
   if (card) {
     card.classList.add('removing');
-    card.addEventListener('animationend', () => card.remove(), { once: true });
+    card.addEventListener('animationend', () => { card.style.display = 'none'; }, { once: true });
+  }
+  updateUploadVisibility();
+  updateSummary();
+  saveDraft();
+
+  const timer = setTimeout(finalizePendingDelete, 5000);
+  pendingDelete = { ph, card, index, timer };
+  showUndoToast('Фото видалено');
+}
+
+function finalizePendingDelete() {
+  if (!pendingDelete) return;
+  const { ph, card } = pendingDelete;
+  pendingDelete = null;
+  hideUndoToast();
+  URL.revokeObjectURL(ph.previewUrl);
+  if (ph.storeKey) idbDelete(ph.storeKey).catch(() => {});
+  if (card) card.remove();
+}
+
+function undoDelete() {
+  if (!pendingDelete) return;
+  clearTimeout(pendingDelete.timer);
+  const { ph, card, index } = pendingDelete;
+  pendingDelete = null;
+  hideUndoToast();
+  // Re-insert into state at original position
+  const i = Math.min(index, S.photos.length);
+  S.photos.splice(i, 0, ph);
+  if (card) {
+    card.classList.remove('removing');
+    card.style.display = '';
   }
   updateUploadVisibility();
   updateSummary();
@@ -2199,9 +2650,38 @@ async function submitOrder(e) {
   }
 
   document.getElementById('success-order-num').textContent = orderId;
+  // Offer email capture only if the client didn't already provide one
+  const peb = document.getElementById('post-email-block');
+  if (peb) peb.style.display = S.email ? 'none' : '';
+  window._lastOrderId = orderId;
   clearDraft();
   celebrate();
   goTo(5);
+}
+
+/* ─ Post-order email capture (value-add, optional) ─ */
+async function submitPostEmail() {
+  const inp = document.getElementById('post-email-input');
+  const btn = document.getElementById('post-email-btn');
+  const v   = inp.value.trim();
+  if (!isEmail(v)) {
+    inp.classList.add('error');
+    document.getElementById('post-email-err').classList.add('show');
+    return;
+  }
+  inp.classList.remove('error');
+  document.getElementById('post-email-err').classList.remove('show');
+  btn.disabled = true; btn.textContent = '…';
+
+  try {
+    await tgSendText('📧 <b>[ПРОЯВ] Клієнт лишив пошту</b>\nЗамовлення: ' + (window._lastOrderId || '—') + '\nEmail: ' + v + '\nІм\'я: ' + (S.name || '—'));
+  } catch (e) { /* non-fatal */ }
+
+  // Replace the form with a thank-you
+  const block = document.getElementById('post-email-block');
+  block.innerHTML = '<div class="post-email-done">' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+    'Дякуємо! Надішлемо цифрові копії на ' + escapeHtml(v) + '</div>';
 }
 
 /* ─ Confetti ─ */
@@ -2223,8 +2703,11 @@ function celebrate() {
 /* ─ Reset ─ */
 function resetApp() {
   S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
-  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',photos:[]});
-  ['ident-input','inp-name','inp-phone','inp-email','inp-city'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
+  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[]});
+  ['ident-input','inp-name','inp-phone','inp-email','inp-city','inp-warehouse'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
+  const whReset=document.getElementById('inp-warehouse'); if(whReset){whReset.disabled=true;whReset.placeholder='Спершу оберіть місто';}
+  document.getElementById('city-picked')?.classList.remove('show');
+  document.getElementById('wh-picked')?.classList.remove('show');
   document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
   document.getElementById('photos-list').innerHTML = '';   // clear photo cards DOM
   clearDraft();
@@ -2280,6 +2763,12 @@ async function validateMagicToken() {
       S.ident     = d.client_instagram;
     }
 
+    // Auto-fill the DOM fields on step 2 so the client doesn't retype anything
+    const nameEl  = document.getElementById('inp-name');
+    const phoneEl = document.getElementById('inp-phone');
+    if (nameEl  && S.name)  { nameEl.value  = S.name;  nameEl.classList.add('valid'); }
+    if (phoneEl && S.phone) { phoneEl.value = S.phone; phoneEl.classList.add('valid'); }
+
     // Show personalised banner
     const banner = document.getElementById('magic-banner');
     const product = PRODUCT_DISPLAY[d.product_type] || d.product_type || '';
@@ -2288,6 +2777,25 @@ async function validateMagicToken() {
     document.getElementById('magic-product').textContent =
       'Продукт: ' + product + (d.photographer ? '  ·  Фотограф: ' + d.photographer : '');
     banner.classList.add('show');
+
+    // Magic link = identity is already known. Hide the step-1 identification entirely:
+    //  · remove the step-2 "Назад" button (there is no step 1 to go back to)
+    //  · show a locked identity chip instead of asking again
+    const backBtn = document.getElementById('step2-back');
+    if (backBtn) backBtn.style.display = 'none';
+
+    const lockWrap = document.getElementById('magic-locked-wrap');
+    if (lockWrap) {
+      const who = d.client_instagram ? '@' + d.client_instagram : (d.client_phone || '');
+      lockWrap.innerHTML =
+        '<div class="magic-locked">' +
+          '<div class="magic-locked-ic">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f5efe4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+          '</div>' +
+          '<div class="magic-locked-txt"><b>' + (d.client_name || 'Ваше замовлення') + '</b><span>' + who + '</span></div>' +
+        '</div>';
+      lockWrap.style.display = '';
+    }
 
     // Skip step 1 (identification) — we already know the client
     goTo(2);

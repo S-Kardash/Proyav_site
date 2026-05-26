@@ -20,30 +20,39 @@ export async function onRequest(context) {
   const client = db(env);
   const token  = randomToken(8);
 
-  const order = await client.query('orders', {
-    method: 'POST',
-    single: true,
-    body: {
-      token,
-      client_name:      name.trim(),
-      client_phone:     phone.replace(/\D/g, ''),
-      client_instagram: client_instagram?.trim().replace('@', '') || null,
-      product_type:     product_type || 'small',
-      source:           'retail',
-      status:           'uploaded',           // photos already sent via TG
-      notes:            message?.trim() || null,
-      photo_count:      photo_count  || null,
-      qty_total:        qty_total    || null,
-      total_amount:     total_amount || null,
-      uploaded_at:      new Date().toISOString(),
-    },
-  });
+  let order = null;
+  let dbError = null;
+  try {
+    order = await client.query('orders', {
+      method: 'POST',
+      single: true,
+      body: {
+        token,
+        client_name:      name.trim(),
+        client_phone:     phone.replace(/\D/g, ''),
+        client_instagram: client_instagram?.trim().replace('@', '') || null,
+        product_type:     product_type || 'small',
+        source:           'retail',
+        status:           'uploaded',           // photos already sent via TG
+        notes:            message?.trim() || null,
+        photo_count:      photo_count  || null,
+        qty_total:        qty_total    || null,
+        total_amount:     total_amount || null,
+        uploaded_at:      new Date().toISOString(),
+      },
+    });
+  } catch (e) {
+    dbError = e.message || String(e);
+    console.error('[retail] Supabase INSERT failed:', dbError);
+  }
 
   // ── Telegram notification to admin ──────────────────────────────────
   if (env.TG_TOKEN && env.TG_CHAT_ID) {
     const product = PRODUCT_NAMES[product_type] || 'Не вказано';
     const text = [
-      `🛒 <b>[ПРОЯВ] Нова заявка з сайту</b>`,
+      dbError
+        ? `⚠️ <b>[ПРОЯВ] Заявка НЕ записалась у базу!</b>\n<i>Помилка: ${dbError}</i>\nДані замовлення нижче — внесіть вручну в /admin`
+        : `🛒 <b>[ПРОЯВ] Нова заявка з сайту</b>`,
       ``,
       `👤 <b>${name.trim()}</b>`,
       `📞 ${phone.trim()}`,
@@ -86,8 +95,9 @@ export async function onRequest(context) {
   ]);
 
   return ok({
-    ok:      true,
+    ok:        !dbError,
+    saved_db:  !dbError,
     token,
-    message: 'Заявку збережено.',
+    message:   dbError ? 'Заявку отримано (надіслано в Telegram).' : 'Заявку збережено.',
   });
 }
