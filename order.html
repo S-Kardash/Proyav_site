@@ -102,14 +102,13 @@
     width: 26px; height: 26px;
     border: 1px solid var(--paper-30); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-display); font-size: 13px;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500; line-height: 1;
     color: var(--paper-50); flex-shrink: 0;
     transition: background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick), transform var(--dur-quick) var(--ease-emerge);
   }
   .step-bubble.active { background: var(--sepia); border-color: var(--sepia); color: var(--ink-graphite); transform: scale(1.08); }
   .step-bubble.done { background: var(--paper); border-color: var(--paper); color: var(--ink-graphite); }
-  .step-bubble.done::after { content: '✓'; font-family: var(--font-body); font-size: 11px; font-weight: 600; }
-  .step-bubble.done span { display: none; }
+  .step-bubble svg { display: block; }
   .step-line {
     width: 18px; height: 1px;
     background: var(--paper-15);
@@ -482,7 +481,7 @@
 /* ══ COMPAT: working-code components (dark room) ══ */
 .dots-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4}
 .main{flex:1;padding:0 24px;position:relative;z-index:1}
-.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1);max-width:calc(100% - 32px)}
+.undo-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%) translateY(calc(100% + 40px));z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1);max-width:calc(100% - 32px);width:max-content}
 .undo-toast.show{transform:translateX(-50%) translateY(0)}
 .undo-toast-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .undo-progress{position:absolute;bottom:0;left:0;height:2px;background:rgba(243,238,230,.5);border-radius:0 0 999px 999px;animation:undoCountdown 5s linear forwards}
@@ -1387,6 +1386,7 @@ function liveEmailValidate() {
    NOVA POSHTA — city + warehouse autocomplete
    ═══════════════════════════════════════════════════════ */
 let npCityTimer = null, npWhTimer = null;
+let npCityItems = [], npWhItems = [];   // hold last fetched lists; picked by index (avoids quote-injection in onclick)
 
 function npDebounce(fn, ms) {
   return function(...args) {
@@ -1420,8 +1420,9 @@ async function onCityInput() {
       if (inp.value.trim() !== v) return; // stale
       const items = data.items || [];
       if (!items.length) { dd.innerHTML = '<div class="np-empty">Нічого не знайдено</div>'; return; }
-      dd.innerHTML = items.map(it =>
-        `<div class="np-item" onclick="pickCity('${it.ref}', ${JSON.stringify(it.present).replace(/'/g, "\\'")} )">
+      npCityItems = items;
+      dd.innerHTML = items.map((it, i) =>
+        `<div class="np-item" onclick="pickCity(${i})">
            <div class="np-item-main">${escapeHtml(it.name)}</div>
            <div class="np-item-sub">${escapeHtml(it.area ? it.area + ' обл.' : it.present)}</div>
          </div>`).join('');
@@ -1431,8 +1432,11 @@ async function onCityInput() {
   }, 280);
 }
 
-function pickCity(ref, present) {
-  S.cityRef  = ref;
+function pickCity(i) {
+  const it = npCityItems[i];
+  if (!it) return;
+  const present = it.present;
+  S.cityRef  = it.ref;
   S.cityName = present;
   document.getElementById('inp-city').value = present;
   document.getElementById('city-dropdown').classList.remove('show');
@@ -1468,8 +1472,9 @@ async function onWarehouseInput() {
       const data = await res.json();
       const items = data.items || [];
       if (!items.length) { dd.innerHTML = '<div class="np-empty">Відділень не знайдено</div>'; return; }
-      dd.innerHTML = items.slice(0, 50).map(w =>
-        `<div class="np-item" onclick="pickWarehouse(${JSON.stringify(w.name).replace(/'/g, "\\'")})">
+      npWhItems = items.slice(0, 50);
+      dd.innerHTML = npWhItems.map((w, i) =>
+        `<div class="np-item" onclick="pickWarehouse(${i})">
            <div class="np-item-main">${escapeHtml(w.name)}</div>
          </div>`).join('');
     } catch (e) {
@@ -1478,7 +1483,10 @@ async function onWarehouseInput() {
   }, 250);
 }
 
-function pickWarehouse(name) {
+function pickWarehouse(i) {
+  const w = npWhItems[i];
+  if (!w) return;
+  const name = w.name;
   S.warehouse = name;
   document.getElementById('inp-warehouse').value = name;
   document.getElementById('wh-dropdown').classList.remove('show');
@@ -2568,7 +2576,7 @@ function buildOrderMessage(orderId, tq) {
     '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
     '\n👤 <b>Клієнт</b>\n' +
     identStr + '\n' +
-    'Ім\'\xd1�: ' + S.name + '\n' +
+    'Ім\'я: ' + S.name + '\n' +
     'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
     '📦 Доставка: ' + cityLine + '\n' +

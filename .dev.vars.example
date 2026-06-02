@@ -1,0 +1,26 @@
+# Локальні змінні для `npx wrangler pages dev` (Cloudflare Pages Functions).
+# Скопіюй цей файл у `.dev.vars` і встав реальні значення.
+# `.dev.vars` у .gitignore — секрети НЕ потраплять у репозиторій.
+# Після зміни — перезапусти dev-сервер.
+
+# ── Nova Poshta (потрібно, щоб працював вибір міста/відділення локально) ──
+NOVA_POSHTA_KEY=
+
+# ── Supabase (потрібно для запису/читання замовлень та обліку) ──
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+
+# ── Адмінка / автентифікація ──
+ADMIN_PASSWORD=
+JWT_SECRET=
+
+# ── Telegram-сповіщення ──
+TG_TOKEN=
+TG_CHAT_ID=
+
+# ── Посилання на сайт (для magic-link у листах/повідомленнях) ──
+SITE_URL=http://localhost:8788
+
+# ── (опційно) Google Sheets sync ──
+GOOGLE_SA_KEY_B64=
+GOOGLE_SHEET_ID=
