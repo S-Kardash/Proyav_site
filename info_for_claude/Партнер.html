@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Партнерство для фотографів</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--ink-darkroom); color: var(--silver-500); overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px);
+  }
+  .page { position: relative; z-index: 1; min-height: 100vh; }
+
+  /* ──────── NAV ──────── */
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    padding: 16px clamp(20px, 4vw, 56px);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(26, 24, 23, 0.85);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(243, 238, 230, 0.06);
+  }
+  .nav-mark { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+  .nav-mark-icon { width:24px; height:24px; border:1.5px solid var(--paper); border-radius:50%; position:relative; flex-shrink:0; }
+  .nav-mark-icon::before { content:''; position:absolute; inset:4px; border:1px solid var(--paper-30); border-radius:50%; }
+  .nav-mark-icon::after  { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--paper); border-radius:50%; transform:translate(-50%,-50%); }
+  .nav-wordmark { font-family: var(--font-display); font-size: 14px; font-weight: 500; letter-spacing: 0.4em; color: var(--paper); }
+  .nav-context { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sepia); display: flex; align-items: center; gap: 8px; }
+  @media (max-width: 700px) { .nav-context { display: none; } }
+  .safelight-dot { width:6px; height:6px; background:var(--safelight); border-radius:50%; box-shadow:0 0 8px var(--safelight); animation:safelight 2.4s ease-in-out infinite; }
+  @keyframes safelight { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-link  { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); text-decoration: none; transition: color var(--dur-quick) var(--ease-fade); }
+  .nav-link:hover { color: var(--paper); }
+  .nav-cta { display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 16px; border-radius:999px; background:var(--paper); color:var(--ink-graphite); font-family:var(--font-body); font-weight:500; font-size:12px; text-decoration:none; transition: background var(--dur-quick) var(--ease-fade); }
+  .nav-cta:hover { background: var(--sepia); }
+
+  /* ════════════════════════════════════════════════════
+     ░░ VIEW 1 — LOGGED OUT (pitch) ░░
+     ════════════════════════════════════════════════════ */
+  .view-out { display: block; }
+  .view-out.hidden { display: none; }
+
+  .pitch {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(48px, 7vw, 96px) clamp(20px, 4vw, 56px);
+  }
+
+  /* HERO */
+  .pitch-hero {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 6vw, 80px);
+    margin-bottom: clamp(64px, 10vw, 120px);
+  }
+  @media (min-width: 900px) { .pitch-hero { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; } }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--safelight);
+    margin-bottom: 28px;
+  }
+  .pitch-hero h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(48px, 8vw, 96px); line-height: 0.96;
+    letter-spacing: -0.018em; color: var(--paper);
+    margin-bottom: clamp(20px, 3vw, 32px);
+    overflow-wrap: anywhere;
+  }
+  .pitch-hero h1 em { font-style: italic; color: var(--sepia); }
+  .pitch-hero p.lead {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: clamp(16px, 1.7vw, 20px); line-height: 1.55;
+    color: var(--paper-70);
+    max-width: 540px;
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+  .pitch-hero p.lead em { font-style: italic; color: var(--sepia); font-weight: 400; }
+
+  .pitch-cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 28px; border-radius: 999px;
+    background: var(--safelight); color: var(--paper);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .btn-primary:hover { background: #962d22; box-shadow: 0 0 24px -4px rgba(178, 58, 44, 0.4); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary .arrow { font-family: var(--font-mono); font-weight: 500; }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 26px; border-radius: 999px;
+    background: transparent; color: var(--paper);
+    border: 1.5px solid var(--paper-30);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    text-decoration: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .btn-ghost:hover { border-color: var(--paper); }
+
+  /* HERO RIGHT — sample print mock */
+  .pitch-mock {
+    position: relative;
+    aspect-ratio: 4/5;
+    max-width: 480px;
+    width: 100%;
+    justify-self: center;
+    background:
+      radial-gradient(ellipse at 35% 40%, rgba(196, 149, 108, 0.4) 0%, transparent 55%),
+      linear-gradient(160deg, #3a3733 0%, #1a1817 80%);
+    border: 1px solid var(--paper-15);
+    overflow: hidden;
+  }
+  .pitch-mock::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px);
+  }
+  .pitch-mock .stamp {
+    position: absolute; top: 16px; right: 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+  }
+  .pitch-mock .caption {
+    position: absolute; bottom: 16px; left: 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+    background: rgba(0,0,0, 0.5); padding: 6px 10px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ──────── ECONOMICS BAND ──────── */
+  .econ {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 1px;
+    background: var(--paper-15); border: 1px solid var(--paper-15);
+    margin-bottom: clamp(64px, 10vw, 120px);
+  }
+  @media (min-width: 700px) { .econ { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .econ-cell {
+    background: var(--ink-darkroom);
+    padding: 28px 24px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .econ-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .econ-val { font-family: var(--font-display); font-style: italic; font-size: clamp(28px, 3.5vw, 40px); line-height: 1; color: var(--paper); }
+  .econ-sub { font-family: var(--font-body); font-size: 12.5px; line-height: 1.55; color: var(--paper-70); margin-top: 6px; }
+
+  /* ──────── CALCULATOR ──────── */
+  .calc {
+    background: var(--paper); color: var(--ink-graphite);
+    padding: clamp(32px, 5vw, 56px);
+    margin-bottom: clamp(64px, 10vw, 120px);
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 40px;
+  }
+  @media (min-width: 800px) { .calc { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; align-items: center; } }
+
+  .calc-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-50); display:flex; align-items:center; gap:10px; margin-bottom: 16px; }
+  .calc-eyebrow::before { content:''; width: 24px; height: 1px; background: var(--ink-graphite); }
+  .calc h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 4.5vw, 56px); line-height: 1; letter-spacing: -0.015em; color: var(--ink-graphite); margin-bottom: 20px; overflow-wrap: anywhere; }
+  .calc h2 em { font-style: italic; color: var(--sepia); }
+  .calc p { font-family: var(--font-body); font-weight: 300; font-size: 16px; line-height: 1.6; color: var(--ink-70); max-width: 460px; }
+
+  .calc-panel { display: flex; flex-direction: column; gap: 24px; }
+
+  .calc-slider-row { display: flex; flex-direction: column; gap: 10px; }
+  .calc-slider-row .lbl { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-50); }
+  .calc-slider-row .lbl strong { color: var(--ink-graphite); font-weight: 500; font-family: var(--font-display); font-style: italic; font-size: 22px; letter-spacing: 0; }
+  .calc-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 2px; background: var(--ink-15); outline: none; }
+  .calc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sepia); cursor: pointer; transition: transform var(--dur-quick) var(--ease-emerge); }
+  .calc-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  .calc-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--sepia); cursor: pointer; border: none; }
+
+  .calc-out {
+    background: var(--ink-graphite); color: var(--paper);
+    padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .calc-out-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .calc-out-val { font-family: var(--font-display); font-style: italic; font-size: clamp(40px, 5vw, 56px); line-height: 1; color: var(--paper); }
+  .calc-out-sub { font-family: var(--font-body); font-size: 13px; color: var(--paper-70); line-height: 1.55; margin-top: 4px; }
+  .calc-out-sub strong { color: var(--paper); font-weight: 400; }
+
+  /* ──────── HOW IT WORKS ──────── */
+  .how {
+    margin-bottom: clamp(64px, 10vw, 120px);
+  }
+  .how-h { font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 4.5vw, 56px); line-height: 1; color: var(--paper); letter-spacing: -0.015em; margin-bottom: 12px; overflow-wrap: anywhere; }
+  .how-h em { font-style: italic; color: var(--sepia); }
+  .how-lead { font-family: var(--font-body); font-weight: 300; font-size: 17px; line-height: 1.55; color: var(--paper-70); max-width: 540px; margin-bottom: 48px; }
+  .how-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  @media (min-width: 700px) { .how-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .how-step {
+    padding: 32px 24px; border-top: 1px solid var(--paper-15);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  @media (min-width: 700px) { .how-step { border-top: 1px solid var(--paper-15); border-right: 1px solid var(--paper-15); padding: 36px 28px; } .how-step:last-child { border-right: 0; } }
+  .how-num { font-family: var(--font-display); font-style: italic; font-size: 56px; line-height: 1; color: var(--silver-200); }
+  .how-step-t { font-family: var(--font-display); font-weight: 500; font-size: 20px; color: var(--paper); line-height: 1.2; }
+  .how-step-b { font-family: var(--font-body); font-size: 13.5px; line-height: 1.65; color: var(--paper-70); }
+  .how-step-m { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sepia); }
+
+  /* ──────── LOGIN BAND ──────── */
+  .login-band {
+    background: var(--paper); color: var(--ink-graphite);
+    padding: clamp(40px, 6vw, 64px) clamp(28px, 4vw, 48px);
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px;
+    margin-bottom: clamp(48px, 8vw, 80px);
+  }
+  @media (min-width: 800px) { .login-band { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; } }
+  .login-band-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--safelight); display:flex; align-items:center; gap:10px; margin-bottom: 18px; }
+  .login-band h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 4.5vw, 48px); line-height: 1; color: var(--ink-graphite); letter-spacing: -0.015em; margin-bottom: 18px; overflow-wrap: anywhere; }
+  .login-band h2 em { font-style: italic; color: var(--sepia); }
+  .login-band p { font-family: var(--font-body); font-size: 15px; line-height: 1.6; color: var(--ink-70); max-width: 440px; }
+  .login-band p strong { color: var(--ink-graphite); font-weight: 500; }
+
+  .login-form { display: flex; flex-direction: column; gap: 14px; max-width: 420px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); }
+  .field input {
+    padding: 14px 16px; background: var(--paper);
+    border: 1.5px solid var(--ink-15); border-radius: 2px;
+    font-family: var(--font-body); font-size: 15px; color: var(--ink-graphite);
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade), box-shadow var(--dur-quick) var(--ease-fade);
+  }
+  .field input::placeholder { color: var(--ink-30); }
+  .field input:focus { border-color: var(--ink-graphite); box-shadow: 0 0 0 3px rgba(44,42,40,.06); }
+  .btn-dark {
+    height: 52px; padding: 0 24px;
+    background: var(--ink-graphite); color: var(--paper);
+    border: none; border-radius: 999px;
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .btn-dark:hover { background: var(--ink-darkroom); }
+  .btn-dark:active { transform: scale(0.98); }
+  .form-note { font-family: var(--font-body); font-size: 12px; color: var(--ink-50); line-height: 1.5; }
+  .form-note em { font-style: italic; color: var(--sepia); }
+
+  /* ════════════════════════════════════════════════════
+     ░░ VIEW 2 — LOGGED IN (dashboard) ░░
+     ════════════════════════════════════════════════════ */
+  .view-in { display: none; }
+  .view-in.show { display: block; }
+
+  .dash {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(32px, 5vw, 56px) clamp(20px, 4vw, 56px) clamp(60px, 10vw, 120px);
+  }
+
+  /* Author header */
+  .author-hdr {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px;
+    padding-bottom: clamp(24px, 4vw, 36px);
+    border-bottom: 1px solid var(--paper-15);
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+  @media (min-width: 800px) { .author-hdr { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+  .author-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--sepia); margin-bottom: 12px; }
+  .author-name { font-family: var(--font-display); font-weight: 400; font-size: clamp(36px, 5vw, 56px); line-height: 1; color: var(--paper); letter-spacing: -0.015em; overflow-wrap: anywhere; }
+  .author-name em { font-style: italic; color: var(--sepia); }
+  .author-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 18px; }
+  .author-meta strong { color: var(--paper); font-weight: 400; }
+
+  .author-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Action card — main */
+  .action {
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(196,149,108,0.12) 0%, transparent 50%),
+      var(--ink-graphite);
+    border: 1px solid var(--paper-15);
+    padding: clamp(32px, 5vw, 48px);
+    margin-bottom: clamp(28px, 4vw, 40px);
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 900px) { .action { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: end; } }
+
+  .action-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--safelight); display:flex; align-items:center; gap:10px; margin-bottom: 18px; }
+  .action h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 4.5vw, 52px); line-height: 1; color: var(--paper); letter-spacing: -0.015em; margin-bottom: 18px; overflow-wrap: anywhere; }
+  .action h2 em { font-style: italic; color: var(--sepia); }
+  .action p { font-family: var(--font-body); font-weight: 300; font-size: 16px; line-height: 1.55; color: var(--paper-70); max-width: 480px; margin-bottom: 28px; }
+
+  .link-form { display: flex; flex-direction: column; gap: 14px; }
+  .link-form-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; }
+  .link-form-row input {
+    height: 52px; padding: 0 16px;
+    background: rgba(243,238,230,0.06); border: 1.5px solid var(--paper-15);
+    color: var(--paper);
+    font-family: var(--font-body); font-size: 15px;
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .link-form-row input::placeholder { color: var(--paper-30); }
+  .link-form-row input:focus { border-color: var(--sepia); }
+  .link-form-row select {
+    height: 52px; padding: 0 16px;
+    background: rgba(243,238,230,0.06); border: 1.5px solid var(--paper-15);
+    color: var(--paper);
+    font-family: var(--font-body); font-size: 15px;
+    cursor: pointer;
+  }
+  .link-form-row select option { background: var(--ink-graphite); color: var(--paper); }
+  .link-cta {
+    height: 52px; padding: 0 22px;
+    background: var(--safelight); color: var(--paper);
+    border: none;
+    font-family: var(--font-body); font-weight: 500; font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+    white-space: nowrap;
+  }
+  .link-cta:hover { background: #962d22; }
+  .link-cta:active { transform: scale(0.98); }
+  .link-note { font-family: var(--font-body); font-size: 12px; color: var(--paper-70); line-height: 1.55; margin-top: 6px; }
+  .link-note em { font-style: italic; color: var(--sepia); }
+
+  /* Link result */
+  .link-result {
+    display: none; flex-direction: column; gap: 12px;
+    padding-top: 16px; border-top: 1px solid var(--paper-15); margin-top: 8px;
+  }
+  .link-result.show { display: flex; animation: emerge 400ms var(--ease-emerge); }
+  @keyframes emerge { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .link-result .url {
+    font-family: var(--font-mono); font-size: 12px; color: var(--paper); padding: 14px 16px;
+    background: rgba(0,0,0,0.4); border: 1px solid var(--paper-15);
+    word-break: break-all; line-height: 1.5;
+  }
+  .link-result-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .copy-btn, .share-btn {
+    height: 40px; padding: 0 16px;
+    border: 1px solid var(--paper-30); background: transparent; color: var(--paper);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; transition: background var(--dur-quick) var(--ease-fade), border-color var(--dur-quick) var(--ease-fade);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .copy-btn:hover, .share-btn:hover { background: rgba(243,238,230,0.06); border-color: var(--paper); }
+  .copy-btn.copied { border-color: var(--sepia); color: var(--sepia); }
+
+  /* RIGHT panel of action — sample print preview */
+  .action-mock {
+    aspect-ratio: 1; max-width: 340px; width: 100%;
+    background: linear-gradient(160deg, #3a3733 0%, #1a1817 80%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+    justify-self: end;
+  }
+  .action-mock::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(196,149,108,0.3) 0%, transparent 50%),
+      repeating-linear-gradient(135deg, transparent 0, transparent 22px, rgba(255,255,255,0.04) 22px, rgba(255,255,255,0.04) 23px);
+  }
+  .action-mock .label {
+    position: absolute; bottom: 14px; left: 14px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+    background: rgba(0,0,0,0.5); padding: 4px 8px;
+    backdrop-filter: blur(4px);
+  }
+  @media (max-width: 900px) { .action-mock { display: none; } }
+
+  /* STATS grid */
+  .stats {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px;
+    background: var(--paper-15); border: 1px solid var(--paper-15);
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+  @media (min-width: 700px) { .stats { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .stat {
+    background: var(--ink-darkroom);
+    padding: 22px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .stat-val { font-family: var(--font-display); font-style: italic; font-size: clamp(28px, 3.5vw, 36px); line-height: 1; color: var(--paper); }
+  .stat-val .currency { font-family: var(--font-body); font-style: normal; font-size: 16px; color: var(--paper-50); margin-left: 4px; }
+  .stat-sub { font-family: var(--font-body); font-size: 11px; color: var(--paper-70); line-height: 1.4; }
+  .stat-sub strong { color: var(--sepia); font-weight: 400; }
+
+  /* Section heading */
+  .sec-h {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--paper-50);
+  }
+  .sec-h .num { color: var(--sepia); }
+  .sec-h .line { flex: 1; height: 1px; background: var(--paper-15); max-width: 320px; }
+
+  /* Orders list */
+  .orders {
+    display: flex; flex-direction: column;
+    border-top: 1px solid var(--paper-15);
+    margin-bottom: clamp(32px, 5vw, 48px);
+  }
+  .order-row {
+    display: grid; grid-template-columns: minmax(0,1fr) auto auto;
+    gap: 20px; align-items: center;
+    padding: 18px 0; border-bottom: 1px solid var(--paper-15);
+  }
+  @media (max-width: 700px) { .order-row { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; } .order-row .commission { grid-column: 1 / -1; padding-top: 4px; } }
+  .order-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .order-num { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+  .order-client { font-family: var(--font-display); font-size: 18px; color: var(--paper); line-height: 1.2; }
+  .order-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-70); }
+  .order-status {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .order-status::before { content:''; width: 5px; height: 5px; border-radius: 50%; }
+  .status-developing { background: rgba(196,149,108,.15); color: var(--sepia); }
+  .status-developing::before { background: var(--sepia); animation: safelight 1.6s ease-in-out infinite; }
+  .status-sent { background: rgba(243,238,230,0.06); color: var(--paper); border: 1px solid var(--paper-30); }
+  .status-sent::before { background: var(--paper); }
+  .status-closed { background: transparent; color: var(--paper-50); border: 1px dashed var(--paper-30); }
+  .status-closed::before { background: var(--paper-30); }
+  .commission { font-family: var(--font-display); font-style: italic; font-size: 20px; color: var(--paper); }
+  .commission-paid { color: var(--sepia); }
+
+  /* Side cards (trial / partner card) */
+  .side-cards {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 16px;
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+  @media (min-width: 800px) { .side-cards { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+  .side-card {
+    padding: clamp(24px, 3vw, 32px);
+    background: rgba(243,238,230,0.03);
+    border: 1px solid var(--paper-15);
+    display: flex; flex-direction: column; gap: 14px;
+    transition: border-color var(--dur-normal) var(--ease-fade);
+  }
+  .side-card:hover { border-color: var(--paper-30); }
+  .side-card .eyebrow { color: var(--sepia); margin-bottom: 8px; }
+  .side-card h3 { font-family: var(--font-display); font-weight: 500; font-size: 24px; line-height: 1.15; color: var(--paper); }
+  .side-card h3 em { font-style: italic; color: var(--sepia); }
+  .side-card p { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--paper-70); flex: 1; }
+  .side-card-btn {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border: 1px solid var(--paper-30); background: transparent; color: var(--paper);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none;
+    transition: background var(--dur-quick) var(--ease-fade), border-color var(--dur-quick) var(--ease-fade);
+    margin-top: 8px;
+  }
+  .side-card-btn:hover { background: rgba(243,238,230,0.06); border-color: var(--paper); }
+
+  /* Manifest */
+  .manifest {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: clamp(18px, 2.2vw, 24px); line-height: 1.45;
+    color: var(--paper-70);
+    max-width: 800px;
+    padding: clamp(32px, 5vw, 48px) 0 0;
+    border-top: 1px solid var(--paper-15);
+    overflow-wrap: anywhere;
+  }
+  .manifest strong { font-style: normal; font-weight: 500; color: var(--paper); }
+  .manifest::before { content:'«'; color: var(--sepia); margin-right: 4px; }
+  .manifest::after  { content:'»'; color: var(--sepia); margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a class="nav-mark" href="Головна.html">
+    <span class="nav-mark-icon" aria-hidden="true"></span>
+    <span class="nav-wordmark">ПРОЯВ</span>
+  </a>
+  <div class="nav-context"><span class="safelight-dot"></span>Партнерство · для авторів</div>
+  <div class="nav-right">
+    <a class="nav-link" href="Головна.html">На головну</a>
+    <button class="nav-cta" id="login-toggle">Увійти в кабінет</button>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- ════════════════ VIEW 1 · LOGGED OUT ════════════════ -->
+<div class="view-out" id="view-out">
+  <div class="pitch">
+
+    <!-- HERO -->
+    <div class="pitch-hero">
+      <div>
+        <div class="eyebrow"><span class="safelight-dot"></span>Партнерство · для авторів</div>
+        <h1>Ваш кадр.<br>Наша <em>майстерня</em>.</h1>
+        <p class="lead">Ви рекомендуєте — ми робимо. Ваш клієнт отримує <em>обряд розпакування</em>, який гідний фотосесії. Ви отримуєте 12% з кожного замовлення без жодних зобов'язань і без своїх зусиль. Перший пробний відбиток — за наш кошт.</p>
+        <div class="pitch-cta-row">
+          <a href="#login" class="btn-primary">Стати співавтором <span class="arrow">→</span></a>
+          <a href="#how" class="btn-ghost">Як це працює</a>
+        </div>
+      </div>
+      <div class="pitch-mock">
+        <span class="stamp">ЗРАЗОК № 014</span>
+        <span class="caption">EPSON SURELAB · ОКСАМИТ · АРХІВ</span>
+      </div>
+    </div>
+
+    <!-- ECONOMICS BAND -->
+    <div class="econ">
+      <div class="econ-cell">
+        <span class="econ-key">Комісія</span>
+        <span class="econ-val">12<span style="font-style:normal; font-size: 60%; color: var(--paper-50); margin-left:6px;">%</span></span>
+        <span class="econ-sub">з кожного замовлення вашого клієнта. Виплата протягом 1–2 днів.</span>
+      </div>
+      <div class="econ-cell">
+        <span class="econ-key">Пробний відбиток</span>
+        <span class="econ-val">0<span style="font-style:normal; font-size: 60%; color: var(--paper-50); margin-left:6px;">₴</span></span>
+        <span class="econ-sub">Безкоштовно з ваших власних кадрів. Раз на квартал.</span>
+      </div>
+      <div class="econ-cell">
+        <span class="econ-key">Час від вас</span>
+        <span class="econ-val">2<span style="font-style:normal; font-size: 60%; color: var(--paper-50); margin-left:6px;">хв</span></span>
+        <span class="econ-sub">Тільки рекомендація. Завантаження, друк, пакування, доставка — на нас.</span>
+      </div>
+      <div class="econ-cell">
+        <span class="econ-key">Зобов'язання</span>
+        <span class="econ-val">0</span>
+        <span class="econ-sub">Без ексклюзиву, без мінімальної квоти, без фіксованих внесків.</span>
+      </div>
+    </div>
+
+    <!-- CALCULATOR -->
+    <div class="calc">
+      <div>
+        <div class="calc-eyebrow">КАЛЬКУЛЯТОР · ОРІЄНТОВНИЙ ДОХІД</div>
+        <h2>Скільки можна <em>заробити</em>.</h2>
+        <p>Це не реклама — це проста математика. Базовий чек 450&nbsp;грн, комісія 12%, ваш середній клієнт замовляє раз на сесію. Пересуньте повзунки.</p>
+      </div>
+
+      <div class="calc-panel">
+        <div class="calc-slider-row">
+          <div class="lbl"><span>Клієнтів на місяць</span><strong id="calc-clients">3</strong></div>
+          <input type="range" min="1" max="20" value="3" step="1" class="calc-slider" id="slider-clients">
+        </div>
+        <div class="calc-slider-row">
+          <div class="lbl"><span>Середній чек, ₴</span><strong id="calc-avg">450</strong></div>
+          <input type="range" min="400" max="900" value="450" step="50" class="calc-slider" id="slider-avg">
+        </div>
+
+        <div class="calc-out">
+          <span class="calc-out-key">Ваш місячний дохід</span>
+          <span class="calc-out-val" id="calc-monthly">162 ₴</span>
+          <span class="calc-out-sub">≈ <strong id="calc-yearly">1 944 ₴</strong> на рік пасивного доходу. Без зусиль після першої рекомендації.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="how" id="how">
+      <h2 class="how-h">Як це <em>відбувається</em>.</h2>
+      <p class="how-lead">Чотири кроки. Без додатків, без додаткової роботи з вашого боку. Усе автоматизовано — від магічного лінку до виплати.</p>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="how-num">i.</div>
+          <div class="how-step-t">Ви рекомендуєте</div>
+          <p class="how-step-b">На фінальній зустрічі або в Direct: «Ось набори ПРОЯВ — друкують ваші кадри в оксамитовий конверт». Скидаєте лінк.</p>
+          <span class="how-step-m">~ 2 хв</span>
+        </div>
+        <div class="how-step">
+          <div class="how-num">ii.</div>
+          <div class="how-step-t">Клієнт замовляє</div>
+          <p class="how-step-b">Завантажує кадри через ваш персональний magic-link. Лінк вже зв'язаний з вами — ми бачимо, хто привів.</p>
+          <span class="how-step-m">~ 5 хв клієнту</span>
+        </div>
+        <div class="how-step">
+          <div class="how-num">iii.</div>
+          <div class="how-step-t">Ми проявляємо</div>
+          <p class="how-step-b">Ручна перевірка тонів. Друк на Epson SureLab. Оксамитовий конверт з тисненням. Доставка ТТН Нової Пошти.</p>
+          <span class="how-step-m">48 годин</span>
+        </div>
+        <div class="how-step">
+          <div class="how-num">iv.</div>
+          <div class="how-step-t">Виплачуємо комісію</div>
+          <p class="how-step-b">Після підтвердження оплати клієнтом — переказ Monobank або готівка при зустрічі. Накопичувально від 200 ₴.</p>
+          <span class="how-step-m">1 — 2 дні</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN BAND -->
+    <div class="login-band" id="login">
+      <div>
+        <div class="login-band-eyebrow"><span class="safelight-dot"></span>Початок партнерства</div>
+        <h2>Перший крок — <em>безкоштовний відбиток</em>.</h2>
+        <p>Залиште контакт. Ми зв'яжемось, попросимо пару ваших улюблених кадрів, надрукуємо й передамо вам особисто. <strong>Без зобов'язань.</strong> Потримайте у руках, відчуйте папір, оксамит, тиснення. А потім вирішите.</p>
+      </div>
+
+      <form class="login-form" onsubmit="event.preventDefault(); demoLogin();">
+        <div class="field">
+          <label for="lg-name">Ваше ім'я</label>
+          <input id="lg-name" type="text" placeholder="Олена Кравець" required>
+        </div>
+        <div class="field">
+          <label for="lg-contact">Telegram або Instagram</label>
+          <input id="lg-contact" type="text" placeholder="@your_nickname" required>
+        </div>
+        <div class="field">
+          <label for="lg-city">Місто</label>
+          <input id="lg-city" type="text" placeholder="Самбір / Дрогобич / Стрий…">
+        </div>
+        <button type="submit" class="btn-dark">Подати заявку на пробний відбиток →</button>
+        <p class="form-note">Уже партнер? <em>Натисніть на «Увійти в кабінет»</em> вгорі, щоб одразу перейти в робочу зону.</p>
+      </form>
+    </div>
+
+    <div class="manifest">
+      Фотограф — <strong>наш співавтор</strong>, не клієнт. Ми чуємо задум, обираємо матеріал під настрій кадру, і повертаємо фото у світ так, як його задумано.
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ VIEW 2 · LOGGED IN (DASHBOARD) ════════════════ -->
+<div class="view-in" id="view-in">
+  <div class="dash">
+
+    <!-- AUTHOR HEADER -->
+    <div class="author-hdr">
+      <div>
+        <div class="author-eyebrow">АВТОР · ПАРТНЕР № 008</div>
+        <h1 class="author-name">Олена <em>Кравець</em></h1>
+        <div class="author-meta">
+          <span>З нами з <strong>лютого 2026</strong></span>
+          <span>Самбір · Дрогобич</span>
+          <span><strong>14</strong> замовлень · <strong>5 040 ₴</strong> комісії</span>
+        </div>
+      </div>
+      <div class="author-actions">
+        <button class="link-cta" style="background:transparent; border:1px solid var(--paper-30);">Картка партнера ↓</button>
+        <button class="link-cta" style="background:transparent; border:1px solid var(--paper-30);" id="logout-btn">Вийти</button>
+      </div>
+    </div>
+
+    <!-- MAIN ACTION — generate link -->
+    <div class="action">
+      <div>
+        <div class="action-eyebrow"><span class="safelight-dot"></span>Головна дія · видати лінк автору</div>
+        <h2>Передайте <em>ключ</em> до майстерні.</h2>
+        <p>Введіть ім'я клієнта — згенеруємо унікальне посилання. Через нього він завантажить кадри і обере набір. Ми побачимо, що його привели <strong style="color:var(--paper); font-weight:500;">ви</strong>.</p>
+
+        <div class="link-form">
+          <div class="link-form-row">
+            <input type="text" id="client-name" placeholder="Ім'я клієнта · напр. Оксана">
+            <select id="client-set">
+              <option value="">Набір (опціонально)</option>
+              <option value="moment">Момент · 400 ₴</option>
+              <option value="memory">Спогад · 600 ₴</option>
+              <option value="archive">Архів · 900 ₴</option>
+              <option value="baby">Малюк · 450 ₴</option>
+            </select>
+          </div>
+          <button class="link-cta" id="gen-link" style="height: 52px; width: 100%;">Згенерувати посилання →</button>
+          <p class="link-note">Посилання діє <em>14 днів</em>. Якщо клієнт не використає за цей час — створите нове. Без обмежень за кількістю активних лінків.</p>
+
+          <div class="link-result" id="link-result">
+            <div class="url" id="link-url"></div>
+            <div class="link-result-row">
+              <button class="copy-btn" id="copy-link">⎘ Копіювати</button>
+              <a class="share-btn" id="share-tg" href="#" target="_blank">↗ Telegram</a>
+              <a class="share-btn" id="share-wa" href="#" target="_blank">↗ WhatsApp</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-mock">
+        <span class="label">ВАШ ЛІНК · ПРОЯВ-AUTH-008</span>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-key">Цього місяця</span>
+        <span class="stat-val">3</span>
+        <span class="stat-sub">замовлення від ваших клієнтів</span>
+      </div>
+      <div class="stat">
+        <span class="stat-key">Активних лінків</span>
+        <span class="stat-val">2</span>
+        <span class="stat-sub">очікують завантаження кадрів</span>
+      </div>
+      <div class="stat">
+        <span class="stat-key">До виплати</span>
+        <span class="stat-val">216<span class="currency">₴</span></span>
+        <span class="stat-sub"><strong>2 замовлення</strong> в очікуванні підтвердження</span>
+      </div>
+      <div class="stat">
+        <span class="stat-key">За весь час</span>
+        <span class="stat-val">5 040<span class="currency">₴</span></span>
+        <span class="stat-sub">14 замовлень · LTV-індекс <strong>1.6</strong></span>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="sec-h">
+      <span><span class="num">01</span> · ВАШІ ОСТАННІ ЗАМОВЛЕННЯ</span>
+      <span class="line"></span>
+      <span>14 ВСЬОГО</span>
+    </div>
+    <div class="orders">
+      <div class="order-row">
+        <div class="order-main">
+          <span class="order-num">№ ПРЯ-839 · 22.05.26 · 12:30</span>
+          <span class="order-client">Оксана Г. · Малюк</span>
+          <span class="order-meta">НЬЮБОРН · 10 КАДРІВ · ДРОГОБИЧ</span>
+        </div>
+        <span class="order-status status-developing">У прояві</span>
+        <span class="commission">54 ₴</span>
+      </div>
+      <div class="order-row">
+        <div class="order-main">
+          <span class="order-num">№ ПРЯ-836 · 19.05.26 · 18:14</span>
+          <span class="order-client">Марія та Андрій · Архів</span>
+          <span class="order-meta">ВЕСІЛЛЯ · 50 КАДРІВ · ТРУСКАВЕЦЬ</span>
+        </div>
+        <span class="order-status status-sent">Відправлено · ТТН</span>
+        <span class="commission">108 ₴</span>
+      </div>
+      <div class="order-row">
+        <div class="order-main">
+          <span class="order-num">№ ПРЯ-832 · 15.05.26 · 09:22</span>
+          <span class="order-client">Наталія Ш. · Спогад</span>
+          <span class="order-meta">LOVE STORY · 20 КАДРІВ · СТРИЙ</span>
+        </div>
+        <span class="order-status status-closed">Закрито</span>
+        <span class="commission commission-paid">72 ₴ ✓</span>
+      </div>
+      <div class="order-row">
+        <div class="order-main">
+          <span class="order-num">№ ПРЯ-828 · 11.05.26 · 14:08</span>
+          <span class="order-client">Софія К. · Момент</span>
+          <span class="order-meta">ПОРТРЕТ · 10 КАДРІВ · САМБІР</span>
+        </div>
+        <span class="order-status status-closed">Закрито</span>
+        <span class="commission commission-paid">48 ₴ ✓</span>
+      </div>
+    </div>
+
+    <!-- SIDE CARDS -->
+    <div class="sec-h">
+      <span><span class="num">02</span> · ІНСТРУМЕНТИ ПАРТНЕРА</span>
+      <span class="line"></span>
+    </div>
+    <div class="side-cards">
+      <div class="side-card">
+        <span class="eyebrow">ПРОБНИЙ ВІДБИТОК · РАЗ НА КВАРТАЛ</span>
+        <h3>Безкоштовний друк ваших <em>кадрів</em></h3>
+        <p>Раз на квартал — безкоштовний відбиток у наборі «Момент» з ваших власних кадрів. Покажіть клієнтам особисто, як виглядає готова робота. Наступна можливість — <strong style="color:var(--sepia);">15 червня</strong>.</p>
+        <a href="#" class="side-card-btn">Замовити пробний →</a>
+      </div>
+
+      <div class="side-card">
+        <span class="eyebrow">КАРТКА АВТОРА · ДЛЯ КЛІЄНТА</span>
+        <h3>PDF-картка для <em>зустрічі</em></h3>
+        <p>Друкована картка А6 з вашим ім'ям, QR-кодом на ваш лінк і коротким описом сервісу. Залиште клієнту в руки разом з носієм з фото — і він повернеться до вас, коли отримає набір.</p>
+        <a href="#" class="side-card-btn">Завантажити PDF ↓</a>
+      </div>
+    </div>
+
+    <div class="manifest">
+      Ми чуємо <strong>задум</strong>. Обираємо матеріал під настрій кадру. Повертаємо фото у світ так, як ви його задумали. Ваш кадр <strong>залишається вашим</strong>.
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+// ─────────────── LOGIN STATE TOGGLE ───────────────
+const viewOut = document.getElementById('view-out');
+const viewIn  = document.getElementById('view-in');
+const loginToggle = document.getElementById('login-toggle');
+const logoutBtn = document.getElementById('logout-btn');
+
+function showDashboard() {
+  viewOut.classList.add('hidden');
+  viewIn.classList.add('show');
+  loginToggle.textContent = 'Вийти';
+  loginToggle.onclick = showPitch;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+function showPitch() {
+  viewOut.classList.remove('hidden');
+  viewIn.classList.remove('show');
+  loginToggle.textContent = 'Увійти в кабінет';
+  loginToggle.onclick = showDashboard;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+function demoLogin() { showDashboard(); }
+
+loginToggle.onclick = showDashboard;
+logoutBtn.onclick = showPitch;
+
+// ─────────────── CALCULATOR ───────────────
+const sClients = document.getElementById('slider-clients');
+const sAvg     = document.getElementById('slider-avg');
+const oClients = document.getElementById('calc-clients');
+const oAvg     = document.getElementById('calc-avg');
+const oMonthly = document.getElementById('calc-monthly');
+const oYearly  = document.getElementById('calc-yearly');
+
+function fmtUAH(n) {
+  return n.toLocaleString('uk-UA', { useGrouping: true }).replace(/,/g, ' ') + ' ₴';
+}
+function updateCalc() {
+  const clients = +sClients.value;
+  const avg     = +sAvg.value;
+  oClients.textContent = clients;
+  oAvg.textContent     = avg;
+  const monthly = Math.round(clients * avg * 0.12);
+  oMonthly.textContent = fmtUAH(monthly);
+  oYearly.textContent  = fmtUAH(monthly * 12);
+}
+sClients.addEventListener('input', updateCalc);
+sAvg.addEventListener('input', updateCalc);
+updateCalc();
+
+// ─────────────── LINK GENERATOR ───────────────
+const clientNameEl = document.getElementById('client-name');
+const clientSetEl  = document.getElementById('client-set');
+const genBtn       = document.getElementById('gen-link');
+const linkResult   = document.getElementById('link-result');
+const linkUrlEl    = document.getElementById('link-url');
+const copyBtn      = document.getElementById('copy-link');
+const shareTG      = document.getElementById('share-tg');
+const shareWA      = document.getElementById('share-wa');
+
+genBtn.addEventListener('click', () => {
+  const name = clientNameEl.value.trim();
+  if (!name) { clientNameEl.focus(); return; }
+  // Fake magic-token generation
+  const token = Math.random().toString(36).slice(2, 12);
+  const setParam = clientSetEl.value ? '&set=' + clientSetEl.value : '';
+  const url = 'https://proyav.ink/?t=' + token + setParam;
+  linkUrlEl.textContent = url;
+  linkResult.classList.add('show');
+
+  const msg = 'Привіт, ' + name + '! Залишаю посилання на ПРОЯВ — там можна обрати набір і завантажити кадри: ' + url;
+  shareTG.href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent('Привіт, ' + name + '! Залишаю посилання на ПРОЯВ — оберіть набір і завантажте кадри.');
+  shareWA.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+});
+
+copyBtn.addEventListener('click', async () => {
+  const text = linkUrlEl.textContent;
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  copyBtn.classList.add('copied');
+  copyBtn.textContent = '✓ Скопійовано';
+  setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.textContent = '⎘ Копіювати'; }, 1800);
+});
+</script>
+
+</body>
+</html>

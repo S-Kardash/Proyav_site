@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Оберіть набір</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* ════════════════════════════════════════════════════════════
+     ПРОЯВ · Набір · Single-screen flow for set choice + lead.
+     Dark concept B aesthetic.
+     ════════════════════════════════════════════════════════════ */
+
+  body { background: var(--ink-darkroom); color: var(--silver-500); overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px);
+  }
+  .page { position: relative; z-index: 1; min-height: 100vh; }
+
+  /* ══════════════ NAV (slim, persistent) ══════════════ */
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    padding: 16px clamp(20px, 4vw, 56px);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(26, 24, 23, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(243, 238, 230, 0.06);
+  }
+  .nav-mark { display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+  .nav-mark-icon { width:24px; height:24px; border:1.5px solid var(--paper); border-radius:50%; position:relative; flex-shrink:0; }
+  .nav-mark-icon::before { content:''; position:absolute; inset:4px; border:1px solid var(--paper-30); border-radius:50%; }
+  .nav-mark-icon::after { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--paper); border-radius:50%; transform:translate(-50%,-50%); }
+  .nav-wordmark { font-family: var(--font-display); font-size: 14px; font-weight: 500; letter-spacing: 0.4em; color: var(--paper); }
+  .nav-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  @media (max-width: 600px) { .nav-meta { display: none; } }
+  .nav-back { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); text-decoration: none; transition: color var(--dur-quick) var(--ease-fade); }
+  .nav-back:hover { color: var(--paper); }
+
+  /* ══════════════ MAIN ══════════════ */
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 80px) clamp(20px, 4vw, 56px) clamp(60px, 10vw, 120px);
+  }
+
+  /* ── Hero strip ── */
+  .head {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6);
+    margin-bottom: clamp(40px, 6vw, 64px);
+    padding-bottom: clamp(32px, 5vw, 48px);
+    border-bottom: 1px solid var(--paper-15);
+  }
+  @media (min-width: 900px) { .head { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 56px; align-items: flex-end; } }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--safelight);
+    margin-bottom: 24px;
+  }
+  .safelight-dot { width:6px; height:6px; background:var(--safelight); border-radius:50%; box-shadow:0 0 8px var(--safelight); animation:safelight 2.4s ease-in-out infinite; }
+  @keyframes safelight { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+
+  .head h1 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 0.96; letter-spacing: -0.018em;
+    color: var(--paper);
+    overflow-wrap: anywhere;
+  }
+  .head h1 em { font-style: italic; color: var(--sepia); }
+
+  .head-aside {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 15px; line-height: 1.6;
+    color: var(--paper-70);
+    max-width: 420px;
+    padding-bottom: 8px;
+  }
+  .head-aside em { font-style: italic; color: var(--sepia); font-weight: 400; }
+
+  /* ══════════════ PRODUCTS ══════════════ */
+  .products {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px;
+    margin-bottom: clamp(48px, 7vw, 80px);
+  }
+  @media (min-width: 600px)  { .products { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .products { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .prod {
+    position: relative;
+    background: rgba(243, 238, 230, 0.03);
+    border: 1px solid var(--paper-15);
+    padding: 22px;
+    display: flex; flex-direction: column;
+    cursor: pointer;
+    transition: border-color var(--dur-normal) var(--ease-fade), background var(--dur-normal) var(--ease-fade), transform var(--dur-normal) var(--ease-emerge);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .prod:hover { border-color: var(--paper-30); }
+  .prod[aria-selected="true"] {
+    border-color: var(--sepia);
+    background: rgba(196, 149, 108, 0.06);
+  }
+  .prod[aria-selected="true"]::before {
+    content: '';
+    position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border: 1px solid var(--sepia);
+    pointer-events: none;
+  }
+
+  .prod-check {
+    position: absolute; top: 14px; right: 14px;
+    width: 22px; height: 22px;
+    border: 1.5px solid var(--paper-30);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--dur-quick) var(--ease-fade), border-color var(--dur-quick) var(--ease-fade);
+  }
+  .prod[aria-selected="true"] .prod-check { background: var(--sepia); border-color: var(--sepia); }
+  .prod-check::after {
+    content: '';
+    width: 8px; height: 4px;
+    border-left: 2px solid var(--ink-graphite);
+    border-bottom: 2px solid var(--ink-graphite);
+    transform: rotate(-45deg) translate(1px, -1px);
+    opacity: 0;
+    transition: opacity var(--dur-quick) var(--ease-fade);
+  }
+  .prod[aria-selected="true"] .prod-check::after { opacity: 1; }
+
+  .prod-mock {
+    aspect-ratio: 4/5; margin-bottom: 18px;
+    background: linear-gradient(135deg, #2a2522 0%, #1a1817 100%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .prod-mock-inner {
+    width: 60%; height: 75%;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.35) 0%, transparent 60%),
+      linear-gradient(180deg, #4a4540 0%, #2c2a28 100%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .prod-mock-inner::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0, transparent 18px, rgba(255,255,255,0.04) 18px, rgba(255,255,255,0.04) 19px);
+  }
+  .prod[data-set="baby"] .prod-mock-inner {
+    background: radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.45) 0%, transparent 60%), linear-gradient(180deg, #5a4536 0%, #2c2a28 100%);
+  }
+  .prod-mock-tag {
+    position: absolute; top: 12px; left: 12px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+  }
+
+  .prod-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 6px; }
+  .prod-title  { font-family: var(--font-display); font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--paper); margin-bottom: 4px; }
+  .prod-title em { font-style: italic; color: var(--sepia); }
+  .prod-desc   { font-family: var(--font-body); font-size: 12.5px; line-height: 1.55; color: var(--paper-70); margin-bottom: 18px; flex: 1; }
+  .prod-foot   { display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; border-top: 1px solid var(--paper-15); }
+  .prod-price  { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); }
+  .prod-meta   { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+
+  /* ══════════════ EXPANDED DETAIL ══════════════ */
+  .detail {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px;
+    margin-bottom: clamp(48px, 7vw, 72px);
+    padding: clamp(28px, 4vw, 40px);
+    background: var(--paper);
+    color: var(--ink-graphite);
+    border: 1px solid var(--paper-15);
+    position: relative;
+  }
+  @media (min-width: 800px) { .detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; } }
+  .detail-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-50); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .detail-eyebrow::before { content:''; width: 24px; height: 1px; background: var(--ink-graphite); }
+  .detail h2 {
+    font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 4vw, 48px);
+    line-height: 1; letter-spacing: -0.015em; color: var(--ink-graphite); margin-bottom: 16px;
+    overflow-wrap: anywhere;
+  }
+  .detail h2 em { font-style: italic; color: var(--sepia); }
+  .detail p.lead {
+    font-family: var(--font-body); font-weight: 300; font-size: 17px; line-height: 1.55;
+    color: var(--ink-70); margin-bottom: 28px;
+  }
+
+  .detail-includes { margin-top: 20px; }
+  .detail-includes h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); margin-bottom: 12px; }
+  .detail-includes ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0; }
+  .detail-includes li {
+    padding: 12px 0; border-top: 1px solid var(--ink-15);
+    display: grid; grid-template-columns: 20px 1fr auto; gap: 12px; align-items: baseline;
+    font-size: 14px; color: var(--ink-graphite);
+  }
+  .detail-includes li:last-child { border-bottom: 1px solid var(--ink-15); }
+  .detail-includes .ic { font-family: var(--font-mono); color: var(--sepia); font-size: 11px; letter-spacing: 0.15em; }
+  .detail-includes .meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; color: var(--ink-50); text-transform: uppercase; }
+
+  /* ══════════════ FORM ══════════════ */
+  .form-card {
+    display: flex; flex-direction: column;
+  }
+  .form-card h3 {
+    font-family: var(--font-display); font-weight: 500; font-size: 24px;
+    line-height: 1.15; color: var(--ink-graphite); margin-bottom: 24px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .field label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); }
+  .field input, .field textarea {
+    width: 100%; padding: 14px 16px;
+    background: var(--paper); border: 1.5px solid var(--ink-15); border-radius: 2px;
+    font-family: var(--font-body); font-size: 15px; color: var(--ink-graphite);
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade), box-shadow var(--dur-quick) var(--ease-fade);
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--ink-30); }
+  .field input:focus, .field textarea:focus { border-color: var(--ink-graphite); box-shadow: 0 0 0 3px rgba(44, 42, 40, 0.06); }
+  .field textarea { min-height: 90px; resize: vertical; font-family: var(--font-body); line-height: 1.5; }
+  .field.has-err input, .field.has-err textarea { border-color: var(--safelight); background: rgba(178, 58, 44, 0.04); }
+  .field .err-msg { font-size: 12px; color: var(--safelight); display: none; }
+  .field.has-err .err-msg { display: block; }
+
+  .summary {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 16px 0; border-top: 1px solid var(--ink-graphite);
+    margin: 24px 0 20px;
+  }
+  .summary-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); }
+  .summary-val { font-family: var(--font-display); font-style: italic; font-size: 28px; color: var(--ink-graphite); }
+
+  .submit-btn {
+    width: 100%; height: 56px;
+    background: var(--ink-graphite); color: var(--paper);
+    border: none; border-radius: 999px;
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .submit-btn:hover { background: var(--ink-darkroom); }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn .arrow { font-family: var(--font-mono); font-weight: 500; }
+  .submit-btn .spin { width: 16px; height: 16px; border: 2px solid rgba(243,238,230,0.35); border-top-color: var(--paper); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .submit-btn.loading .spin { display: block; }
+  .submit-btn.loading .arrow { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-note { font-family: var(--font-body); font-size: 12px; color: var(--ink-50); margin-top: 14px; line-height: 1.5; text-align: center; }
+  .form-note em { font-style: italic; color: var(--sepia); }
+
+  /* ══════════════ TRUST STRIP ══════════════ */
+  .trust {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 0;
+    border-top: 1px solid var(--paper-15);
+    border-bottom: 1px solid var(--paper-15);
+    margin-bottom: clamp(48px, 7vw, 80px);
+  }
+  @media (min-width: 700px) { .trust { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .trust-item {
+    padding: 24px 22px;
+    display: flex; flex-direction: column; gap: 6px;
+    border-top: 1px solid var(--paper-15);
+  }
+  @media (min-width: 700px) { .trust-item { border-top: 0; border-right: 1px solid var(--paper-15); } .trust-item:last-child { border-right: 0; } }
+  .trust-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .trust-val { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); line-height: 1.1; }
+  .trust-sub { font-family: var(--font-body); font-size: 12px; color: var(--paper-70); line-height: 1.5; margin-top: 2px; }
+
+  /* ══════════════ MANIFEST ══════════════ */
+  .manifest {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: clamp(18px, 2.2vw, 24px); line-height: 1.45;
+    color: var(--paper-70);
+    max-width: 800px;
+    padding: clamp(32px, 5vw, 48px) 0;
+    border-top: 1px solid var(--paper-15);
+    overflow-wrap: anywhere;
+  }
+  .manifest strong { font-style: normal; font-weight: 500; color: var(--paper); }
+  .manifest::before { content:'«'; color: var(--sepia); margin-right: 4px; }
+  .manifest::after  { content:'»'; color: var(--sepia); margin-left: 4px; }
+
+  /* ══════════════ SUCCESS STATE ══════════════ */
+  .success-screen {
+    display: none;
+    text-align: left;
+    padding: clamp(60px, 10vw, 120px) 0;
+    max-width: 720px;
+  }
+  .success-screen.show { display: block; animation: emerge 800ms var(--ease-emerge); }
+  @keyframes emerge { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .success-screen .eyebrow { color: var(--sepia); }
+  .success-screen h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 6vw, 72px); line-height: 0.98; color: var(--paper); margin-bottom: 24px; overflow-wrap: anywhere; }
+  .success-screen h2 em { font-style: italic; color: var(--sepia); }
+  .success-screen p { font-family: var(--font-body); font-weight: 300; font-size: 17px; line-height: 1.55; color: var(--paper-70); max-width: 540px; margin-bottom: 32px; }
+
+  .success-order-num {
+    display: inline-flex; align-items: baseline; gap: 12px;
+    padding: 14px 20px;
+    border: 1px solid var(--paper-30);
+    margin-bottom: 32px;
+  }
+  .success-order-num .lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .success-order-num .num { font-family: var(--font-display); font-style: italic; font-size: 28px; color: var(--paper); }
+
+  .success-next {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--paper-15);
+  }
+  .success-next h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 18px; }
+  .success-next ol { list-style: none; padding: 0; counter-reset: step; display: flex; flex-direction: column; gap: 16px; }
+  .success-next li { counter-increment: step; display: grid; grid-template-columns: 36px 1fr; gap: 16px; }
+  .success-next li::before { content: counter(step, lower-roman) "."; font-family: var(--font-display); font-style: italic; font-size: 24px; color: var(--sepia); }
+  .success-next li-body { font-size: 14px; line-height: 1.6; color: var(--paper-70); }
+  .success-next li-body strong { color: var(--paper); font-weight: 500; }
+
+  /* ══════════════ HIDDEN ══════════════ */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a class="nav-mark" href="Головна.html">
+    <span class="nav-mark-icon" aria-hidden="true"></span>
+    <span class="nav-wordmark">ПРОЯВ</span>
+  </a>
+  <div class="nav-meta">Замовлення набору · крок 1 / 2</div>
+  <a class="nav-back" href="Головна.html">← На головну</a>
+</nav>
+
+<div class="page">
+  <main>
+
+    <!-- ───────────── FORM VIEW ───────────── -->
+    <div id="form-view">
+
+      <!-- HERO -->
+      <div class="head">
+        <div>
+          <div class="eyebrow"><span class="safelight-dot"></span>Майстерня проявлення · Самбір</div>
+          <h1>Оберіть набір.<br>Решту — <em>зробимо</em>.</h1>
+        </div>
+        <div class="head-aside">
+          Це форма для тих, хто прийшов <em>напряму</em> — без фотографа-партнера. Залишіть заявку, ми зв'яжемось протягом кількох годин і надішлемо персональне посилання для завантаження кадрів.
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="products" role="radiogroup" aria-label="Оберіть набір">
+
+        <div class="prod" role="radio" aria-selected="true" tabindex="0" data-set="moment" data-price="400" data-qty="10">
+          <div class="prod-check" aria-hidden="true"></div>
+          <div class="prod-mock">
+            <span class="prod-mock-tag">10 КАДРІВ</span>
+            <div class="prod-mock-inner"></div>
+          </div>
+          <div class="prod-eyebrow">№ 01 · СТАРТ</div>
+          <h3 class="prod-title"><em>Момент</em></h3>
+          <p class="prod-desc">10 кадрів 10×15 · оксамитовий конверт · картка з підписом.</p>
+          <div class="prod-foot">
+            <span class="prod-price">400 ₴</span>
+            <span class="prod-meta">48 ГОДИН</span>
+          </div>
+        </div>
+
+        <div class="prod" role="radio" aria-selected="false" tabindex="0" data-set="memory" data-price="600" data-qty="20">
+          <div class="prod-check" aria-hidden="true"></div>
+          <div class="prod-mock">
+            <span class="prod-mock-tag">20 КАДРІВ</span>
+            <div class="prod-mock-inner" style="width: 64%; height: 80%;"></div>
+          </div>
+          <div class="prod-eyebrow">№ 02 · ПОПУЛЯРНИЙ</div>
+          <h3 class="prod-title"><em>Спогад</em></h3>
+          <p class="prod-desc">20 кадрів · оксамитовий конверт · картка · вкладка з номером.</p>
+          <div class="prod-foot">
+            <span class="prod-price">600 ₴</span>
+            <span class="prod-meta">48 ГОДИН</span>
+          </div>
+        </div>
+
+        <div class="prod" role="radio" aria-selected="false" tabindex="0" data-set="archive" data-price="900" data-qty="50">
+          <div class="prod-check" aria-hidden="true"></div>
+          <div class="prod-mock">
+            <span class="prod-mock-tag">50 КАДРІВ</span>
+            <div class="prod-mock-inner" style="width: 70%; height: 85%;"></div>
+          </div>
+          <div class="prod-eyebrow">№ 03 · ДЛЯ ВЕСІЛЛЯ</div>
+          <h3 class="prod-title"><em>Архів</em></h3>
+          <p class="prod-desc">50 кадрів · преміальна коробка · 2 конверти батькам · картка.</p>
+          <div class="prod-foot">
+            <span class="prod-price">900 ₴</span>
+            <span class="prod-meta">72 ГОДИНИ</span>
+          </div>
+        </div>
+
+        <div class="prod" role="radio" aria-selected="false" tabindex="0" data-set="baby" data-price="450" data-qty="10">
+          <div class="prod-check" aria-hidden="true"></div>
+          <div class="prod-mock">
+            <span class="prod-mock-tag">10 КАДРІВ · ⚭</span>
+            <div class="prod-mock-inner"></div>
+          </div>
+          <div class="prod-eyebrow">№ 04 · НЬЮБОРН</div>
+          <h3 class="prod-title"><em>Малюк</em></h3>
+          <p class="prod-desc">10 кадрів · конверт з ведмедиком · картка «З народженням».</p>
+          <div class="prod-foot">
+            <span class="prod-price">450 ₴</span>
+            <span class="prod-meta">48 ГОДИН</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DETAIL — light card showing selected set + form -->
+      <div class="detail">
+
+        <!-- LEFT: details -->
+        <div>
+          <div class="detail-eyebrow" id="detail-eyebrow">НАБІР № 01</div>
+          <h2 id="detail-title"><em>Момент</em></h2>
+          <p class="lead" id="detail-lead">10 кадрів — оптимальна стартова кількість, щоб попробувати майстерню. Кладемо в оксамитовий конверт з тисненням і калькою між кадрами.</p>
+
+          <div class="detail-includes">
+            <h4 id="detail-includes-h">Що ви отримаєте</h4>
+            <ul id="detail-includes-list">
+              <li><span class="ic">i</span><span>Друк 10×15 см на матовому або глянцевому папері</span><span class="meta">EPSON SURELAB</span></li>
+              <li><span class="ic">ii</span><span>Оксамитовий конверт з тисненням «ПРОЯВ»</span><span class="meta">VELVET</span></li>
+              <li><span class="ic">iii</span><span>Калька між кожним кадром</span><span class="meta">VELLUM</span></li>
+              <li><span class="ic">iv</span><span>Картка з підписом ательє та номером замовлення</span><span class="meta">ARCHIVE</span></li>
+              <li><span class="ic">v</span><span>Доставка Новою Поштою або самовивіз у Самборі</span><span class="meta">1–2 ДНІ</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- RIGHT: form -->
+        <div class="form-card">
+          <h3>Залиште заявку</h3>
+
+          <div class="field" id="field-name">
+            <label for="inp-name">Ваше ім'я</label>
+            <input type="text" id="inp-name" placeholder="Оксана" autocomplete="name">
+            <div class="err-msg">Введіть ваше ім'я</div>
+          </div>
+
+          <div class="field" id="field-phone">
+            <label for="inp-phone">Телефон</label>
+            <input type="tel" id="inp-phone" placeholder="+380 67 123 45 67" autocomplete="tel">
+            <div class="err-msg">Введіть коректний номер телефону</div>
+          </div>
+
+          <div class="field">
+            <label for="inp-msg">Повідомлення · необов'язково</label>
+            <textarea id="inp-msg" placeholder="Розкажіть про вашу фотосесію — кадри з весілля, ньюборн, портрет, love story…"></textarea>
+          </div>
+
+          <div class="summary">
+            <span class="summary-key">До сплати</span>
+            <span class="summary-val" id="summary-val">400 ₴</span>
+          </div>
+
+          <button class="submit-btn" id="submit-btn">
+            <span class="arrow">Надіслати заявку →</span>
+            <span class="spin"></span>
+          </button>
+
+          <p class="form-note">Без передоплат. Зв'яжемось <em>протягом кількох годин</em> і надішлемо посилання для завантаження кадрів.</p>
+        </div>
+
+      </div>
+
+      <!-- TRUST -->
+      <div class="trust">
+        <div class="trust-item">
+          <span class="trust-key">Проявлення</span>
+          <span class="trust-val">48 годин</span>
+          <span class="trust-sub">від моменту заявки до відправки</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-key">Якість</span>
+          <span class="trust-val">Epson SureLab</span>
+          <span class="trust-sub">фотолабораторний рівень друку</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-key">Пакування</span>
+          <span class="trust-val">Оксамит</span>
+          <span class="trust-sub">конверт з тисненням і калькою</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-key">Доставка</span>
+          <span class="trust-val">Нова Пошта</span>
+          <span class="trust-sub">по всій Україні, самовивіз у Самборі</span>
+        </div>
+      </div>
+
+      <div class="manifest">
+        Майстерня — це місце, де <strong>не вирвалися з машини</strong>. Кожен кадр відкривається на каліброваному моніторі. Перевіряється під різним світлом. Пакується руками.
+      </div>
+
+    </div>
+
+    <!-- ───────────── SUCCESS VIEW ───────────── -->
+    <div class="success-screen" id="success-view">
+      <div class="eyebrow"><span class="safelight-dot"></span>Заявка отримана</div>
+      <h2>Кадри прийняті <em>в роботу</em>.</h2>
+      <p>Ми зв'яжемось з вами протягом кількох годин — підтвердимо набір, надішлемо персональне посилання для завантаження ваших кадрів, і потім вам залишиться тільки чекати на конверт.</p>
+
+      <div class="success-order-num">
+        <span class="lbl">Номер заявки</span>
+        <span class="num" id="success-num">—</span>
+      </div>
+
+      <div class="success-next">
+        <h4>Що далі</h4>
+        <ol>
+          <li><span><strong>Ми пишемо вам у Telegram чи телефонуємо</strong> — підтверджуємо набір і надсилаємо лінк для завантаження кадрів.</span></li>
+          <li><span><strong>Ви завантажуєте кадри</strong> через лінк — до 25 МБ за кадр. Можна обрати глянець або мат, кольорове чи чорно-біле.</span></li>
+          <li><span><strong>Проявляємо й пакуємо</strong> протягом 48 годин — з ручною перевіркою кожного кадру.</span></li>
+          <li><span><strong>Відправляємо ТТН</strong> у SMS і Telegram. Готово.</span></li>
+        </ol>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────── State ───────────────
+const SETS = {
+  moment:  { name: 'Момент', num: '01 · СТАРТ',          price: 400, qty: 10, lead: '10 кадрів — оптимальна стартова кількість, щоб попробувати майстерню. Кладемо в оксамитовий конверт з тисненням і калькою між кадрами.' },
+  memory:  { name: 'Спогад', num: '02 · ПОПУЛЯРНИЙ',     price: 600, qty: 20, lead: '20 кадрів — найпопулярніший набір для сімейних і love story сесій. Окрема вкладка з номером архіву всередині конверта.' },
+  archive: { name: 'Архів',  num: '03 · ДЛЯ ВЕСІЛЛЯ',    price: 900, qty: 50, lead: '50 кадрів у преміальній коробці плюс два окремих оксамитових конверти для батьків. Виготовляємо до 72 годин — обсяг великий.' },
+  baby:    { name: 'Малюк',  num: '04 · НЬЮБОРН',        price: 450, qty: 10, lead: '10 кадрів у конверті з силуетом ведмедика, тиснення «З народженням», окрема картка з місцем для імені та дати народження.' },
+};
+
+let currentSet = 'moment';
+
+// Preselect from URL
+const urlSet = new URLSearchParams(location.search).get('set');
+if (urlSet && SETS[urlSet]) currentSet = urlSet;
+
+function selectSet(key) {
+  if (!SETS[key]) return;
+  currentSet = key;
+  document.querySelectorAll('.prod').forEach(p => {
+    p.setAttribute('aria-selected', p.dataset.set === key ? 'true' : 'false');
+  });
+  const s = SETS[key];
+  document.getElementById('detail-eyebrow').textContent = 'НАБІР № ' + s.num;
+  // The detail-title uses <em>
+  const titleEl = document.getElementById('detail-title');
+  titleEl.innerHTML = '<em>' + s.name + '</em>';
+  document.getElementById('detail-lead').textContent = s.lead;
+  document.getElementById('summary-val').textContent = s.price + ' ₴';
+}
+
+// Wire up products
+document.querySelectorAll('.prod').forEach(prod => {
+  prod.addEventListener('click', () => selectSet(prod.dataset.set));
+  prod.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectSet(prod.dataset.set);
+    }
+  });
+});
+
+// Init
+selectSet(currentSet);
+
+// ─────────────── Form validation + submit ───────────────
+const nameEl = document.getElementById('inp-name');
+const phoneEl = document.getElementById('inp-phone');
+const msgEl = document.getElementById('inp-msg');
+const submitBtn = document.getElementById('submit-btn');
+const fieldName = document.getElementById('field-name');
+const fieldPhone = document.getElementById('field-phone');
+
+function isPhone(v) {
+  const digits = v.replace(/\D/g, '');
+  return digits.length >= 10 && digits.length <= 14;
+}
+
+[nameEl, phoneEl].forEach(el => {
+  el.addEventListener('input', () => {
+    el.closest('.field').classList.remove('has-err');
+  });
+});
+
+submitBtn.addEventListener('click', async () => {
+  const name = nameEl.value.trim();
+  const phone = phoneEl.value.trim();
+  let ok = true;
+  if (!name) { fieldName.classList.add('has-err'); ok = false; }
+  if (!isPhone(phone)) { fieldPhone.classList.add('has-err'); ok = false; }
+  if (!ok) return;
+
+  submitBtn.classList.add('loading');
+  submitBtn.disabled = true;
+
+  // Simulate request (real wiring: POST /api-retail with {name, phone, product_type: currentSet, message})
+  try {
+    // In production, replace with real fetch:
+    // const r = await fetch('/api-retail', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({...}) });
+    // const d = await r.json();
+    await new Promise(res => setTimeout(res, 900));
+    const fakeNum = 'ПРЯ-' + Math.floor(100000 + Math.random() * 900000);
+    showSuccess(fakeNum);
+  } catch (e) {
+    submitBtn.classList.remove('loading');
+    submitBtn.disabled = false;
+    alert('Помилка надсилання. Спробуйте ще раз.');
+  }
+});
+
+function showSuccess(orderNum) {
+  document.getElementById('form-view').classList.add('hidden');
+  document.getElementById('success-view').classList.add('show');
+  document.getElementById('success-num').textContent = orderNum;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>

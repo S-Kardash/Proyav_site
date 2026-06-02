@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Аудит UX/Design</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--paper); }
+
+  /* ── PAGE GRID ── */
+  .doc {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: var(--s-6) var(--gutter) var(--s-9);
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: var(--s-5);
+    border-bottom: 1px solid var(--ink-graphite);
+    margin-bottom: var(--s-8);
+    flex-wrap: wrap; gap: var(--s-3);
+  }
+  .topbar-left { display: flex; align-items: center; gap: var(--s-4); }
+  .topbar-mark { width: 32px; height: 32px; border: 1.5px solid var(--ink-graphite); border-radius: 50%; position: relative; }
+  .topbar-mark::before { content:''; position:absolute; inset:5px; border:1px solid var(--ink-30); border-radius:50%; }
+  .topbar-mark::after { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--ink-graphite); border-radius:50%; transform:translate(-50%,-50%); }
+  .topbar-brand { font-family: var(--font-display); font-size: 16px; font-weight: 500; letter-spacing: 0.3em; }
+  .topbar-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+  .back-link { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-60); text-decoration: none; }
+  .back-link:hover { color: var(--ink-graphite); }
+
+  /* ── HERO ── */
+  .doc-hero {
+    display: grid; grid-template-columns: 1fr; gap: var(--s-6);
+    margin-bottom: var(--s-9); padding-bottom: var(--s-8);
+    border-bottom: var(--bd-hairline);
+  }
+  @media (min-width: 900px) { .doc-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-9); } }
+  .doc-hero h1, .chapter-title, .gap-title, .page-name, .rec-title { overflow-wrap: anywhere; }
+
+  .doc-eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono);
+    text-transform: uppercase; color: var(--ink-50);
+    display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-5);
+  }
+  .doc-eyebrow .line { flex: 0 0 32px; height: 1px; background: var(--ink-graphite); }
+
+  .doc-hero h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 6vw, 80px); line-height: 0.98; letter-spacing: -0.015em; color: var(--ink-graphite); margin-bottom: var(--s-4); }
+  .doc-hero h1 em { font-style: italic; color: var(--silver-300); }
+  .doc-hero .lead { font-size: var(--t-lead); line-height: var(--lh-lead); color: var(--ink-70); font-weight: 300; }
+
+  .doc-summary { display: flex; flex-direction: column; gap: var(--s-4); padding-top: var(--s-4); }
+  .doc-summary-row { display: grid; grid-template-columns: 120px 1fr; gap: var(--s-4); padding: var(--s-3) 0; border-top: var(--bd-hairline); }
+  .doc-summary-row:last-child { border-bottom: var(--bd-hairline); }
+  .doc-summary-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); padding-top: 4px; }
+  .doc-summary-val { font-size: 14px; line-height: 1.55; color: var(--ink-graphite); }
+  .doc-summary-val strong { font-weight: 500; }
+
+  /* ── SECTION FRAME ── */
+  section.chapter { margin-bottom: var(--s-9); }
+  .chapter-head {
+    display: grid; grid-template-columns: auto 1fr; gap: var(--s-5);
+    align-items: baseline; padding-bottom: var(--s-5);
+    border-bottom: 1px solid var(--ink-graphite);
+    margin-bottom: var(--s-6);
+  }
+  .chapter-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--silver-300); white-space: nowrap; }
+  .chapter-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 3.5vw, 44px); line-height: 1.05; color: var(--ink-graphite); }
+  .chapter-title em { font-style: italic; color: var(--silver-300); }
+
+  .prose { max-width: 700px; }
+  .prose p { font-size: 16px; line-height: 1.6; color: var(--ink-graphite); }
+  .prose p + p { margin-top: var(--s-4); }
+  .prose p.lead { font-size: var(--t-lead); font-weight: 300; color: var(--ink-70); line-height: var(--lh-lead); }
+  .prose strong { font-weight: 500; }
+  .prose em.note { font-style: italic; color: var(--ink-60); }
+
+  /* ── GAP CARDS ── */
+  .gaps { display: grid; grid-template-columns: 1fr; gap: var(--s-4); margin-top: var(--s-6); }
+  @media (min-width: 700px) { .gaps { grid-template-columns: 1fr 1fr; } }
+
+  .gap {
+    background: var(--paper);
+    border: 1px solid var(--ink-15);
+    padding: var(--s-5) var(--s-5) var(--s-5);
+    display: flex; flex-direction: column; gap: var(--s-3);
+    position: relative;
+  }
+  .gap::before {
+    content: ''; position: absolute; top: 0; left: 0; height: 3px; width: 48px;
+    background: var(--safelight);
+  }
+  .gap-num { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--safelight); }
+  .gap-title { font-family: var(--font-display); font-weight: 500; font-size: 22px; line-height: 1.2; color: var(--ink-graphite); }
+  .gap-body { font-size: 14px; line-height: 1.6; color: var(--ink-70); }
+  .gap-evidence {
+    margin-top: var(--s-3); padding: var(--s-3); background: var(--ink-02);
+    border-left: 2px solid var(--silver-300);
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-60); line-height: 1.55;
+  }
+  .gap-evidence strong { color: var(--ink-graphite); font-weight: 500; }
+
+  /* ── PAGE ANALYSIS ── */
+  .page-card {
+    display: grid; grid-template-columns: 1fr; gap: var(--s-5);
+    background: var(--paper);
+    border: 1px solid var(--ink-15);
+    padding: var(--s-6);
+    margin-bottom: var(--s-5);
+  }
+  @media (min-width: 900px) { .page-card { grid-template-columns: 280px minmax(0, 1fr); gap: var(--s-7); } }
+
+  .page-card-meta { display: flex; flex-direction: column; gap: var(--s-3); border-right: 0; padding-right: 0; }
+  @media (min-width: 900px) { .page-card-meta { border-right: var(--bd-hairline); padding-right: var(--s-6); } }
+
+  .page-filename { font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+  .page-name { font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.15; color: var(--ink-graphite); }
+  .page-stats { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-3); }
+  .page-stat { display: flex; justify-content: space-between; gap: var(--s-3); font-size: 13px; padding: 6px 0; border-top: var(--bd-hairline); }
+  .page-stat:last-child { border-bottom: var(--bd-hairline); }
+  .page-stat-k { color: var(--ink-60); font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; }
+  .page-stat-v { color: var(--ink-graphite); font-weight: 500; }
+
+  .verdict { margin-top: var(--s-3); display: inline-flex; align-items: center; gap: var(--s-2); font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; padding: 6px 12px; border-radius: var(--r-pill); }
+  .verdict--ok      { background: rgba(196,149,108,.15); color: #6e4a20; }
+  .verdict--warn    { background: rgba(178,58,44,.10);  color: var(--safelight); }
+  .verdict--rebuild { background: var(--ink-graphite); color: var(--paper); }
+
+  .page-body { display: flex; flex-direction: column; gap: var(--s-5); }
+
+  .finding-list { display: flex; flex-direction: column; gap: var(--s-3); }
+  .finding {
+    display: grid; grid-template-columns: 18px 1fr; gap: var(--s-3);
+    padding: var(--s-3) 0; border-top: var(--bd-hairline);
+  }
+  .finding:first-child { border-top: 0; padding-top: 0; }
+  .finding-mark { font-family: var(--font-mono); font-size: 13px; line-height: 1.5; color: var(--ink-30); }
+  .finding-mark.bad  { color: var(--safelight); }
+  .finding-mark.ok   { color: #6e4a20; }
+  .finding-text { font-size: 14px; line-height: 1.6; color: var(--ink-graphite); }
+  .finding-text strong { font-weight: 500; }
+  .finding-text code {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--ink-05); padding: 2px 5px; border-radius: 2px;
+    color: var(--silver-200);
+  }
+
+  /* ── CODE QUOTE ── */
+  pre.quote {
+    background: var(--ink-darkroom);
+    color: var(--silver-500);
+    padding: var(--s-4) var(--s-5);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    border-left: 3px solid var(--sepia);
+    margin: var(--s-3) 0;
+  }
+  pre.quote .c { color: var(--silver-300); }
+  pre.quote .k { color: var(--sepia); }
+  pre.quote .s { color: #d6c39e; }
+
+  /* ── COLOR SWATCHES (small) ── */
+  .swatches { display: flex; gap: 6px; margin-top: var(--s-3); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: 4px; font-family: var(--font-mono); font-size: 9px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+  .sw-chip { width: 56px; height: 32px; border: 1px solid var(--ink-15); }
+  .sw-name { white-space: nowrap; }
+
+  /* ── VOICE TABLE ── */
+  .voice-table { width: 100%; border-collapse: collapse; margin-top: var(--s-5); }
+  .voice-table th, .voice-table td { text-align: left; padding: var(--s-3) var(--s-4); border-bottom: var(--bd-hairline); font-size: 14px; vertical-align: top; }
+  .voice-table th { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); font-weight: 400; padding-top: var(--s-3); padding-bottom: var(--s-3); border-bottom: 1px solid var(--ink-graphite); }
+  .voice-table .from { color: var(--safelight); text-decoration: line-through; text-decoration-color: var(--safelight); font-size: 14px; }
+  .voice-table .to   { font-family: var(--font-display); font-weight: 400; color: var(--ink-graphite); font-style: italic; font-size: 17px; line-height: 1.35; }
+  .voice-table .where { font-family: var(--font-mono); font-size: 11px; color: var(--ink-50); }
+
+  /* ── RECOMMENDATIONS ── */
+  .recs { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-5); }
+  .rec {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: var(--s-5);
+    padding: var(--s-4) 0;
+    border-bottom: var(--bd-hairline);
+    align-items: baseline;
+  }
+  .rec-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--silver-300); }
+  .rec-title { font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.2; color: var(--ink-graphite); margin-bottom: 4px; }
+  .rec-sub { font-size: 14px; line-height: 1.55; color: var(--ink-60); }
+  .rec-impact {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase;
+    padding: 4px 10px; border: 1px solid var(--ink-15); white-space: nowrap;
+    align-self: center;
+  }
+  .impact-high { color: var(--safelight); border-color: var(--safelight); }
+  .impact-mid  { color: #6e4a20; border-color: var(--sepia); }
+  .impact-low  { color: var(--silver-300); }
+
+  /* ── Closing manifest ── */
+  .closer {
+    margin-top: var(--s-9);
+    padding-top: var(--s-7);
+    border-top: 1px solid var(--ink-graphite);
+    text-align: left;
+    max-width: 800px;
+  }
+  .closer .quote-mark { font-family: var(--font-display); font-size: 80px; color: var(--sepia); line-height: 1; }
+  .closer .body { font-family: var(--font-display); font-style: italic; font-weight: 300; font-size: clamp(22px, 2.5vw, 30px); line-height: 1.4; color: var(--ink-70); margin-top: var(--s-3); }
+  .closer .body strong { font-style: normal; font-weight: 500; color: var(--ink-graphite); }
+  .closer .sig { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); margin-top: var(--s-5); }
+
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-mark" aria-hidden="true"></div>
+      <div class="topbar-brand">ПРОЯВ</div>
+      <div class="topbar-meta">Аудит UX/Design · № 01</div>
+    </div>
+    <a class="back-link" href="Прояв.html">← Робоча кімната</a>
+  </header>
+
+  <!-- ════════════ HERO ════════════ -->
+  <section class="doc-hero">
+    <div>
+      <div class="doc-eyebrow">
+        <span class="line"></span>
+        Дата · 26.05.2026 · Внутрішнє
+      </div>
+      <h1>Те, що є.<br>Те, що <em>мовчить</em>.</h1>
+      <p class="lead">Цей документ розбирає поточний сайт ПРОЯВ — чотири HTML-сторінки, 2 828 + 767 + 373 + 171 рядків коду — і показує, де код не сходиться з обіцянкою брендбуку. Без здогадок: тільки цитати з файлів та цифри з дослідження.</p>
+    </div>
+
+    <div class="doc-summary">
+      <div class="doc-summary-row">
+        <div class="doc-summary-key">Предмет</div>
+        <div class="doc-summary-val"><strong>4 файли</strong>: index, order, partner, admin. Доменна логіка — Cloudflare Functions поза рамками цього аудиту.</div>
+      </div>
+      <div class="doc-summary-row">
+        <div class="doc-summary-key">База</div>
+        <div class="doc-summary-val">Брендбук <strong>v.01</strong> · Маркетингове дослідження <strong>v2.0</strong>.</div>
+      </div>
+      <div class="doc-summary-row">
+        <div class="doc-summary-key">Висновок</div>
+        <div class="doc-summary-val">Поточний код — це <strong>добре зроблений утилітарний інструмент</strong> із 1 розривом стратегії, 3 розривами стилю та 1 повністю відсутньою сторінкою (лендингом). Платформу не треба переписувати — треба переозвучити.</div>
+      </div>
+      <div class="doc-summary-row">
+        <div class="doc-summary-key">Пріоритет</div>
+        <div class="doc-summary-val">Спершу — <strong>лендинг</strong>. Без нього фотограф не має чого показати клієнту, а клієнт не має соцдоказу. Це блокує LTV/CAC=16–25× з дослідження.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ 01. EXECUTIVE SUMMARY ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 01</div>
+      <h2 class="chapter-title">Резюме — <em>п'ять розривів</em></h2>
+    </div>
+
+    <div class="prose">
+      <p class="lead">ПРОЯВ має сильний брендбук і працюючий продукт. Між ними — п'ять розривів. Жоден з них не катастрофа, але разом вони перетворюють «майстерню проявлення» на «студію друку». Це різні бізнеси.</p>
+    </div>
+
+    <div class="gaps">
+
+      <article class="gap">
+        <div class="gap-num">Розрив № 01 · Стратегія</div>
+        <h3 class="gap-title">Атель'є vs. ринок</h3>
+        <p class="gap-body">Брендбук обіцяє cotton-rag 310 г/м², архівність 200+ років, edition-копії. Дослідження каже: 1 400 фотосесій на рік у регіоні, середній чек 400&nbsp;грн, маржа 33–37%, основний канал — комісія 12% фотографу. Це два <strong>різні бізнеси</strong> в одному імені.</p>
+        <div class="gap-evidence">
+          <strong>Брендбук:</strong> «Hahnemühle Photo Rag 308 · 200+ років архівності»<br>
+          <strong>Дослідження:</strong> «Папір 10×15 — 40&nbsp;грн собівартість. Epson&nbsp;SureLab&nbsp;D700.»
+        </div>
+      </article>
+
+      <article class="gap">
+        <div class="gap-num">Розрив № 02 · Колір</div>
+        <h3 class="gap-title">Три різні палітри в одному сайті</h3>
+        <p class="gap-body">index.html близький до брендбуку (<code>#f5efe4</code> ≈ Папір, <code>#2c2a28</code> = Графіт). Але <strong>order, admin і partner</strong> працюють в іншому ключі — з акцентом <code>#c9a96e</code> (золото), якого в брендбуку немає взагалі.</p>
+        <div class="gap-evidence">
+          <strong>index.html:6</strong> <code>--bg:#f5efe4; --dark:#2c2a28;</code> ✓<br>
+          <strong>order.html:5</strong> <code>--gold:#c9a96e;</code> ✕ — НЕ в палітрі<br>
+          <strong>admin.html:5</strong> <code>--gold-d:#a8834a;</code> ✕ — НЕ в палітрі
+        </div>
+      </article>
+
+      <article class="gap">
+        <div class="gap-num">Розрив № 03 · Типографіка</div>
+        <h3 class="gap-title">Cormorant — лише на одній сторінці</h3>
+        <p class="gap-body">Брендбук передбачає <strong>триголосну систему</strong>: Cormorant (display), Inter (body), JetBrains Mono (technical). Реально Cormorant використовується тільки в index.html. У трьох інших сторінках — системний шрифт.</p>
+        <div class="gap-evidence">
+          <strong>index.html:</strong> Cormorant + Inter ✓ (JetBrains Mono немає)<br>
+          <strong>order, admin, partner:</strong> <code>-apple-system, BlinkMacSystemFont, 'Segoe UI'</code> — жодного брендового шрифту
+        </div>
+      </article>
+
+      <article class="gap">
+        <div class="gap-num">Розрив № 04 · Голос</div>
+        <h3 class="gap-title">Шепіт куратора замінено на UI-метрики</h3>
+        <p class="gap-body">Брендбук просить казати «Проявляємо», «кадр», «автор», «спогад». Поточний UI каже «Завантажте фото», «Як вас знайти?», «Студія друку». Не погано — але <strong>порожньо</strong>. Жодних ритуальних слів бренду.</p>
+        <div class="gap-evidence">
+          <strong>index.html footer:</strong> «Прояв · <span style="color:var(--safelight)">Студія друку</span>» — не «Майстерня проявлення»<br>
+          <strong>order.html tagline:</strong> «Твої фото заслуговують більшого, ніж лежати в телефоні» — добре, але це єдине бренд-речення на сайті
+        </div>
+      </article>
+
+      <article class="gap" style="grid-column: 1 / -1;">
+        <div class="gap-num">Розрив № 05 · Точка входу</div>
+        <h3 class="gap-title">Лендинга немає. Клієнт випадає в Step 1 без контексту.</h3>
+        <p class="gap-body">«Оксана» (мама з ньюборн-сесією, головна персона з дослідження) приходить з Direct фотографа. Перше, що бачить — питання <em>«Як вас знайти?»</em> з полем для нікнейму Instagram. Жодного зразка набору, жодного відгуку, жодного фото пакування. Усі сигнали довіри, про які пише дослідження («Reels, відгуки, фото готових наборів»), у самому UX <strong>відсутні</strong>.</p>
+        <div class="gap-evidence">
+          <strong>index.html · screen-1, рядок 1198:</strong> <code>&lt;div class="heading"&gt;Як вас знайти?&lt;/div&gt;</code><br>
+          Це перше, що бачить клієнт після SPLASH. Жодного контексту перед ним. Лендинг як окремий артефакт у проєкті <strong>не існує</strong>.
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ════════════ 02. PAGE-BY-PAGE ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 02</div>
+      <h2 class="chapter-title">Постранично — <em>4 файли під лупою</em></h2>
+    </div>
+
+    <div class="prose" style="margin-bottom: var(--s-6);">
+      <p>Кожен файл оцінюється за чотирма осями: <strong>стратегія</strong> (відповідність бізнес-моделі), <strong>стиль</strong> (відповідність брендбуку), <strong>досвід</strong> (зрозумілий шлях користувача), <strong>код</strong> (підтримуваність).</p>
+    </div>
+
+    <!-- ─── index.html ─── -->
+    <article class="page-card">
+      <div class="page-card-meta">
+        <div class="page-filename">index.html</div>
+        <div class="page-name">Замовлення друку</div>
+        <div class="page-stats">
+          <div class="page-stat"><span class="page-stat-k">Рядків</span><span class="page-stat-v">2 828</span></div>
+          <div class="page-stat"><span class="page-stat-k">Кроків флоу</span><span class="page-stat-v">5</span></div>
+          <div class="page-stat"><span class="page-stat-k">Цільова ширина</span><span class="page-stat-v">448 px max</span></div>
+          <div class="page-stat"><span class="page-stat-k">Сховище</span><span class="page-stat-v">IndexedDB + LS</span></div>
+        </div>
+        <div class="verdict verdict--ok">Рефакторинг, не переписувати</div>
+
+        <div class="swatches">
+          <div class="sw"><div class="sw-chip" style="background:#f5efe4"></div><span class="sw-name">#f5efe4</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#2c2a28"></div><span class="sw-name">#2c2a28</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#c0392b"></div><span class="sw-name">#c0392b err</span></div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="prose">
+          <p><strong>Що зроблено надзвичайно добре.</strong> Splash з літерами-проявленням, IndexedDB-чернетки, undo-toast після видалення, magic-link, Nova Poshta автокомпліт, lightbox для фото, recovery-banner при втраті блобів. Це продумано не на рівні бутіка, а на рівні зрілого продукту.</p>
+        </div>
+
+        <div class="finding-list">
+          <div class="finding"><span class="finding-mark ok">✓</span><div class="finding-text">Кольори <strong>близькі до брендбуку</strong>: <code>#f5efe4</code> ≈ Папір (#F3EEE6), <code>#2c2a28</code> = Графіт. Достатньо просто перейменувати змінні в брендові.</div></div>
+          <div class="finding"><span class="finding-mark ok">✓</span><div class="finding-text">Cormorant + Inter уже завантажуються. Залишається додати <strong>JetBrains Mono</strong> для технічних метаданих фото (DPI, формат, дата).</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Голос — нейтральний UI-копірайт. <em>«Як вас знайти?», «Ваші фото», «Підтвердження»</em> — не «майстерня». Треба переписати <strong>кожен заголовок</strong> у мові брендбуку.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Логотип на header — звичайний текст з <code>letter-spacing:9px</code>. Брендбук має <strong>монограму-діафрагму</strong>. Зараз — імітація.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Сафлайт (<code>#B23A2C</code>) — обов'язковий акцент в брендбуку — <strong>відсутній</strong>. Помилка зараз — <code>#c0392b</code>. Близько, але не точно.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">У флоу немає <strong>«ритуалу проявлення»</strong>. Step 3 (фото) — це звичайний uploader. Можна додати мікро-метадані (роздільність, варто-не-варто друкувати) у Mono — буде нагадувати лабораторну картку.</div></div>
+          <div class="finding"><span class="finding-mark">·</span><div class="finding-text">EmailJS-ключ <strong>прибитий у коді клієнта</strong> (рядок 1052). Це не дизайнерська проблема, але варто винести у Cloudflare Function — той самий патерн, що вже використовується для Telegram.</div></div>
+        </div>
+
+        <pre class="quote"><span class="c">/* index.html · поточний splash · L1170 */</span>
+<span class="k">&lt;div</span> <span class="s">class="splash-sub"</span><span class="k">&gt;</span>Студія друку<span class="k">&lt;/div&gt;</span>
+
+<span class="c">/* пропозиція — у мові брендбуку */</span>
+<span class="k">&lt;div</span> <span class="s">class="splash-sub"</span><span class="k">&gt;</span>Майстерня проявлення<span class="k">&lt;/div&gt;</span></pre>
+      </div>
+    </article>
+
+    <!-- ─── order.html ─── -->
+    <article class="page-card">
+      <div class="page-card-meta">
+        <div class="page-filename">order.html</div>
+        <div class="page-name">Вибір набору</div>
+        <div class="page-stats">
+          <div class="page-stat"><span class="page-stat-k">Рядків</span><span class="page-stat-v">171</span></div>
+          <div class="page-stat"><span class="page-stat-k">Наборів</span><span class="page-stat-v">4</span></div>
+          <div class="page-stat"><span class="page-stat-k">Шрифт</span><span class="page-stat-v">system</span></div>
+          <div class="page-stat"><span class="page-stat-k">Емодзі в trust</span><span class="page-stat-v">📸 🤍 🚀</span></div>
+        </div>
+        <div class="verdict verdict--rebuild">Переписати від нуля</div>
+
+        <div class="swatches">
+          <div class="sw"><div class="sw-chip" style="background:#f5f0ea"></div><span class="sw-name">#f5f0ea</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#3d3530"></div><span class="sw-name">#3d3530 ⚠</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#c9a96e"></div><span class="sw-name">#c9a96e ✕</span></div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="prose">
+          <p>Найменший файл — і найслабша точка контакту з брендом. Це <strong>сирота</strong>: окремий шрифт, окрема палітра, окремий настрій. Виглядає як landing-сторінка з 2018 року, не як вітрина майстерні.</p>
+        </div>
+
+        <div class="finding-list">
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Палітра не з брендбуку.</strong> <code>#3d3530</code> темніший за Графіт. <code>#c9a96e</code> «золото» — взагалі чужий тон, у брендбуку акценти — Сепія (#C4956C) і Сафлайт (#B23A2C).</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Системний шрифт</strong> (<code>-apple-system</code>) замість Cormorant. Заголовок «ПРОЯВ» виведений напівжирним сансом — це руйнує впізнаваність на 70%.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Емодзі в trust-блоці</strong> (📸 🤍 🚀) — брендбук категорично проти такого. Сюди потрібен моноширинний підпис у дусі архівної етикетки: <code>ISO 100 · 1/250 · f/1.4</code>.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Картки наборів — <strong>radio-button-структура</strong>, без зображень. Клієнт не бачить, що купує. Це для preorder-ринку токсично: довіра падає.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Немає якоря на фотосесію.</strong> Дослідження прямо радить: «3-7% від уже витрачених 5-6 тис. на сесію». Цей принцип не закладений в UX.</div></div>
+          <div class="finding"><span class="finding-mark">·</span><div class="finding-text">Слово <em>«Spогади малюка»</em> з конвертом-ведмедиком — гарна персоналізація. Але треба показати картку конверта зразком, а не описом.</div></div>
+        </div>
+
+        <pre class="quote"><span class="c">/* order.html · trust badges · L94 */</span>
+&lt;div class="trust-item"&gt;<span class="s">📸</span>&lt;strong&gt;Epson SureLab&lt;/strong&gt;Фотолаб якість&lt;/div&gt;
+&lt;div class="trust-item"&gt;<span class="s">🤍</span>&lt;strong&gt;Оксамит&lt;/strong&gt;Преміум пакування&lt;/div&gt;
+&lt;div class="trust-item"&gt;<span class="s">🚀</span>&lt;strong&gt;1–2 дні&lt;/strong&gt;Готово швидко&lt;/div&gt;
+
+<span class="c">/* пропозиція — у дусі архівної етикетки */</span>
+<span class="k">·</span> ISO 100 <span class="k">·</span> EPSON SureLab D700 <span class="k">·</span> ARCHIVE 75+ YRS
+<span class="k">·</span> VELVET <span class="k">·</span> EDITION 1/∞ <span class="k">·</span> SAMBIR
+<span class="k">·</span> SHUTTER 48H <span class="k">·</span> NOVA POSHTA <span class="k">·</span> CARE</pre>
+      </div>
+    </article>
+
+    <!-- ─── partner.html ─── -->
+    <article class="page-card">
+      <div class="page-card-meta">
+        <div class="page-filename">partner.html</div>
+        <div class="page-name">Кабінет фотографа</div>
+        <div class="page-stats">
+          <div class="page-stat"><span class="page-stat-k">Рядків</span><span class="page-stat-v">373</span></div>
+          <div class="page-stat"><span class="page-stat-k">Призначення</span><span class="page-stat-v">B2B</span></div>
+          <div class="page-stat"><span class="page-stat-k">Цільова ширина</span><span class="page-stat-v">700 px max</span></div>
+          <div class="page-stat"><span class="page-stat-k">Особистий шрифт</span><span class="page-stat-v">—</span></div>
+        </div>
+        <div class="verdict verdict--rebuild">Переосмислити концепцію</div>
+
+        <div class="swatches">
+          <div class="sw"><div class="sw-chip" style="background:#f5f0ea"></div><span class="sw-name">cream</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#3d3530"></div><span class="sw-name">dark</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#c9a96e"></div><span class="sw-name">gold ✕</span></div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="prose">
+          <p>Це <strong>найважливіша сторінка з точки зору моделі бізнесу</strong> (фотограф = ¾ всього доходу за LTV/CAC-розрахунками), і вона зараз виглядає як CRM-форма. Фотограф — це автор у мові брендбуку, не оператор.</p>
+        </div>
+
+        <div class="finding-list">
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Login → таблиця замовлень.</strong> Перше враження — оператор колл-центру, а не співавтор майстерні. Зайшовши вперше, фотограф не бачить, навіщо він тут.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text"><strong>Немає калькулятора пасивного доходу.</strong> Дослідження прямо пропонує сценарій: «3 клієнти/місяць = 150&nbsp;грн». Це <em>головний product-pitch</em>, і він не показаний у самому продукті.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">«Створити замовлення» — це <strong>не та дія</strong>, якої очікує фотограф. Він не оператор. Він тільки <em>рекомендує</em> і отримує magic-link для клієнта. Дія мала б називатись <strong>«Видати лінк клієнту»</strong>.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Немає <strong>пробного відбитку</strong>. Брендбук обіцяє його як головний інструмент рекрутування партнерів. У продукті це має бути CTA в одному кліку.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Немає <strong>портфоліо фотографа</strong>. Якщо ПРОЯВ — це майстерня для авторів, тут має бути сторінка <code>proyav.ink/author/olena-koval</code> зі списком кадрів, які пройшли проявлення. Це і marketing, і фактор утримання.</div></div>
+          <div class="finding"><span class="finding-mark ok">✓</span><div class="finding-text">WhatsApp-кнопка для швидкого скидання лінку клієнту — добра ідея. Залишити, але перенести в інший контекст.</div></div>
+        </div>
+
+        <pre class="quote"><span class="c">/* Концептуальна перебудова partner.html */</span>
+1.  <span class="k">Hero автора</span>             — підпис, портфоліо, кількість edition-друків
+2.  <span class="k">Видати лінк клієнту</span>    — головна дія, 1 клік + WhatsApp share
+3.  <span class="k">Калькулятор доходу</span>     — слайдер «N клієнтів на місяць → ₴»
+4.  <span class="k">Замовлення</span>             — список у мові «кадрів», не «orders»
+5.  <span class="k">Пробний відбиток</span>       — безкоштовно, раз на 3 місяці
+6.  <span class="k">Картка партнера</span>        — PDF / .vcf для друку чи Telegram</pre>
+      </div>
+    </article>
+
+    <!-- ─── admin.html ─── -->
+    <article class="page-card">
+      <div class="page-card-meta">
+        <div class="page-filename">admin.html</div>
+        <div class="page-name">Внутрішня панель</div>
+        <div class="page-stats">
+          <div class="page-stat"><span class="page-stat-k">Рядків</span><span class="page-stat-v">767</span></div>
+          <div class="page-stat"><span class="page-stat-k">Розділів</span><span class="page-stat-v">~6 (orders, retail, partners, inventory, expenses, settings)</span></div>
+          <div class="page-stat"><span class="page-stat-k">Цільова ширина</span><span class="page-stat-v">1100 px max</span></div>
+          <div class="page-stat"><span class="page-stat-k">Принцип</span><span class="page-stat-v">CRM-картки</span></div>
+        </div>
+        <div class="verdict verdict--warn">Косметика + темний режим</div>
+
+        <div class="swatches">
+          <div class="sw"><div class="sw-chip" style="background:#f5f0ea"></div><span class="sw-name">bg</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#3d3530"></div><span class="sw-name">dark</span></div>
+          <div class="sw"><div class="sw-chip" style="background:#c9a96e"></div><span class="sw-name">gold ✕</span></div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="prose">
+          <p>Адмінка — <strong>внутрішній інструмент</strong>, тому функціонально все на місці: фільтри, статуси, бейджі, модалки, експорт. Її не потрібно переписувати — потрібно <strong>переозвучити та перебарвити</strong> в брендовий тон, бо <em>персонал теж формує культуру майстерні</em>.</p>
+        </div>
+
+        <div class="finding-list">
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Шість різних кольорів для статусів (<code>blue / orange / yellow / green / purple / red</code>) — це <strong>веселка</strong>. Брендбук дозволяє Сепію та Сафлайт для акцентів. Інше — шкала срібла.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Статуси названі технічно: <em>new, uploaded, in_progress, sent, paid</em>. Можна перейти на мову проявлення: <strong>отримано → у прояві → запаковано → відправлено → закрито</strong>.</div></div>
+          <div class="finding"><span class="finding-mark bad">✕</span><div class="finding-text">Білий фон щільної таблиці важко читати весь день. Можна <strong>темний режим за замовчуванням</strong> (Темна камера як основа): зменшує око-втому, відповідає назві.</div></div>
+          <div class="finding"><span class="finding-mark ok">✓</span><div class="finding-text">Швидкість, фільтри, пошук — добре зроблено. Не чіпати функціонал.</div></div>
+          <div class="finding"><span class="finding-mark ok">✓</span><div class="finding-text">Модалки з деталями замовлення — компактні, корисні. Залишити структуру, освіжити типографіку.</div></div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ════════════ 03. VOICE ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 03</div>
+      <h2 class="chapter-title">Голос — <em>перекласти кожен заголовок</em></h2>
+    </div>
+
+    <div class="prose">
+      <p>Брендбук дає чіткий словник: «Проявлення» не «друк», «Автор» не «клієнт», «Кадр» не «фотографія», «Майстерня» не «друкарня». Зараз цих слів у UI немає взагалі. Кожен з нижче перерахованих заголовків потребує <strong>двадцяти секунд правки</strong> — а сумарний ефект на сприйняття бренду колосальний.</p>
+    </div>
+
+    <table class="voice-table">
+      <thead>
+        <tr>
+          <th style="width:25%">Де</th>
+          <th style="width:35%">Як зараз</th>
+          <th style="width:40%">Як має бути</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="where">index.html · splash</div></td>
+          <td><span class="from">Студія друку</span></td>
+          <td><span class="to">Майстерня проявлення</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">index.html · step 1</div></td>
+          <td><span class="from">Як вас знайти?</span></td>
+          <td><span class="to">З'єднайте кадри з автором</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">index.html · step 2</div></td>
+          <td><span class="from">Ваші дані</span></td>
+          <td><span class="to">Куди надіслати готовий конверт</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">index.html · step 3</div></td>
+          <td><span class="from">Ваші фото</span></td>
+          <td><span class="to">Кадри, які проявляємо</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">index.html · step 5</div></td>
+          <td><span class="from">Замовлення надіслано!</span></td>
+          <td><span class="to">Кадри прийняті в роботу</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">order.html · trust</div></td>
+          <td><span class="from">Готово швидко</span></td>
+          <td><span class="to">Проявляємо за 48 годин</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">partner.html · CTA</div></td>
+          <td><span class="from">Створити замовлення</span></td>
+          <td><span class="to">Видати лінк автору</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">admin.html · status</div></td>
+          <td><span class="from">in_progress</span></td>
+          <td><span class="to">у прояві</span></td>
+        </tr>
+        <tr>
+          <td><div class="where">admin.html · status</div></td>
+          <td><span class="from">sent</span></td>
+          <td><span class="to">відправлено · ТТН</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ════════════ 04. RECOMMENDATIONS ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 04</div>
+      <h2 class="chapter-title">Дорожня карта — <em>по пріоритету</em></h2>
+    </div>
+
+    <div class="prose">
+      <p>Дванадцять конкретних дій, упорядкованих за впливом на бізнес і вартістю виконання. Цифри впливу — інтуїтивні, не виміряні; цифри вартості — реалістичні (один день одного дизайнера+розробника).</p>
+    </div>
+
+    <div class="recs">
+      <div class="rec">
+        <div class="rec-num">01</div>
+        <div>
+          <div class="rec-title">Винести брендові токени в окремий файл</div>
+          <div class="rec-sub">Один <code>tokens.css</code> — повний словник кольорів, шрифтів, відступів. Усі 4 існуючі сторінки рефакторити на нього за 2 години сумарно. <em>Фундамент усього іншого.</em></div>
+        </div>
+        <div class="rec-impact impact-high">Високий</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">02</div>
+        <div>
+          <div class="rec-title">Зробити лендинг — нову головну сторінку</div>
+          <div class="rec-sub">Без неї шлях клієнта <em>через</em> Instagram-діректа фотографа — це холодна посадка одразу в форму. Лендинг закриває увесь блок «соцдоказ» з дослідження.</div>
+        </div>
+        <div class="rec-impact impact-high">Високий</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">03</div>
+        <div>
+          <div class="rec-title">Перебудувати partner.html як «двері для співавтора»</div>
+          <div class="rec-sub">Калькулятор доходу, безкоштовний пробний відбиток, портфоліо. Фотограф = ¾ доходу за LTV-моделлю. Чим простіше йому увійти — тим швидше Студія наповнюється замовленнями.</div>
+        </div>
+        <div class="rec-impact impact-high">Високий</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">04</div>
+        <div>
+          <div class="rec-title">Переписати order.html в естетиці брендбуку</div>
+          <div class="rec-sub">Замість radio-карток — кінематичне порівняння наборів, фото пакування, «якір на фотосесію», моноширинні метадані. Це сторінка, на яку клієнт потрапляє з Direct без фотографа-партнера.</div>
+        </div>
+        <div class="rec-impact impact-mid">Середній</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">05</div>
+        <div>
+          <div class="rec-title">Переозвучити всі заголовки в index.html</div>
+          <div class="rec-sub">Кожен з 5 кроків — у мові майстерні проявлення (див. таблицю вище). Це 30 хвилин роботи, але змінює відчуття всього флоу.</div>
+        </div>
+        <div class="rec-impact impact-mid">Середній</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">06</div>
+        <div>
+          <div class="rec-title">Додати JetBrains Mono в шрифти і використати на метаданих</div>
+          <div class="rec-sub">Технічні описи фото (роздільність, формат, дата), статуси, ТТН Нової Пошти, номер замовлення — все в Mono UPPERCASE з трекінгом 0.25em. Це візуально «архівує» продукт.</div>
+        </div>
+        <div class="rec-impact impact-mid">Середній</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">07</div>
+        <div>
+          <div class="rec-title">Зробити цифровий сертифікат архівності</div>
+          <div class="rec-sub">Один HTML-шаблон, що генерується після оплати: фото, дата, edition № X/∞, підпис автора-фотографа (якщо є). Брендбук-обіцянка стає реальною. Безкоштовно при кожному великому наборі.</div>
+        </div>
+        <div class="rec-impact impact-mid">Середній</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">08</div>
+        <div>
+          <div class="rec-title">Замінити логотип на справжню монограму</div>
+          <div class="rec-sub">Брендбук показує <em>знак-діафрагму</em>: концентричні кола, центральна точка фокусу, хрест калібрування. Зараз — текст з letter-spacing. Один SVG-файл, що використовується скрізь.</div>
+        </div>
+        <div class="rec-impact impact-mid">Середній</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">09</div>
+        <div>
+          <div class="rec-title">Темний режим admin.html за замовчуванням</div>
+          <div class="rec-sub">Темна камера як основа панелі — це і красиво, і функціонально (праця годинами, втома очей). Перейти на шкалу срібла для статусів.</div>
+        </div>
+        <div class="rec-impact impact-low">Низький</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">10</div>
+        <div>
+          <div class="rec-title">Винести EmailJS-ключ із клієнта</div>
+          <div class="rec-sub">Зараз <code>EMAILJS_PUBLIC_KEY</code> у відкритому JS. Уже є патерн для Telegram через Cloudflare Function — повторити для email.</div>
+        </div>
+        <div class="rec-impact impact-low">Низький</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">11</div>
+        <div>
+          <div class="rec-title">Прибрати емодзі з trust-блоків</div>
+          <div class="rec-sub">📸 🤍 🚀 — це антипатерн до брендбуку. Замінити на текстові маркери в Mono або SVG-іконки в стилі знаку.</div>
+        </div>
+        <div class="rec-impact impact-low">Низький</div>
+      </div>
+
+      <div class="rec">
+        <div class="rec-num">12</div>
+        <div>
+          <div class="rec-title">Сторінка автора — proyav.ink/author/[slug]</div>
+          <div class="rec-sub">Кожен фотограф-партнер отримує публічну сторінку зі своїм портфоліо edition-друків. Це і marketing для ПРОЯВ, і утримання партнера, і чесна точка ідентичності в брендбуку.</div>
+        </div>
+        <div class="rec-impact impact-low">Низький</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ CLOSER ════════════ -->
+  <section class="closer">
+    <div class="quote-mark">«</div>
+    <div class="body">Сайт ПРОЯВ <strong>не зламаний</strong>. Він просто говорить голосом інженера, тоді як майстер за стіною чекає, щоб говорити шепотом куратора. <em>Брендбук — це ноти, код — це інструмент.</em> Цей аудит — про те, як налаштувати інструмент, щоб він зіграв ту мелодію.»</div>
+    <div class="sig">— Кінець документу № 01 · ПРОЯВ · 26.05.2026 · Made with care</div>
+  </section>
+
+</div>
+
+</body>
+</html>

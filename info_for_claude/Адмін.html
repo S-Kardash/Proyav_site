@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Внутрішня панель</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* ════════════════════════════════════════════════════════════
+     ПРОЯВ · Адмін · Внутрішня панель.
+     Темний режим за замовчуванням. Брендова мова статусів.
+     Компактна щільність для роботи годинами.
+     ════════════════════════════════════════════════════════════ */
+
+  html, body { background: var(--ink-darkroom); color: var(--silver-500); min-height: 100vh; }
+  body { overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px);
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--paper-15); border-radius: 4px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--paper-30); }
+
+  /* ──────── LOGIN SCREEN ──────── */
+  #login-screen {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .login-card {
+    width: 100%; max-width: 380px;
+    padding: 48px 36px;
+    background: rgba(243, 238, 230, 0.03);
+    border: 1px solid var(--paper-15);
+    text-align: center;
+  }
+  .login-mark {
+    width: 48px; height: 48px;
+    border: 1.5px solid var(--paper); border-radius: 50%;
+    margin: 0 auto 18px;
+    position: relative;
+  }
+  .login-mark::before { content:''; position:absolute; inset:7px; border:1px solid var(--paper-30); border-radius:50%; }
+  .login-mark::after  { content:''; position:absolute; top:50%; left:50%; width:4px; height:4px; background:var(--paper); border-radius:50%; transform:translate(-50%,-50%); }
+  .login-brand { font-family: var(--font-display); font-size: 18px; font-weight: 500; letter-spacing: 0.4em; color: var(--paper); }
+  .login-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--sepia); margin-top: 8px; margin-bottom: 32px; }
+  .login-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+  .login-form .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 6px; display: block; }
+  .login-form .input {
+    width: 100%; padding: 12px 14px;
+    background: rgba(243,238,230,0.04); border: 1.5px solid var(--paper-15);
+    color: var(--paper); font-family: var(--font-body); font-size: 15px;
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .login-form .input:focus { border-color: var(--sepia); }
+  .login-form .btn {
+    width: 100%; height: 48px;
+    background: var(--sepia); color: var(--ink-graphite);
+    border: none; font-family: var(--font-body); font-weight: 500; font-size: 14px;
+    cursor: pointer; margin-top: 12px;
+    transition: background var(--dur-quick) var(--ease-fade);
+  }
+  .login-form .btn:hover { background: #b88656; }
+
+  /* ──────── APP SHELL ──────── */
+  #app { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  #app.show { display: grid; grid-template-columns: 220px minmax(0, 1fr); }
+  @media (max-width: 800px) { #app.show { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ──────── SIDEBAR ──────── */
+  .sidebar {
+    padding: 24px 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid var(--paper-15);
+    display: flex; flex-direction: column; gap: 24px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  @media (max-width: 800px) { .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 18px; border-right: 0; border-bottom: 1px solid var(--paper-15); } }
+  .side-brand { display: flex; align-items: center; gap: 12px; }
+  .side-brand .mark {
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--paper); border-radius: 50%;
+    position: relative; flex-shrink: 0;
+  }
+  .side-brand .mark::before { content:''; position:absolute; inset:5px; border:1px solid var(--paper-30); border-radius:50%; }
+  .side-brand .mark::after { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--paper); border-radius:50%; transform:translate(-50%,-50%); }
+  .side-brand-text { display: flex; flex-direction: column; gap: 2px; }
+  .side-brand-name { font-family: var(--font-display); font-size: 14px; font-weight: 500; letter-spacing: 0.4em; color: var(--paper); }
+  .side-brand-meta { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sepia); }
+  @media (max-width: 800px) { .side-brand-text { display: none; } }
+
+  .side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  @media (max-width: 800px) { .side-nav { flex-direction: row; flex: 1; gap: 4px; overflow-x: auto; } }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: none; background: none;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+    cursor: pointer; text-align: left;
+    transition: background var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+    white-space: nowrap;
+  }
+  .nav-btn:hover { background: rgba(243,238,230,0.04); color: var(--paper); }
+  .nav-btn.active { background: var(--paper); color: var(--ink-graphite); }
+  .nav-btn .ic {
+    width: 14px; height: 14px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .nav-btn .ic svg { width: 14px; height: 14px; }
+  .nav-btn .count {
+    margin-left: auto;
+    font-family: var(--font-display); font-style: italic; font-size: 14px;
+    letter-spacing: 0; color: var(--sepia);
+  }
+  .nav-btn.active .count { color: var(--ink-graphite); }
+  @media (max-width: 800px) { .nav-btn .count { display: none; } }
+
+  .side-bottom { padding-top: 16px; border-top: 1px solid var(--paper-15); display: flex; flex-direction: column; gap: 8px; }
+  @media (max-width: 800px) { .side-bottom { border-top: 0; padding-top: 0; flex-direction: row; gap: 4px; } }
+  .safelight-dot { width: 6px; height: 6px; background: var(--safelight); border-radius: 50%; box-shadow: 0 0 8px var(--safelight); animation: safelightP 2.4s ease-in-out infinite; }
+  @keyframes safelightP { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .side-status { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .logout-btn {
+    padding: 8px 12px; border: 1px solid var(--paper-15); background: none;
+    color: var(--paper-50); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; text-align: left;
+    transition: border-color var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+  }
+  .logout-btn:hover { border-color: var(--paper); color: var(--paper); }
+
+  /* ──────── MAIN ──────── */
+  main.content {
+    padding: 28px clamp(20px, 3vw, 36px);
+    min-height: 100vh;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s var(--ease-emerge); }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ── PAGE HEADER ── */
+  .page-h {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--paper-15);
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .page-h-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1; color: var(--paper); letter-spacing: -0.012em; overflow-wrap: anywhere; }
+  .page-h-title em { font-style: italic; color: var(--sepia); }
+  .page-h-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .page-h-meta strong { color: var(--paper); font-weight: 400; }
+
+  /* ── STATS ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px;
+    background: var(--paper-15); border: 1px solid var(--paper-15);
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--ink-darkroom);
+    padding: 18px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .stat-val { font-family: var(--font-display); font-style: italic; font-size: clamp(28px, 3.5vw, 36px); line-height: 1; color: var(--paper); }
+  .stat-val .cur { font-family: var(--font-body); font-style: normal; font-size: 16px; color: var(--paper-50); margin-left: 4px; }
+  .stat-sub { font-family: var(--font-body); font-size: 11px; color: var(--paper-70); line-height: 1.4; }
+  .stat-sub strong { color: var(--sepia); font-weight: 400; }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 18px;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    background: transparent; color: var(--paper-50);
+    border: 1px solid var(--paper-15); border-radius: 0;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade), border-color var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+  }
+  .filter-btn:hover { color: var(--paper); border-color: var(--paper-30); }
+  .filter-btn.active { background: var(--paper); color: var(--ink-graphite); border-color: var(--paper); }
+  .filter-btn .count { margin-left: 6px; font-family: var(--font-display); font-style: italic; font-size: 13px; letter-spacing: 0; color: var(--sepia); }
+  .filter-btn.active .count { color: var(--ink-graphite); }
+
+  .search {
+    flex: 1; min-width: 200px;
+    padding: 7px 12px;
+    background: rgba(243,238,230,0.04); border: 1px solid var(--paper-15);
+    color: var(--paper); font-family: var(--font-body); font-size: 13px;
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .search:focus { border-color: var(--sepia); }
+  .search::placeholder { color: var(--paper-30); }
+
+  .action {
+    padding: 7px 14px;
+    background: var(--sepia); color: var(--ink-graphite);
+    border: none;
+    font-family: var(--font-body); font-weight: 500; font-size: 13px;
+    cursor: pointer; white-space: nowrap;
+    transition: background var(--dur-quick) var(--ease-fade);
+  }
+  .action:hover { background: #b88656; }
+  .action.ghost { background: transparent; border: 1px solid var(--paper-30); color: var(--paper); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+  .action.ghost:hover { background: rgba(243,238,230,0.05); border-color: var(--paper); }
+
+  /* ── TABLE ── */
+  .orders-card {
+    background: rgba(243,238,230,0.02);
+    border: 1px solid var(--paper-15);
+    overflow: hidden;
+  }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--font-body); font-size: 13px;
+  }
+  th {
+    text-align: left; padding: 12px 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; font-weight: 400;
+    color: var(--paper-50);
+    border-bottom: 1px solid var(--paper-15);
+    background: rgba(0,0,0,0.2);
+    white-space: nowrap;
+  }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--paper-15);
+    vertical-align: middle;
+    color: var(--paper-70);
+  }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr {
+    cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade);
+  }
+  tbody tr:hover td { background: rgba(243,238,230,0.04); color: var(--paper); }
+  td.num { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; color: var(--paper-50); }
+  td.client { color: var(--paper); }
+  td.client em { font-style: italic; color: var(--sepia); }
+  td.price { font-family: var(--font-display); font-style: italic; font-size: 17px; color: var(--paper); white-space: nowrap; }
+  td.date { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--paper-50); white-space: nowrap; }
+
+  /* Status badges — from design system */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .badge-received   { background: rgba(217,211,200,0.12); color: var(--silver-500); }
+  .badge-received::before { background: var(--silver-300); }
+  .badge-developing { background: rgba(196,149,108,.15); color: var(--sepia); }
+  .badge-developing::before { background: var(--sepia); animation: safelightP 1.6s ease-in-out infinite; }
+  .badge-packed     { background: rgba(243,238,230,0.10); color: var(--paper); }
+  .badge-packed::before { background: var(--paper); }
+  .badge-sent       { background: transparent; color: var(--paper); border: 1px solid var(--paper-30); }
+  .badge-sent::before { background: var(--paper); }
+  .badge-closed     { background: transparent; color: var(--paper-50); border: 1px dashed var(--paper-30); }
+  .badge-closed::before { background: var(--paper-30); }
+  .badge-alert      { background: var(--safelight); color: var(--paper); }
+  .badge-alert::before { background: var(--paper); }
+  .badge-channel-retail { background: rgba(196,149,108,.10); color: var(--sepia); }
+  .badge-channel-retail::before { background: var(--sepia); }
+  .badge-channel-partner { background: rgba(243,238,230,0.08); color: var(--paper-70); }
+  .badge-channel-partner::before { background: var(--paper-50); }
+
+  /* ── DETAIL DRAWER ── */
+  .drawer-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    animation: fadeIn 0.2s var(--ease-fade);
+  }
+  .drawer-overlay.open { display: block; }
+  .drawer {
+    position: fixed; right: 0; top: 0; bottom: 0; z-index: 201;
+    width: 100%; max-width: 520px;
+    background: var(--ink-darkroom);
+    border-left: 1px solid var(--paper-15);
+    transform: translateX(100%);
+    transition: transform 0.32s var(--ease-emerge);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-h {
+    padding: 22px 28px; border-bottom: 1px solid var(--paper-15);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    position: sticky; top: 0; background: var(--ink-darkroom); z-index: 1;
+  }
+  .drawer-h .title { font-family: var(--font-display); font-style: italic; font-size: 24px; color: var(--paper); line-height: 1.1; overflow-wrap: anywhere; }
+  .drawer-h .num { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sepia); margin-bottom: 4px; }
+  .drawer-h .close {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--paper-30); background: none;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper); cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade);
+    flex-shrink: 0;
+  }
+  .drawer-h .close:hover { background: rgba(243,238,230,0.06); }
+
+  .drawer-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 22px; }
+  .drawer-sec { display: flex; flex-direction: column; gap: 12px; }
+  .drawer-sec-h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--paper-50); }
+  .drawer-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .drawer-field { display: flex; flex-direction: column; gap: 4px; }
+  .drawer-field .k { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+  .drawer-field .v { font-family: var(--font-body); font-size: 14px; color: var(--paper); }
+  .drawer-field .v em { font-style: italic; color: var(--sepia); }
+
+  .drawer-status-select {
+    padding: 10px 14px;
+    background: rgba(243,238,230,0.05); border: 1px solid var(--paper-15);
+    color: var(--paper); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .drawer-status-select:focus { border-color: var(--sepia); }
+  .drawer-status-select option { background: var(--ink-graphite); color: var(--paper); }
+
+  .drawer-photos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .drawer-photo {
+    width: 64px; height: 88px;
+    background: linear-gradient(160deg, #3a3733 0%, #1a1817 90%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+  }
+  .drawer-photo::before { content:''; position:absolute; inset:0; background: repeating-linear-gradient(135deg, transparent 0, transparent 12px, rgba(255,255,255,0.04) 12px, rgba(255,255,255,0.04) 13px); }
+  .drawer-photo .b { position:absolute; bottom:2px; left:2px; right:2px; font-family: var(--font-mono); font-size:7px; letter-spacing:0.15em; text-align:center; color: var(--paper-70); background: rgba(0,0,0,0.6); padding: 2px; }
+
+  .drawer-foot {
+    padding: 18px 28px; border-top: 1px solid var(--paper-15);
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: auto;
+  }
+  .drawer-foot .action { flex: 1; min-width: 120px; height: 44px; display: flex; align-items: center; justify-content: center; }
+
+  /* ── EMPTY ── */
+  .empty {
+    text-align: center; padding: 80px 20px;
+    color: var(--paper-50);
+    font-family: var(--font-display); font-style: italic; font-size: 18px;
+  }
+
+  /* ── HIDE on small ── */
+  @media (max-width: 700px) {
+    .hide-sm { display: none; }
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--paper); color: var(--ink-graphite);
+    padding: 10px 18px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    opacity: 0; pointer-events: none; z-index: 500;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ════════════ LOGIN ════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark" aria-hidden="true"></div>
+    <div class="login-brand">ПРОЯВ</div>
+    <div class="login-meta">ВНУТРІШНЯ ПАНЕЛЬ · v.01</div>
+
+    <form class="login-form" onsubmit="event.preventDefault(); doLogin();">
+      <div>
+        <label class="label" for="lg-pw">Пароль</label>
+        <input class="input" type="password" id="lg-pw" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn" type="submit">Увійти в майстерню →</button>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════ APP ════════════ -->
+<div id="app">
+
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div class="side-brand-text">
+        <div class="side-brand-name">ПРОЯВ</div>
+        <div class="side-brand-meta">АДМІН · v.01</div>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <button class="nav-btn active" data-page="orders">
+        <span class="ic"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><line x1="2" y1="5.5" x2="12" y2="5.5"/></svg></span>
+        Замовлення
+        <span class="count">12</span>
+      </button>
+      <button class="nav-btn" data-page="retail">
+        <span class="ic"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 5h8l-1 7H4z"/><path d="M5 5V3.5a2 2 0 1 1 4 0V5"/></svg></span>
+        Заявки
+        <span class="count">3</span>
+      </button>
+      <button class="nav-btn" data-page="partners">
+        <span class="ic"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="5" r="2.5"/><path d="M2 12c0-2 2.5-3.5 5-3.5s5 1.5 5 3.5"/></svg></span>
+        Партнери
+        <span class="count">8</span>
+      </button>
+      <button class="nav-btn" data-page="inventory">
+        <span class="ic"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="10" height="9" rx="0.5"/><line x1="2" y1="6" x2="12" y2="6"/><line x1="5" y1="3" x2="5" y2="6"/></svg></span>
+        Матеріали
+      </button>
+      <button class="nav-btn" data-page="settings">
+        <span class="ic"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg></span>
+        Налаштування
+      </button>
+    </nav>
+
+    <div class="side-bottom">
+      <div class="side-status"><span class="safelight-dot"></span>Майстерня · ONLINE</div>
+      <button class="logout-btn" onclick="doLogout()">Вийти</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ════════════ ORDERS ════════════ -->
+    <div class="page active" id="page-orders">
+      <div class="page-h">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:var(--sepia); margin-bottom:8px;">№ 01 · РОБОЧИЙ СТІЛ</div>
+          <h1 class="page-h-title">Кадри <em>в роботі</em></h1>
+        </div>
+        <div class="page-h-meta">
+          <span>СЬОГОДНІ · <strong>26.05.2026</strong></span>
+          <span><span class="safelight-dot" style="display:inline-block; vertical-align:middle;"></span> 3 НОВИХ ЗА ГОДИНУ</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-key">Цього місяця</span>
+          <span class="stat-val">47</span>
+          <span class="stat-sub">замовлень · <strong>+22%</strong> до квітня</span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">У роботі</span>
+          <span class="stat-val">12</span>
+          <span class="stat-sub"><strong>5</strong> очікують перевірки</span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">Виторг місяця</span>
+          <span class="stat-val">18 850<span class="cur">₴</span></span>
+          <span class="stat-sub">з них <strong>3 240 ₴</strong> комісій до виплати</span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">Активних партнерів</span>
+          <span class="stat-val">8</span>
+          <span class="stat-sub">+ <strong>2</strong> чекають пробного відбитку</span>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button class="filter-btn active" data-filter="all">Усі <span class="count">12</span></button>
+        <button class="filter-btn" data-filter="received">Отримано <span class="count">3</span></button>
+        <button class="filter-btn" data-filter="developing">У прояві <span class="count">5</span></button>
+        <button class="filter-btn" data-filter="packed">Запаковано <span class="count">2</span></button>
+        <button class="filter-btn" data-filter="sent">Відправлено <span class="count">2</span></button>
+        <input class="search" type="text" placeholder="Пошук за номером, ім'ям або @nickname…">
+        <button class="action ghost">Експорт CSV</button>
+      </div>
+
+      <!-- Table -->
+      <div class="orders-card">
+        <div class="table-wrap">
+          <table id="orders-table">
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Автор</th>
+                <th class="hide-sm">Канал</th>
+                <th>Статус</th>
+                <th class="hide-sm">Доставка</th>
+                <th>Сума</th>
+                <th class="hide-sm">Дата</th>
+              </tr>
+            </thead>
+            <tbody id="orders-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ RETAIL APPLICATIONS ════════════ -->
+    <div class="page" id="page-retail">
+      <div class="page-h">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:var(--sepia); margin-bottom:8px;">№ 02 · ЗАЯВКИ З ЛЕНДИНГУ</div>
+          <h1 class="page-h-title">Хто <em>постукав у двері</em></h1>
+        </div>
+        <div class="page-h-meta"><span>3 НОВИХ · <strong>СЬОГОДНІ</strong></span></div>
+      </div>
+
+      <div class="orders-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>№</th><th>Контакт</th><th>Набір</th><th class="hide-sm">Повідомлення</th><th class="hide-sm">Дата</th><th>Дія</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">ПРЯ-839</td>
+                <td class="client">Оксана Г. · <span style="color:var(--paper-50);">+38 067 123 4567</span></td>
+                <td><span class="badge badge-channel-retail">Малюк · 450 ₴</span></td>
+                <td class="hide-sm" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Робила фото з малюком 3 тижні тому, хочу красивий друк…</td>
+                <td class="hide-sm date">26.05 · 09:14</td>
+                <td><button class="action">Видати лінк →</button></td>
+              </tr>
+              <tr>
+                <td class="num">ПРЯ-838</td>
+                <td class="client">Марія Б. · <span style="color:var(--paper-50);">+38 050 ··· 23 89</span></td>
+                <td><span class="badge badge-channel-retail">Архів · 900 ₴</span></td>
+                <td class="hide-sm" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Весілля 18 травня, є 200+ фото. Цікавлять подробиці…</td>
+                <td class="hide-sm date">26.05 · 08:02</td>
+                <td><button class="action">Видати лінк →</button></td>
+              </tr>
+              <tr>
+                <td class="num">ПРЯ-837</td>
+                <td class="client">Андрій К. · <span style="color:var(--paper-50);">@andrii_k</span></td>
+                <td><span class="badge badge-channel-retail">Момент · 400 ₴</span></td>
+                <td class="hide-sm" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Подарунок на річницю, без фотосесії — фото з телефону…</td>
+                <td class="hide-sm date">25.05 · 19:48</td>
+                <td><button class="action">Видати лінк →</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ PARTNERS ════════════ -->
+    <div class="page" id="page-partners">
+      <div class="page-h">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:var(--sepia); margin-bottom:8px;">№ 03 · СПІВАВТОРИ</div>
+          <h1 class="page-h-title">Автори, які <em>з нами</em></h1>
+        </div>
+        <div class="page-h-meta"><span>8 АКТИВНИХ · <strong>+2 НОВИХ ЦЬОГО МІСЯЦЯ</strong></span></div>
+      </div>
+
+      <div class="orders-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>№</th><th>Автор</th><th class="hide-sm">Місто</th><th>Замовлень</th><th>Виплачено</th><th class="hide-sm">До виплати</th><th>З нами</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">008</td>
+                <td class="client"><em>Олена Кравець</em> · @olena_kravets_photo</td>
+                <td class="hide-sm">Самбір · Дрогобич</td>
+                <td>14</td>
+                <td class="price">5 040 ₴</td>
+                <td class="hide-sm price" style="color:var(--sepia);">216 ₴</td>
+                <td class="date">ЛЮТИЙ 2026</td>
+              </tr>
+              <tr>
+                <td class="num">007</td>
+                <td class="client"><em>Софія Лісовська</em> · @sofia.lis</td>
+                <td class="hide-sm">Стрий</td>
+                <td>9</td>
+                <td class="price">3 600 ₴</td>
+                <td class="hide-sm price">0 ₴</td>
+                <td class="date">БЕРЕЗЕНЬ 2026</td>
+              </tr>
+              <tr>
+                <td class="num">006</td>
+                <td class="client"><em>Андрій Дубас</em> · @dubas_studio</td>
+                <td class="hide-sm">Дрогобич · Борислав</td>
+                <td>7</td>
+                <td class="price">2 520 ₴</td>
+                <td class="hide-sm price" style="color:var(--sepia);">108 ₴</td>
+                <td class="date">КВІТЕНЬ 2026</td>
+              </tr>
+              <tr>
+                <td class="num">005</td>
+                <td class="client"><em>Марта Цимбалюк</em> · @marta.frame</td>
+                <td class="hide-sm">Трускавець</td>
+                <td>5</td>
+                <td class="price">2 250 ₴</td>
+                <td class="hide-sm price">0 ₴</td>
+                <td class="date">КВІТЕНЬ 2026</td>
+              </tr>
+              <tr>
+                <td class="num">004</td>
+                <td class="client"><em>Іван Сорока</em> · @soroka_weddings</td>
+                <td class="hide-sm">Львів · Самбір</td>
+                <td>11</td>
+                <td class="price">8 280 ₴</td>
+                <td class="hide-sm price">0 ₴</td>
+                <td class="date">БЕРЕЗЕНЬ 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════ INVENTORY ════════════ -->
+    <div class="page" id="page-inventory">
+      <div class="page-h">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:var(--sepia); margin-bottom:8px;">№ 04 · МАТЕРІАЛИ</div>
+          <h1 class="page-h-title">Що є у <em>майстерні</em></h1>
+        </div>
+        <div class="page-h-meta"><span>ОНОВЛЕНО · <strong>СЬОГОДНІ 14:30</strong></span></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-key">Папір 10×15</span>
+          <span class="stat-val">340</span>
+          <span class="stat-sub">аркушів · <strong>вистачить на ≈ 14 наборів</strong></span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">Чорнило</span>
+          <span class="stat-val">62<span class="cur">%</span></span>
+          <span class="stat-sub">UltraChrome 12 · CMYK + LM</span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">Конверти</span>
+          <span class="stat-val">28</span>
+          <span class="stat-sub">оксамитових · <strong>замовити ще 50 до 30.05</strong></span>
+        </div>
+        <div class="stat">
+          <span class="stat-key">Картки</span>
+          <span class="stat-val">112</span>
+          <span class="stat-sub">з підписом ательє</span>
+        </div>
+      </div>
+
+      <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--paper-50); margin-top:24px; padding:24px; background:rgba(243,238,230,0.03); border:1px solid var(--paper-15);">
+        Запис матеріалів. Усі дії з історією. <strong style="color:var(--sepia);">Готується до Фази 3</strong>.
+      </div>
+    </div>
+
+    <!-- ════════════ SETTINGS ════════════ -->
+    <div class="page" id="page-settings">
+      <div class="page-h">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:var(--sepia); margin-bottom:8px;">№ 05 · НАЛАШТУВАННЯ</div>
+          <h1 class="page-h-title">Як <em>працює</em> майстерня</h1>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+        <div style="padding:22px; background:rgba(243,238,230,0.03); border:1px solid var(--paper-15);">
+          <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--paper-50); margin-bottom:8px;">ЦІНА ВІДБИТКА</div>
+          <div style="font-family:var(--font-display); font-style:italic; font-size:32px; color:var(--paper);">12 ₴</div>
+          <div style="font-family:var(--font-body); font-size:12px; color:var(--paper-70); margin-top:4px;">за 1 шт 10×15. Змінюється у admin.</div>
+        </div>
+        <div style="padding:22px; background:rgba(243,238,230,0.03); border:1px solid var(--paper-15);">
+          <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--paper-50); margin-bottom:8px;">КОМІСІЯ ПАРТНЕРАМ</div>
+          <div style="font-family:var(--font-display); font-style:italic; font-size:32px; color:var(--paper);">12 <span style="font-style:normal; font-size:20px; color:var(--paper-50);">%</span></div>
+          <div style="font-family:var(--font-body); font-size:12px; color:var(--paper-70); margin-top:4px;">від суми замовлення клієнта.</div>
+        </div>
+        <div style="padding:22px; background:rgba(243,238,230,0.03); border:1px solid var(--paper-15);">
+          <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.25em; text-transform:uppercase; color:var(--paper-50); margin-bottom:8px;">ТЕРМІН ПРОЯВЛЕННЯ</div>
+          <div style="font-family:var(--font-display); font-style:italic; font-size:32px; color:var(--paper);">48 <span style="font-style:normal; font-size:20px; color:var(--paper-50);">годин</span></div>
+          <div style="font-family:var(--font-body); font-size:12px; color:var(--paper-70); margin-top:4px;">базовий SLA для всіх наборів.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ════════════ DRAWER (Order detail) ════════════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-h">
+    <div>
+      <div class="num" id="dr-num">ПРЯ-839</div>
+      <div class="title" id="dr-title">Оксана Г. · Малюк</div>
+    </div>
+    <button class="close" onclick="closeDrawer()" aria-label="Закрити">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+
+    <div class="drawer-sec">
+      <div class="drawer-sec-h">Стадія проявлення</div>
+      <select class="drawer-status-select" id="dr-status">
+        <option value="received">Отримано</option>
+        <option value="developing" selected>У прояві</option>
+        <option value="packed">Запаковано</option>
+        <option value="sent">Відправлено · ТТН</option>
+        <option value="closed">Закрито</option>
+        <option value="alert">Помилка зображення</option>
+      </select>
+    </div>
+
+    <div class="drawer-sec">
+      <div class="drawer-sec-h">Автор замовлення</div>
+      <div class="drawer-grid">
+        <div class="drawer-field"><span class="k">Ім'я</span><span class="v" id="dr-name">Оксана Г.</span></div>
+        <div class="drawer-field"><span class="k">Телефон</span><span class="v" id="dr-phone">+38 067 123 4567</span></div>
+        <div class="drawer-field"><span class="k">Instagram</span><span class="v" id="dr-ig">@oksana_g</span></div>
+        <div class="drawer-field"><span class="k">Канал</span><span class="v" id="dr-channel"><em>Через партнера №008</em></span></div>
+      </div>
+    </div>
+
+    <div class="drawer-sec">
+      <div class="drawer-sec-h">Доставка</div>
+      <div class="drawer-grid">
+        <div class="drawer-field"><span class="k">Спосіб</span><span class="v">Нова Пошта</span></div>
+        <div class="drawer-field"><span class="k">Місто</span><span class="v">Дрогобич</span></div>
+        <div class="drawer-field" style="grid-column:1 / -1;"><span class="k">Відділення</span><span class="v">№ 14, вул. Грушевського 23</span></div>
+        <div class="drawer-field"><span class="k">ТТН</span><span class="v" style="font-family:var(--font-mono); letter-spacing:0.12em;">59 0099 7841 2345</span></div>
+        <div class="drawer-field"><span class="k">Очікується</span><span class="v">28.05.2026</span></div>
+      </div>
+    </div>
+
+    <div class="drawer-sec">
+      <div class="drawer-sec-h">Кадри · 10 шт</div>
+      <div class="drawer-photos" id="dr-photos">
+        <!-- generated -->
+      </div>
+    </div>
+
+    <div class="drawer-sec">
+      <div class="drawer-sec-h">Сума замовлення</div>
+      <div class="drawer-grid">
+        <div class="drawer-field"><span class="k">10 відбитків × 12 ₴</span><span class="v" style="font-family:var(--font-display); font-style:italic; font-size:20px;">120 ₴</span></div>
+        <div class="drawer-field"><span class="k">Набір «Малюк»</span><span class="v" style="font-family:var(--font-display); font-style:italic; font-size:20px;">450 ₴</span></div>
+        <div class="drawer-field"><span class="k">Доставка НП</span><span class="v">≈ 65 ₴</span></div>
+        <div class="drawer-field"><span class="k" style="color:var(--sepia);">Комісія партнеру 12%</span><span class="v" style="color:var(--sepia); font-family:var(--font-display); font-style:italic; font-size:20px;">54 ₴</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="drawer-foot">
+    <button class="action ghost">↗ Telegram</button>
+    <button class="action ghost">↗ Подзвонити</button>
+    <button class="action">Зберегти зміни</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────── Login ───────────────
+function doLogin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+}
+function doLogout() {
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('lg-pw').value = '';
+}
+
+// ─────────────── Nav ───────────────
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+  });
+});
+
+// ─────────────── Orders data ───────────────
+const ORDERS = [
+  { num: 'ПРЯ-839', name: 'Оксана Г.', set: 'Малюк', channel: 'partner', partner: '#008 Олена К.', status: 'developing', delivery: 'НП · Дрогобич', amount: 510, date: '26.05 · 09:14', photos: 10, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-836', name: 'Марія та Андрій', set: 'Архів', channel: 'partner', partner: '#008 Олена К.', status: 'sent', delivery: 'НП · Трускавець', amount: 990, date: '24.05 · 18:14', photos: 50, color: 'mixed', paper: 'mat' },
+  { num: 'ПРЯ-835', name: 'Наталія Ш.', set: 'Спогад', channel: 'partner', partner: '#007 Софія Л.', status: 'packed', delivery: 'НП · Стрий', amount: 620, date: '23.05 · 11:22', photos: 20, color: 'color', paper: 'gloss' },
+  { num: 'ПРЯ-834', name: 'Софія К.', set: 'Момент', channel: 'partner', partner: '#006 Андрій Д.', status: 'received', delivery: 'Самовивіз · Самбір', amount: 400, date: '22.05 · 16:08', photos: 10, color: 'bw', paper: 'mat' },
+  { num: 'ПРЯ-833', name: 'Анна Б.', set: 'Спогад', channel: 'retail', partner: '—', status: 'developing', delivery: 'НП · Львів', amount: 660, date: '22.05 · 10:48', photos: 20, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-832', name: 'Олег та Іра', set: 'Архів', channel: 'partner', partner: '#004 Іван С.', status: 'developing', delivery: 'НП · Львів', amount: 950, date: '21.05 · 20:33', photos: 50, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-831', name: 'Юля М.', set: 'Малюк', channel: 'partner', partner: '#007 Софія Л.', status: 'developing', delivery: 'НП · Стрий', amount: 470, date: '21.05 · 14:11', photos: 10, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-830', name: 'Дмитро К.', set: 'Момент', channel: 'retail', partner: '—', status: 'received', delivery: 'НП · Київ', amount: 415, date: '21.05 · 09:22', photos: 10, color: 'color', paper: 'gloss' },
+  { num: 'ПРЯ-829', name: 'Катерина Л.', set: 'Спогад', channel: 'partner', partner: '#005 Марта Ц.', status: 'sent', delivery: 'НП · Трускавець', amount: 640, date: '20.05 · 12:55', photos: 20, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-828', name: 'Антон Ш.', set: 'Малюк', channel: 'partner', partner: '#008 Олена К.', status: 'developing', delivery: 'Самовивіз · Самбір', amount: 450, date: '19.05 · 18:01', photos: 10, color: 'color', paper: 'mat' },
+  { num: 'ПРЯ-827', name: 'Ірина Г.', set: 'Архів', channel: 'partner', partner: '#004 Іван С.', status: 'packed', delivery: 'НП · Львів', amount: 980, date: '19.05 · 15:33', photos: 50, color: 'mixed', paper: 'mat' },
+  { num: 'ПРЯ-826', name: 'Олена П.', set: 'Момент', channel: 'retail', partner: '—', status: 'received', delivery: 'НП · Самбір', amount: 410, date: '19.05 · 11:14', photos: 10, color: 'bw', paper: 'mat' },
+];
+
+const STATUS_LABEL = {
+  received: 'Отримано',
+  developing: 'У прояві',
+  packed: 'Запаковано',
+  sent: 'Відправлено · ТТН',
+  closed: 'Закрито',
+  alert: 'Помилка зображення',
+};
+
+function renderOrders(filter = 'all') {
+  const tbody = document.getElementById('orders-body');
+  tbody.innerHTML = '';
+  const filtered = filter === 'all' ? ORDERS : ORDERS.filter(o => o.status === filter);
+  filtered.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num">${o.num}</td>
+      <td class="client"><em>${o.name}</em> · ${o.set}</td>
+      <td class="hide-sm"><span class="badge badge-channel-${o.channel}">${o.channel === 'retail' ? 'Напряму' : 'Партнер ' + o.partner.replace('#','№').split(' ')[0]}</span></td>
+      <td><span class="badge badge-${o.status}">${STATUS_LABEL[o.status]}</span></td>
+      <td class="hide-sm">${o.delivery}</td>
+      <td class="price">${o.amount} ₴</td>
+      <td class="hide-sm date">${o.date}</td>
+    `;
+    tr.onclick = () => openDrawer(o);
+    tbody.appendChild(tr);
+  });
+}
+renderOrders();
+
+// Filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderOrders(btn.dataset.filter);
+  });
+});
+
+// ─────────────── Drawer ───────────────
+function openDrawer(o) {
+  document.getElementById('dr-num').textContent = o.num;
+  document.getElementById('dr-title').textContent = o.name + ' · ' + o.set;
+  document.getElementById('dr-name').textContent = o.name;
+  document.getElementById('dr-status').value = o.status;
+  document.getElementById('dr-channel').innerHTML = o.channel === 'retail' ? '<em>Напряму з лендингу</em>' : '<em>Через партнера ' + o.partner + '</em>';
+
+  // photos placeholder grid
+  const photos = document.getElementById('dr-photos');
+  photos.innerHTML = '';
+  for (let i = 0; i < Math.min(o.photos, 12); i++) {
+    const d = document.createElement('div');
+    d.className = 'drawer-photo';
+    const colorLabel = o.color === 'bw' ? 'Ч/Б' : (o.color === 'mixed' ? 'МІКС' : 'КОЛ');
+    const paperLabel = o.paper === 'gloss' ? 'ГЛ' : 'МАТ';
+    d.innerHTML = `<div class="b">${String(i+1).padStart(2,'0')} · ${colorLabel}·${paperLabel}</div>`;
+    photos.appendChild(d);
+  }
+  if (o.photos > 12) {
+    const d = document.createElement('div');
+    d.className = 'drawer-photo';
+    d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center';
+    d.style.fontFamily = 'var(--font-display)'; d.style.fontStyle = 'italic';
+    d.style.fontSize = '14px'; d.style.color = 'var(--paper-70)';
+    d.innerHTML = '+' + (o.photos - 12);
+    photos.appendChild(d);
+  }
+
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+// Toast
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+document.getElementById('dr-status').addEventListener('change', e => {
+  toast('Статус: ' + STATUS_LABEL[e.target.value]);
+});
+
+// Auto-login for demo viewing (comment out to require password)
+doLogin();
+</script>
+
+</body>
+</html>

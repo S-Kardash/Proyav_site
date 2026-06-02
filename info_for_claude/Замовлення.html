@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ПРОЯВ · Завантаження кадрів</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* ════════════════════════════════════════════════════════════
+     ПРОЯВ · Замовлення · 5-step flow (refactor of index.html).
+     Mobile-first 448px max. Concept B (Темна кімната).
+     ════════════════════════════════════════════════════════════ */
+
+  html, body { background: var(--ink-darkroom); color: var(--silver-500); min-height: 100vh; }
+  body { overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px);
+  }
+
+  /* ──────── SPLASH ──────── */
+  #splash {
+    position: fixed; inset: 0; z-index: 999;
+    background: var(--ink-darkroom);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; pointer-events: none;
+  }
+  #splash.done { animation: splashOut 0.7s 0.1s var(--ease-emerge) forwards; }
+  @keyframes splashOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); visibility: hidden; } }
+  #splash.done { visibility: hidden; }
+  .splash-letters { display: flex; gap: 6px; }
+  .splash-letter {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: clamp(44px, 12vw, 64px);
+    color: var(--paper);
+    opacity: 0; transform: translateY(28px);
+    animation: letterIn 0.55s var(--ease-emerge) forwards;
+  }
+  .splash-letter:nth-child(1) { animation-delay: 0.06s; }
+  .splash-letter:nth-child(2) { animation-delay: 0.14s; }
+  .splash-letter:nth-child(3) { animation-delay: 0.22s; }
+  .splash-letter:nth-child(4) { animation-delay: 0.30s; }
+  .splash-letter:nth-child(5) { animation-delay: 0.38s; }
+  @keyframes letterIn { to { opacity: 1; transform: translateY(0); } }
+  .splash-line {
+    width: 0; height: 1px; background: var(--paper);
+    animation: lineGrow 0.6s 0.6s ease forwards;
+  }
+  @keyframes lineGrow { to { width: clamp(80px, 28vw, 140px); } }
+  .splash-sub {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.35em;
+    text-transform: uppercase; color: var(--paper-50);
+    opacity: 0; animation: fadeIn 0.5s 0.95s ease forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .splash-safelight {
+    position: absolute; top: 36px; right: 36px;
+    width: 6px; height: 6px; background: var(--safelight); border-radius: 50%;
+    box-shadow: 0 0 12px var(--safelight);
+    opacity: 0; animation: fadeIn 0.5s 1.05s ease forwards, safelightP 2.4s 1.5s ease-in-out infinite;
+  }
+  @keyframes safelightP { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ──────── APP CONTAINER ──────── */
+  .app {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    padding-bottom: 80px;
+    opacity: 0;
+    animation: appIn 0.5s 1.35s ease forwards;
+  }
+  @keyframes appIn { to { opacity: 1; } }
+
+  /* ──────── HEADER ──────── */
+  .header {
+    padding: 28px 24px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 18px;
+  }
+  .header-logo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .header-logo-text {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: 20px; line-height: 1; letter-spacing: 0.5em;
+    color: var(--paper); padding-left: 0.5em;
+  }
+  .header-logo-line { width: 100px; height: 1px; background: var(--paper-30); }
+  .header-meta {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--paper-50);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .safelight-dot { width: 5px; height: 5px; background: var(--safelight); border-radius: 50%; box-shadow: 0 0 6px var(--safelight); animation: safelightP 2.4s ease-in-out infinite; }
+
+  /* ──────── STEPPER ──────── */
+  .stepper { display: flex; align-items: center; gap: 6px; }
+  .step-bubble {
+    width: 26px; height: 26px;
+    border: 1px solid var(--paper-30); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-size: 13px;
+    color: var(--paper-50); flex-shrink: 0;
+    transition: background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .step-bubble.active { background: var(--sepia); border-color: var(--sepia); color: var(--ink-graphite); transform: scale(1.08); }
+  .step-bubble.done { background: var(--paper); border-color: var(--paper); color: var(--ink-graphite); }
+  .step-bubble.done::after { content: '✓'; font-family: var(--font-body); font-size: 11px; font-weight: 600; }
+  .step-bubble.done span { display: none; }
+  .step-line {
+    width: 18px; height: 1px;
+    background: var(--paper-15);
+    transition: background var(--dur-quick);
+  }
+  .step-line.done { background: var(--paper); }
+
+  /* ──────── MAIN ──────── */
+  main { flex: 1; padding: 0 24px; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: screenIn 0.38s var(--ease-emerge); }
+  @keyframes screenIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* ──────── HEADINGS ──────── */
+  .h-screen { font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 7vw, 36px); line-height: 1.05; color: var(--paper); margin-bottom: 8px; letter-spacing: -0.012em; overflow-wrap: anywhere; }
+  .h-screen em { font-style: italic; color: var(--sepia); }
+  .h-sub { font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: var(--paper-70); margin-bottom: 26px; }
+  .h-sub em { font-style: italic; color: var(--sepia); font-weight: 400; }
+
+  /* ──────── BACK BUTTON ──────── */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 0; background: none; border: none;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--paper-50);
+    cursor: pointer; margin-bottom: 22px;
+    transition: color var(--dur-quick) var(--ease-fade);
+  }
+  .back-btn:hover { color: var(--paper); }
+
+  /* ──────── SEGMENTED ──────── */
+  .seg {
+    background: rgba(243,238,230,0.05);
+    border: 1px solid var(--paper-15);
+    padding: 4px;
+    display: flex; gap: 0;
+    margin-bottom: 22px;
+  }
+  .seg-btn {
+    flex: 1; padding: 12px 8px;
+    border: none; background: none;
+    font-family: var(--font-body); font-weight: 500; font-size: 13px;
+    color: var(--paper-50); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .seg-btn.active { background: var(--paper); color: var(--ink-graphite); }
+
+  /* ──────── INPUT ──────── */
+  .input-wrap { margin-bottom: 16px; }
+  .label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--paper-50);
+    margin-bottom: 6px; display: block;
+  }
+  .field-row { position: relative; display: flex; align-items: center; }
+  .input-field {
+    width: 100%; height: 52px; padding: 0 16px;
+    border: 1.5px solid var(--paper-15);
+    background: rgba(243,238,230,0.04);
+    font-family: var(--font-body); font-size: 15px; color: var(--paper);
+    outline: none;
+    transition: border-color var(--dur-quick) var(--ease-fade), box-shadow var(--dur-quick) var(--ease-fade);
+    -webkit-appearance: none;
+  }
+  .input-field.has-prefix { padding-left: 36px; }
+  .input-field::placeholder { color: var(--paper-30); }
+  .input-field:focus { border-color: var(--sepia); box-shadow: 0 0 0 3px rgba(196, 149, 108, 0.08); }
+  .input-field.error { border-color: var(--safelight); background: rgba(178, 58, 44, 0.06); }
+  .input-prefix {
+    position: absolute; left: 16px;
+    font-family: var(--font-body); font-size: 15px;
+    color: var(--paper-30);
+    pointer-events: none;
+  }
+  .order-prefix-badge {
+    height: 52px; padding: 0 12px 0 16px;
+    border: 1.5px solid var(--paper-15); border-right: none;
+    background: rgba(243,238,230,0.04);
+    font-family: var(--font-display); font-size: 16px; font-weight: 500;
+    color: var(--paper);
+    display: none; align-items: center;
+    white-space: nowrap; letter-spacing: 0.1em;
+    flex-shrink: 0;
+  }
+  .order-prefix-badge.visible { display: flex; }
+  .input-field.order-mode { padding-left: 12px; font-family: var(--font-mono); font-size: 16px; letter-spacing: 0.2em; border-left: none; }
+  .input-field.order-mode::placeholder { font-family: var(--font-body); font-size: 14px; letter-spacing: 0; }
+
+  .field-error {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--safelight); margin-top: 6px; display: none;
+  }
+  .field-error.show { display: block; animation: errFade 0.2s ease; }
+  @keyframes errFade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ──────── BUTTONS ──────── */
+  .btn-primary {
+    width: 100%; height: 56px;
+    background: var(--safelight); color: var(--paper);
+    border: none; border-radius: 999px;
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; margin-top: 24px;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge), opacity var(--dur-quick);
+    -webkit-tap-highlight-color: transparent;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary:hover:not(:disabled) { background: #962d22; box-shadow: 0 0 24px -4px rgba(178, 58, 44, 0.4); }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-primary .arrow { font-family: var(--font-mono); }
+
+  .btn-paper {
+    width: 100%; height: 52px;
+    background: var(--paper); color: var(--ink-graphite);
+    border: none; border-radius: 999px;
+    font-family: var(--font-body); font-weight: 500; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; margin-top: 14px;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .btn-paper:hover { background: var(--sepia); }
+  .btn-paper:active { transform: scale(0.98); }
+
+  /* ──────── UPLOAD ZONE ──────── */
+  .upload-zone {
+    border: 1.5px dashed var(--paper-30);
+    background: rgba(243,238,230,0.02);
+    min-height: 200px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: border-color var(--dur-quick) var(--ease-fade), background var(--dur-quick) var(--ease-fade);
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--sepia);
+    background: rgba(196, 149, 108, 0.04);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+  .upload-icon-circle {
+    width: 52px; height: 52px;
+    border: 1.5px solid var(--paper); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper);
+    pointer-events: none;
+  }
+  .upload-title {
+    font-family: var(--font-display); font-weight: 500; font-size: 20px;
+    color: var(--paper); pointer-events: none;
+  }
+  .upload-hint {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+    pointer-events: none;
+  }
+
+  /* ──────── PHOTO LIST ──────── */
+  .photos-list { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+  .photo-card {
+    background: rgba(243,238,230,0.03);
+    border: 1px solid var(--paper-15);
+    overflow: hidden;
+    animation: photoIn 0.4s var(--ease-emerge);
+    min-width: 0;
+  }
+  @keyframes photoIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .photo-preview {
+    position: relative; aspect-ratio: 4 / 3;
+    background: linear-gradient(160deg, #3a3733 0%, #1a1817 90%);
+    overflow: hidden;
+  }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+  .photo-preview-placeholder {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0, transparent 22px, rgba(255,255,255,0.04) 22px, rgba(255,255,255,0.04) 23px);
+  }
+
+  .photo-num {
+    position: absolute; top: 10px; left: 12px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+    background: rgba(0,0,0, 0.5); padding: 4px 8px;
+    backdrop-filter: blur(4px);
+  }
+  .photo-delete {
+    position: absolute; top: 10px; right: 10px;
+    width: 30px; height: 30px;
+    background: rgba(0,0,0,0.5); border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--paper);
+    backdrop-filter: blur(4px);
+    transition: background var(--dur-quick) var(--ease-fade);
+  }
+  .photo-delete:hover { background: var(--safelight); }
+
+  .photo-meta-strip {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 8px 12px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.7), transparent);
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+  }
+  .photo-meta-strip strong { color: var(--paper); font-weight: 400; }
+
+  .photo-controls {
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .photo-ctrl-row { display: flex; flex-direction: column; gap: 6px; }
+  .photo-ctrl-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .photo-seg {
+    background: rgba(243,238,230,0.05); border: 1px solid var(--paper-15);
+    padding: 3px; display: flex; gap: 0;
+  }
+  .photo-seg-btn {
+    flex: 1; padding: 8px 6px; border: none; background: none;
+    font-family: var(--font-body); font-size: 12px; color: var(--paper-50); cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .photo-seg-btn.active { background: var(--paper); color: var(--ink-graphite); }
+
+  .qty-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; border-top: 1px solid var(--paper-15); }
+  .qty-row .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .qty-controls { display: flex; align-items: center; gap: 10px; }
+  .qty-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--paper-30); background: none;
+    color: var(--paper); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-family: var(--font-mono);
+    transition: border-color var(--dur-quick) var(--ease-fade), background var(--dur-quick) var(--ease-fade);
+  }
+  .qty-btn:hover { border-color: var(--paper); }
+  .qty-btn.plus { background: var(--sepia); border-color: var(--sepia); color: var(--ink-graphite); }
+  .qty-btn.plus:hover { background: #b88656; }
+  .qty-val { font-family: var(--font-display); font-style: italic; font-size: 20px; color: var(--paper); min-width: 24px; text-align: center; }
+
+  /* ──────── ADD MORE ──────── */
+  .add-more {
+    width: 100%; padding: 14px;
+    border: 1.5px dashed var(--paper-30);
+    background: none; color: var(--paper-70);
+    font-family: var(--font-body); font-weight: 500; font-size: 13px;
+    cursor: pointer; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    position: relative; overflow: hidden;
+    transition: border-color var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+  }
+  .add-more:hover { border-color: var(--sepia); color: var(--paper); }
+  .add-more input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  /* ──────── BOTTOM BAR ──────── */
+  .bottom-bar {
+    position: sticky; bottom: 0;
+    background: rgba(26, 24, 23, 0.95);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--paper-15);
+    padding: 14px 24px 24px;
+    margin: 16px -24px 0;
+    width: calc(100% + 48px);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .bottom-bar-info {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+  }
+  .bottom-bar-info strong { color: var(--paper); font-weight: 400; font-family: var(--font-display); font-style: italic; font-size: 16px; letter-spacing: 0; }
+
+  /* ──────── REVIEW ──────── */
+  .review-card {
+    background: rgba(243,238,230,0.03);
+    border: 1px solid var(--paper-15);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .review-section-title {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--paper-50);
+    margin-bottom: 14px;
+  }
+  .review-row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    padding: 9px 0; border-top: 1px solid var(--paper-15);
+  }
+  .review-row:first-of-type { border-top: 0; padding-top: 0; }
+  .review-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+  .review-val { font-family: var(--font-body); font-size: 14px; color: var(--paper); text-align: right; }
+
+  .review-photos { display: flex; flex-wrap: wrap; gap: 8px; }
+  .review-photo {
+    width: 72px; height: 96px;
+    background: linear-gradient(160deg, #3a3733 0%, #1a1817 90%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+  }
+  .review-photo::before { content:''; position:absolute; inset:0; background: repeating-linear-gradient(135deg, transparent 0, transparent 14px, rgba(255,255,255,0.04) 14px, rgba(255,255,255,0.04) 15px); }
+  .review-photo .badge {
+    position: absolute; bottom: 2px; left: 2px; right: 2px;
+    font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.15em;
+    text-align: center; color: var(--paper-70);
+    background: rgba(0,0,0,0.6); padding: 2px 4px;
+  }
+
+  .total-card {
+    background: var(--paper); color: var(--ink-graphite);
+    padding: 22px; margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .total-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .total-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); }
+  .total-val { font-family: var(--font-display); font-style: italic; font-size: 18px; color: var(--ink-graphite); }
+  .total-price { font-family: var(--font-display); font-style: italic; font-size: 32px; color: var(--ink-graphite); line-height: 1; }
+
+  /* ──────── SUCCESS ──────── */
+  .success-screen { text-align: left; padding: 32px 0 24px; }
+  .success-icon-wrap { display: flex; align-items: center; justify-content: flex-start; margin-bottom: 22px; }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--sepia); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-graphite);
+    animation: emerge 0.6s 0.1s var(--ease-emerge) backwards;
+  }
+  @keyframes emerge { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+  .success-checkmark { stroke-dasharray: 30; stroke-dashoffset: 30; animation: drawCheck 0.5s 0.3s ease forwards; }
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+  .success-title { font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.1; color: var(--paper); margin-bottom: 10px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .success-title em { font-style: italic; color: var(--sepia); }
+  .success-text { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--paper-70); margin-bottom: 24px; }
+  .success-order-id {
+    display: inline-flex; flex-direction: column; gap: 4px;
+    padding: 12px 18px;
+    border: 1px solid var(--paper-30);
+    margin-bottom: 28px;
+  }
+  .success-order-id .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .success-order-id strong { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); letter-spacing: 0.15em; }
+
+  /* ──────── FOOTER ──────── */
+  .footer {
+    padding: 14px 24px 24px;
+    text-align: center;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--paper-30);
+  }
+
+  /* ──────── TOAST ──────── */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--paper); color: var(--ink-graphite);
+    padding: 10px 18px;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    opacity: 0; pointer-events: none; z-index: 500;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ════════════ SPLASH ════════════ -->
+<div id="splash">
+  <div class="splash-safelight"></div>
+  <div class="splash-letters">
+    <span class="splash-letter">П</span>
+    <span class="splash-letter">Р</span>
+    <span class="splash-letter">О</span>
+    <span class="splash-letter">Я</span>
+    <span class="splash-letter">В</span>
+  </div>
+  <div class="splash-line"></div>
+  <div class="splash-sub">Майстерня проявлення</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+  <header class="header">
+    <div class="header-logo">
+      <span class="header-logo-text">ПРОЯВ</span>
+      <div class="header-logo-line"></div>
+    </div>
+    <div class="header-meta"><span class="safelight-dot"></span>ЗАВАНТАЖЕННЯ КАДРІВ · MAGIC LINK</div>
+    <div class="stepper" id="stepper"></div>
+  </header>
+
+  <main>
+
+    <!-- ════════ STEP 1 ════════ -->
+    <div class="screen active" id="screen-1">
+      <h1 class="h-screen">З'єднайте кадри <em>з автором</em>.</h1>
+      <p class="h-sub">Введіть нікнейм Instagram або номер замовлення — щоб ваші кадри потрапили в правильне місце архіву.</p>
+
+      <div class="seg" id="ident-seg">
+        <button class="seg-btn active" data-type="instagram" onclick="setIdentType('instagram')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+          Instagram
+        </button>
+        <button class="seg-btn" data-type="order" onclick="setIdentType('order')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+          Замовлення
+        </button>
+      </div>
+
+      <div class="input-wrap">
+        <label class="label" id="ident-label">Нікнейм Instagram</label>
+        <div class="field-row">
+          <span class="order-prefix-badge" id="order-badge">ПРЯ-</span>
+          <span class="input-prefix" id="ident-prefix">@</span>
+          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname" oninput="onIdentInput()" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="30">
+        </div>
+        <div class="field-error" id="ident-err">Введіть нікнейм</div>
+      </div>
+
+      <button class="btn-primary" id="btn-step1" onclick="goTo(2)" disabled>Продовжити <span class="arrow">→</span></button>
+    </div>
+
+    <!-- ════════ STEP 2 ════════ -->
+    <div class="screen" id="screen-2">
+      <button class="back-btn" onclick="goTo(1)">← Назад</button>
+      <h1 class="h-screen">Куди надіслати <em>конверт</em>.</h1>
+      <p class="h-sub">Щоб ми могли передати готовий друк саме вам.</p>
+
+      <div class="input-wrap">
+        <label class="label">Ім'я та прізвище</label>
+        <input class="input-field" id="inp-name" type="text" placeholder="Оксана Коваль" autocomplete="name">
+        <div class="field-error" id="name-err">Введіть імʼя</div>
+      </div>
+
+      <div class="input-wrap">
+        <label class="label">Телефон</label>
+        <input class="input-field" id="inp-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel">
+        <div class="field-error" id="phone-err">Введіть коректний номер</div>
+      </div>
+
+      <div class="input-wrap">
+        <label class="label">Доставка</label>
+        <div class="seg">
+          <button class="seg-btn active" data-del="nova" onclick="setDel('nova')">Нова Пошта</button>
+          <button class="seg-btn" data-del="self" onclick="setDel('self')">Самовивіз</button>
+        </div>
+      </div>
+
+      <div id="city-wrap">
+        <div class="input-wrap">
+          <label class="label">Місто</label>
+          <input class="input-field" id="inp-city" type="text" placeholder="Почніть вводити місто" autocomplete="off">
+        </div>
+        <div class="input-wrap">
+          <label class="label">Відділення / Поштомат</label>
+          <input class="input-field" id="inp-wh" type="text" placeholder="Спершу оберіть місто" disabled>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="goTo(3)">Завантажити кадри <span class="arrow">→</span></button>
+    </div>
+
+    <!-- ════════ STEP 3 ════════ -->
+    <div class="screen" id="screen-3">
+      <button class="back-btn" onclick="goTo(2)">← Назад</button>
+      <h1 class="h-screen">Кадри, які <em>проявляємо</em>.</h1>
+      <p class="h-sub">Друк 10×15 см на Epson SureLab. Можна обрати глянець або мат, кольорове чи чорно-біле — окремо для кожного кадру.</p>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/heic" multiple>
+        <div class="upload-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Завантажте кадри</div>
+        <div class="upload-hint">JPG / PNG / HEIC · ДО 25 МБ</div>
+      </div>
+
+      <div class="photos-list" id="photos-list"></div>
+
+      <div id="photos-bottom" style="display: none;">
+        <label class="add-more">
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" multiple id="add-more-input">
+          <span>+ Додати ще кадри</span>
+        </label>
+
+        <div class="bottom-bar">
+          <div class="bottom-bar-info">
+            <span>Кадрів у наборі</span>
+            <span><strong id="photos-count">0</strong> · <span id="photos-prints">0 ВІДБИТКІВ</span></span>
+          </div>
+          <button class="btn-primary" onclick="goTo(4)" style="margin-top: 0;">Перейти до підтвердження <span class="arrow">→</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ STEP 4 ════════ -->
+    <div class="screen" id="screen-4">
+      <button class="back-btn" onclick="goTo(3)">← Назад</button>
+      <h1 class="h-screen">Перевіримо <em>разом</em>.</h1>
+      <p class="h-sub">Перевірте деталі перед відправкою. Після цього ми отримаємо ваше замовлення і почнемо проявлення.</p>
+
+      <div class="review-card">
+        <div class="review-section-title">АВТОР</div>
+        <div class="review-row"><span class="review-key" id="rv-ident-k">Instagram</span><span class="review-val" id="rv-ident-v">—</span></div>
+        <div class="review-row"><span class="review-key">Ім'я</span><span class="review-val" id="rv-name">—</span></div>
+        <div class="review-row"><span class="review-key">Телефон</span><span class="review-val" id="rv-phone">—</span></div>
+        <div class="review-row"><span class="review-key">Доставка</span><span class="review-val" id="rv-delivery">—</span></div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-section-title">КАДРИ · <span id="rv-photos-count">0</span></div>
+        <div class="review-photos" id="rv-photos-grid"></div>
+      </div>
+
+      <div class="total-card">
+        <div class="total-row">
+          <span class="total-key">Усього відбитків</span>
+          <span class="total-val" id="rv-total-qty">0</span>
+        </div>
+        <div class="total-row">
+          <span class="total-key">Орієнтовна вартість</span>
+          <span class="total-price" id="rv-total-price">0 ₴</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-submit" onclick="submitOrder()">Передати в роботу <span class="arrow">→</span></button>
+    </div>
+
+    <!-- ════════ STEP 5 ════════ -->
+    <div class="screen" id="screen-5">
+      <div class="success-screen">
+        <div class="success-icon-wrap">
+          <div class="success-icon">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <polyline class="success-checkmark" points="6,16 13,23 26,9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <h1 class="success-title">Кадри прийняті <em>в роботу</em>.</h1>
+        <p class="success-text">Ми відкриємо кожен кадр на каліброваному моніторі, перевіримо тон шкіри, надрукуємо на Epson SureLab і запакуємо в оксамитовий конверт з тисненням. Готово за 48 годин від цієї хвилини.</p>
+
+        <div class="success-order-id">
+          <span class="lbl">НОМЕР ЗАМОВЛЕННЯ</span>
+          <strong id="success-num">ПРЯ-000000</strong>
+        </div>
+
+        <p style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 8px;">ЩО ВІДБУВАЄТЬСЯ ДАЛІ</p>
+        <ol style="list-style: none; padding: 0; counter-reset: step; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 12px; counter-increment: step;">
+            <span style="font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--sepia); line-height: 1;">i.</span>
+            <span style="font-family: var(--font-body); font-size: 13px; line-height: 1.6; color: var(--paper-70);"><strong style="color: var(--paper); font-weight: 500;">До 4 годин</strong> — ми перевіряємо ваші кадри і пишемо в Telegram, якщо є питання.</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 12px; counter-increment: step;">
+            <span style="font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--sepia); line-height: 1;">ii.</span>
+            <span style="font-family: var(--font-body); font-size: 13px; line-height: 1.6; color: var(--paper-70);"><strong style="color: var(--paper); font-weight: 500;">24-48 годин</strong> — проявляємо, перевіряємо ще раз і пакуємо в оксамитовий конверт.</span>
+          </li>
+          <li style="display: grid; grid-template-columns: 28px 1fr; gap: 12px; counter-increment: step;">
+            <span style="font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--sepia); line-height: 1;">iii.</span>
+            <span style="font-family: var(--font-body); font-size: 13px; line-height: 1.6; color: var(--paper-70);"><strong style="color: var(--paper); font-weight: 500;">Відправляємо ТТН</strong> у Telegram і SMS. Очікуйте конверт за 1-2 дні Новою Поштою.</span>
+          </li>
+        </ol>
+
+        <button class="btn-paper" onclick="resetFlow()">Нове замовлення</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ · САМБІР</footer>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   ПРОЯВ · Замовлення · flow logic
+   Спрощений рефакторинг index.html. Без IndexedDB, magic-link,
+   реального Nova Poshta API — для демонстрації UX і голосу.
+   ════════════════════════════════════════════════════════════ */
+
+const PRICE_PER_PRINT = 12;
+
+const S = {
+  step: 1,
+  identType: 'instagram',
+  ident: '',
+  name: '',
+  phone: '',
+  delivery: 'nova',
+  city: '',
+  warehouse: '',
+  photos: [],
+};
+
+// ── Splash ──
+setTimeout(() => document.getElementById('splash').classList.add('done'), 1200);
+
+// ── Stepper ──
+function renderStepper() {
+  const wrap = document.getElementById('stepper');
+  wrap.innerHTML = '';
+  for (let i = 1; i <= 4; i++) {
+    const bub = document.createElement('div');
+    bub.className = 'step-bubble';
+    if (i < S.step) bub.classList.add('done');
+    else if (i === S.step) bub.classList.add('active');
+    bub.innerHTML = '<span>' + i + '</span>';
+    wrap.appendChild(bub);
+    if (i < 4) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (i < S.step ? ' done' : '');
+      wrap.appendChild(line);
+    }
+  }
+}
+renderStepper();
+
+// ── Navigate ──
+function goTo(n) {
+  if (n === 4) prepareReview();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+  S.step = n;
+  renderStepper();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Ident type ──
+function setIdentType(type) {
+  S.identType = type;
+  document.querySelectorAll('#ident-seg .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  const label = document.getElementById('ident-label');
+  const prefix = document.getElementById('ident-prefix');
+  const badge = document.getElementById('order-badge');
+  const input = document.getElementById('ident-input');
+  if (type === 'instagram') {
+    label.textContent = 'Нікнейм Instagram';
+    prefix.style.display = ''; prefix.textContent = '@';
+    badge.classList.remove('visible');
+    input.classList.add('has-prefix'); input.classList.remove('order-mode');
+    input.placeholder = 'your_nickname';
+    input.maxLength = 30;
+  } else {
+    label.textContent = 'Номер замовлення';
+    prefix.style.display = 'none';
+    badge.classList.add('visible');
+    input.classList.remove('has-prefix'); input.classList.add('order-mode');
+    input.placeholder = '000000';
+    input.maxLength = 6;
+  }
+  input.value = '';
+  onIdentInput();
+}
+
+function onIdentInput() {
+  const input = document.getElementById('ident-input');
+  let v = input.value.trim();
+  if (S.identType === 'order') {
+    v = v.replace(/\D/g, '').slice(0, 6);
+    input.value = v;
+    S.ident = v ? 'ПРЯ-' + v : '';
+  } else {
+    v = v.replace(/^@/, '');
+    S.ident = v;
+  }
+  const valid = (S.identType === 'instagram' && v.length >= 2) || (S.identType === 'order' && v.length === 6);
+  document.getElementById('btn-step1').disabled = !valid;
+}
+
+// ── Delivery ──
+function setDel(d) {
+  S.delivery = d;
+  document.querySelectorAll('#screen-2 .seg-btn[data-del]').forEach(b => b.classList.toggle('active', b.dataset.del === d));
+  document.getElementById('city-wrap').style.display = d === 'nova' ? '' : 'none';
+}
+
+// ── Photos ──
+let pid = 0;
+const fileInput = document.getElementById('file-input');
+const addMoreInput = document.getElementById('add-more-input');
+const photosList = document.getElementById('photos-list');
+const photosBottom = document.getElementById('photos-bottom');
+const uploadZone = document.getElementById('upload-zone');
+
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+addMoreInput.addEventListener('change', e => handleFiles(e.target.files));
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', e => { uploadZone.classList.remove('dragover'); });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    const id = ++pid;
+    const url = URL.createObjectURL(f);
+    S.photos.push({ id, file: f, url, color: 'color', paper: 'mat', qty: 1 });
+    renderPhotos();
+  }
+}
+
+function renderPhotos() {
+  photosList.innerHTML = '';
+  S.photos.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.innerHTML = `
+      <div class="photo-preview">
+        <span class="photo-num">№ ${String(idx+1).padStart(3,'0')} · ${(p.file.size/1024/1024).toFixed(1)} МБ</span>
+        <button class="photo-delete" aria-label="Видалити кадр" data-id="${p.id}">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg>
+        </button>
+        <img src="${p.url}" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="photo-controls">
+        <div class="photo-ctrl-row">
+          <span class="photo-ctrl-label">КОЛІР</span>
+          <div class="photo-seg" data-group="color">
+            <button class="photo-seg-btn ${p.color==='color' ? 'active' : ''}" data-val="color">Кольорове</button>
+            <button class="photo-seg-btn ${p.color==='bw' ? 'active' : ''}" data-val="bw">Чорно-біле</button>
+          </div>
+        </div>
+        <div class="photo-ctrl-row">
+          <span class="photo-ctrl-label">ПАПІР</span>
+          <div class="photo-seg" data-group="paper">
+            <button class="photo-seg-btn ${p.paper==='gloss' ? 'active' : ''}" data-val="gloss">Глянець</button>
+            <button class="photo-seg-btn ${p.paper==='mat' ? 'active' : ''}" data-val="mat">Мат</button>
+          </div>
+        </div>
+        <div class="qty-row">
+          <span class="lbl">КІЛЬКІСТЬ ВІДБИТКІВ</span>
+          <div class="qty-controls">
+            <button class="qty-btn minus" data-id="${p.id}" data-op="dec">−</button>
+            <span class="qty-val">${p.qty}</span>
+            <button class="qty-btn plus" data-id="${p.id}" data-op="inc">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+    photosList.appendChild(card);
+
+    // wire delete
+    card.querySelector('.photo-delete').onclick = () => {
+      S.photos = S.photos.filter(ph => ph.id !== p.id);
+      URL.revokeObjectURL(p.url);
+      renderPhotos();
+    };
+    // wire seg buttons
+    card.querySelectorAll('.photo-seg').forEach(seg => {
+      seg.querySelectorAll('.photo-seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          const group = seg.dataset.group;
+          p[group] = btn.dataset.val;
+          seg.querySelectorAll('.photo-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+        };
+      });
+    });
+    // wire qty
+    card.querySelectorAll('.qty-btn').forEach(b => {
+      b.onclick = () => {
+        const op = b.dataset.op;
+        p.qty = Math.max(1, Math.min(20, p.qty + (op === 'inc' ? 1 : -1)));
+        card.querySelector('.qty-val').textContent = p.qty;
+        updateBottom();
+      };
+    });
+  });
+  updateBottom();
+}
+
+function updateBottom() {
+  photosBottom.style.display = S.photos.length ? 'block' : 'none';
+  const totalQty = S.photos.reduce((s, p) => s + p.qty, 0);
+  document.getElementById('photos-count').textContent = S.photos.length;
+  document.getElementById('photos-prints').textContent = totalQty + ' ВІДБИТКІВ · ' + (totalQty * PRICE_PER_PRINT) + ' ₴';
+}
+
+// ── Review ──
+function prepareReview() {
+  S.name = document.getElementById('inp-name').value.trim();
+  S.phone = document.getElementById('inp-phone').value.trim();
+  S.city = document.getElementById('inp-city').value.trim();
+  S.warehouse = document.getElementById('inp-wh').value.trim();
+
+  document.getElementById('rv-ident-k').textContent = S.identType === 'instagram' ? 'Instagram' : 'Замовлення';
+  document.getElementById('rv-ident-v').textContent = S.identType === 'instagram' ? '@' + S.ident : S.ident;
+  document.getElementById('rv-name').textContent = S.name || '—';
+  document.getElementById('rv-phone').textContent = S.phone || '—';
+
+  let delTxt = S.delivery === 'nova'
+    ? 'Нова Пошта · ' + (S.city || '—') + (S.warehouse ? ' · ' + S.warehouse : '')
+    : 'Самовивіз · Самбір';
+  document.getElementById('rv-delivery').textContent = delTxt;
+
+  document.getElementById('rv-photos-count').textContent = S.photos.length;
+  const grid = document.getElementById('rv-photos-grid');
+  grid.innerHTML = '';
+  S.photos.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'review-photo';
+    d.innerHTML = `<div class="badge">×${p.qty} · ${p.paper === 'gloss' ? 'ГЛ' : 'МАТ'}${p.color === 'bw' ? ' · Ч/Б' : ''}</div>`;
+    grid.appendChild(d);
+  });
+
+  const totalQty = S.photos.reduce((s, p) => s + p.qty, 0);
+  document.getElementById('rv-total-qty').textContent = totalQty + ' відбитків';
+  document.getElementById('rv-total-price').textContent = (totalQty * PRICE_PER_PRINT) + ' ₴';
+}
+
+// ── Submit ──
+async function submitOrder() {
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = 'Відправляємо…';
+  await new Promise(res => setTimeout(res, 900));
+  const num = 'ПРЯ-' + Math.floor(100000 + Math.random() * 900000);
+  document.getElementById('success-num').textContent = num;
+  goTo(5);
+  btn.disabled = false;
+  btn.innerHTML = 'Передати в роботу <span class="arrow">→</span>';
+}
+
+function resetFlow() {
+  S.photos.forEach(p => URL.revokeObjectURL(p.url));
+  Object.assign(S, { step:1, identType:'instagram', ident:'', name:'', phone:'', delivery:'nova', city:'', warehouse:'', photos:[] });
+  document.getElementById('ident-input').value = '';
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-phone').value = '';
+  document.getElementById('inp-city').value = '';
+  document.getElementById('inp-wh').value = '';
+  setIdentType('instagram');
+  setDel('nova');
+  renderPhotos();
+  goTo(1);
+}
+
+// init
+onIdentInput();
+</script>
+
+</body>
+</html>

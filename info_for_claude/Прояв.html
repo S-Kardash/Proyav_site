@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Робоча кімната</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { min-height: 100vh; }
+
+  .page {
+    max-width: var(--max-w-page);
+    margin: 0 auto;
+    padding: var(--s-7) var(--gutter) var(--s-9);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-9);
+  }
+
+  @media (min-width: 900px) {
+    .page { grid-template-columns: 320px minmax(0, 1fr); gap: var(--s-10); padding-top: var(--s-9); }
+  }
+  .hero h1, .toc-title, .position-card h2 { overflow-wrap: anywhere; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { position: sticky; top: var(--s-7); align-self: start; display: flex; flex-direction: column; gap: var(--s-6); }
+
+  .mark {
+    width: 56px; height: 56px;
+    border: 1.5px solid var(--ink-graphite);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .mark::before {
+    content: ''; position: absolute; inset: 8px;
+    border: 1px solid var(--ink-30);
+    border-radius: 50%;
+  }
+  .mark::after {
+    content: ''; width: 4px; height: 4px; background: var(--ink-graphite); border-radius: 50%;
+  }
+
+  .brand { display: flex; flex-direction: column; gap: var(--s-2); }
+  .brand-name { font-family: var(--font-display); font-weight: 500; font-size: 22px; letter-spacing: 0.35em; }
+  .brand-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+
+  .side-block { display: flex; flex-direction: column; gap: var(--s-2); padding-top: var(--s-4); border-top: var(--bd-hairline); }
+  .side-block-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); }
+  .side-block-value { font-family: var(--font-display); font-size: 18px; font-weight: 400; color: var(--ink-graphite); }
+  .side-block-value em { font-style: italic; color: var(--ink-60); }
+
+  /* ── MAIN ── */
+  .hero { max-width: 720px; }
+  .hero-eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono);
+    text-transform: uppercase; color: var(--ink-50);
+    display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-5);
+  }
+  .hero-eyebrow .line { flex: 0 0 48px; height: 1px; background: var(--ink-30); }
+
+  .hero h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(48px, 7vw, 88px); line-height: 0.98; letter-spacing: -0.015em; color: var(--ink-graphite); margin-bottom: var(--s-5); }
+  .hero h1 em { font-style: italic; color: var(--silver-300); }
+  .hero p { font-size: var(--t-lead); line-height: var(--lh-lead); color: var(--ink-70); max-width: 580px; font-weight: 300; }
+  .hero p + p { margin-top: var(--s-4); }
+  .hero p strong { font-weight: 500; color: var(--ink-graphite); }
+
+  /* ── INDEX of documents ── */
+  .toc {
+    margin-top: var(--s-9);
+    display: grid; grid-template-columns: 1fr; gap: 0;
+    border-top: 1px solid var(--ink-graphite);
+  }
+
+  .toc-row {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: var(--s-5);
+    align-items: baseline;
+    padding: var(--s-6) 0 var(--s-5);
+    border-bottom: var(--bd-hairline);
+    text-decoration: none;
+    color: inherit;
+    transition: padding var(--dur-normal) var(--ease-emerge);
+    position: relative;
+  }
+  .toc-row:hover { padding-left: var(--s-4); }
+  .toc-row:hover .toc-num { color: var(--safelight); }
+  .toc-row:hover .toc-arrow { transform: translateX(8px); color: var(--ink-graphite); }
+
+  .toc-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-30); padding-top: 8px; transition: color var(--dur-quick) var(--ease-fade); }
+  .toc-body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+  .toc-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; color: var(--ink-graphite); }
+  .toc-sub { font-size: var(--t-small); line-height: 1.55; color: var(--ink-60); max-width: 540px; }
+  .toc-meta { display: flex; gap: var(--s-3); margin-top: var(--s-3); }
+  .toc-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-50); padding: 4px 10px; border: 1px solid var(--ink-15); border-radius: var(--r-pill); }
+  .toc-tag--draft { color: var(--silver-300); border-color: var(--silver-400); }
+  .toc-tag--ready { color: var(--ink-graphite); border-color: var(--ink-graphite); }
+  .toc-tag--queued { color: var(--ink-30); border-style: dashed; }
+  .toc-arrow { font-family: var(--font-mono); font-size: 16px; color: var(--ink-30); transition: transform var(--dur-normal) var(--ease-emerge), color var(--dur-quick) var(--ease-fade); align-self: center; }
+
+  /* ── Strategic position card ── */
+  .position-card {
+    margin-top: var(--s-9);
+    background: var(--ink-graphite);
+    color: var(--silver-500);
+    padding: var(--s-7) var(--s-6);
+    border-radius: var(--r-1);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-6);
+  }
+  @media (min-width: 960px) {
+    .position-card { grid-template-columns: 200px minmax(0, 1fr); padding: var(--s-8) var(--s-7); gap: var(--s-7); }
+  }
+  .position-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); }
+  .position-card h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 3.5vw, 44px); line-height: 1.1; color: var(--paper); margin-top: var(--s-3); }
+  .position-card h2 em { font-style: italic; color: var(--sepia); }
+  .position-card .lines { display: flex; flex-direction: column; gap: var(--s-4); }
+  .position-card p { font-size: var(--t-small); line-height: 1.65; color: var(--paper-70); font-weight: 300; }
+  .position-card p strong { font-weight: 500; color: var(--paper); }
+
+  .pos-two {
+    margin-top: var(--s-5);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-4);
+    border-top: 1px solid var(--paper-15);
+    padding-top: var(--s-5);
+  }
+  .pos-line { display: flex; flex-direction: column; gap: var(--s-2); }
+  .pos-line-name { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--paper); }
+  .pos-line-name em { font-style: italic; color: var(--sepia); }
+  .pos-line-role { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); }
+  .pos-line-detail { font-size: 13px; line-height: 1.6; color: var(--paper-70); }
+
+  /* ── Manifest footer ── */
+  .manifest {
+    margin-top: var(--s-9);
+    padding-top: var(--s-6);
+    border-top: var(--bd-hairline);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(20px, 2.5vw, 28px);
+    line-height: 1.45;
+    color: var(--ink-60);
+    max-width: 720px;
+  }
+  .manifest::before { content: '«'; color: var(--sepia); margin-right: 4px; }
+  .manifest::after  { content: '»'; color: var(--sepia); margin-left: 4px; }
+
+  .footer-meta {
+    margin-top: var(--s-6);
+    display: flex; gap: var(--s-5); flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--ink-30);
+  }
+
+  /* ── animation: gentle emerge on load ── */
+  @keyframes emerge { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .hero, .toc-row, .position-card, .manifest { animation: emerge var(--dur-slow) var(--ease-emerge) backwards; }
+  .toc-row:nth-child(1) { animation-delay: 80ms; }
+  .toc-row:nth-child(2) { animation-delay: 160ms; }
+  .toc-row:nth-child(3) { animation-delay: 240ms; }
+  .toc-row:nth-child(4) { animation-delay: 320ms; }
+  .toc-row:nth-child(5) { animation-delay: 400ms; }
+  .toc-row:nth-child(6) { animation-delay: 480ms; }
+  .toc-row:nth-child(7) { animation-delay: 560ms; }
+  .toc-row:nth-child(8) { animation-delay: 640ms; }
+  .position-card { animation-delay: 200ms; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <aside class="sidebar">
+    <div class="mark" aria-hidden="true"></div>
+    <div class="brand">
+      <div class="brand-name">ПРОЯВ</div>
+      <div class="brand-meta">Робоча кімната · v.01 · 2026</div>
+    </div>
+
+    <div class="side-block">
+      <div class="side-block-label">Замовник</div>
+      <div class="side-block-value">Власник студії</div>
+    </div>
+    <div class="side-block">
+      <div class="side-block-label">Стан</div>
+      <div class="side-block-value">Перша редакція <em>· готова</em></div>
+    </div>
+    <div class="side-block">
+      <div class="side-block-label">База</div>
+      <div class="side-block-value">Брендбук v.01<br>Дослідження v2.0</div>
+    </div>
+    <div class="side-block">
+      <div class="side-block-label">Файлів проєкту</div>
+      <div class="side-block-value">4 існуючі <em>· 8 нових ✓</em></div>
+    </div>
+  </aside>
+
+  <main>
+    <section class="hero">
+      <div class="hero-eyebrow">
+        <span class="line"></span>
+        Внутрішній документ · конфіденційно
+      </div>
+      <h1>Робоча кімната,<br>де <em>проявляється</em> досвід.</h1>
+      <p>Це не лендинг і не звіт. Це <strong>робочий стіл</strong>, на якому лежить розкладений ПРОЯВ — поточний код, брендбук, дослідження і нові артефакти, побудовані з них.</p>
+      <p>Усе тут — результат уважного читання трьох документів і чотирьох сторінок поточного сайту. Жодних здогадок: лише те, що проростає з реальних даних, реальних персон і реальної фінансової моделі.</p>
+    </section>
+
+    <nav class="toc" aria-label="Зміст робочих документів">
+
+      <a class="toc-row" href="Аудит.html">
+        <span class="toc-num">№ 01</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Аудит — що є зараз</h2>
+          <p class="toc-sub">Розбір 4 сторінок поточного сайту, 5 розривів між брендбуком і кодом, конкретні цитати з файлів, кольорові коди, що не сходяться, і голос, який мовчить там, де мав би шепотіти.</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">≈ 12 хв читання</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Дизайн-система.html">
+        <span class="toc-num">№ 02</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Дизайн-система — токени та компоненти</h2>
+          <p class="toc-sub">Витяг з брендбуку у код: кольори з RGB і ролями, типографічна шкала, правило 70 · 25 · 5, голос бренду в прикладах, базові компоненти — кнопки, інпути, картки, сертифікат.</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">tokens.css</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Лендинг — концепції.html">
+        <span class="toc-num">№ 03</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Лендинг — три концепції</h2>
+          <p class="toc-sub">Канвас із трьома візуальними напрямками головної: <em>«Тиха майстерня»</em>, <em>«Темна кімната»</em>, <em>«Архів»</em>. Mobile та desktop рядом. Один з них стане основою для повної реалізації.</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">3 концепції</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Головна.html">
+        <span class="toc-num">№ 04</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Лендинг — фінальна реалізація</h2>
+          <p class="toc-sub">Ціла сторінка в концепції <em>«Темна кімната»</em>: hero, філософія догляду, 4 набори, процес, двері для фотографа-партнера, архів останніх кадрів, відгук, FAQ, маніфест. Респонсивно — mobile + desktop.</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">Концепція B</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Набір.html">
+        <span class="toc-num">№ 05</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Вибір набору — нова order.html</h2>
+          <p class="toc-sub">Чотири набори як варіанти вибору, розгорнутий блок деталей обраного (що входить, з яких матеріалів), форма з живою перевіркою, траст-смуга, стан «заявку отримано».</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">?set= URL</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Замовлення.html">
+        <span class="toc-num">№ 06</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Замовлення — рефакторинг index.html</h2>
+          <p class="toc-sub">5 кроків в естетиці «Темна кімната»: splash з літерами-проявленням, з'єднання з автором, дані доставки, завантаження кадрів з живими контролами паперу/кольору/кількості, підтвердження, «Кадри прийняті в роботу».</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">5 кроків</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Партнер.html">
+        <span class="toc-num">№ 07</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Партнерський кабінет — «двері для співавтора»</h2>
+          <p class="toc-sub">Два стани: «пітч» (калькулятор доходу, 4 кроки як це працює, заявка на безкоштовний відбиток) і «кабінет» (видача лінку клієнту з Telegram/WhatsApp розсилкою, статистика, замовлення, картка автора).</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">2 стани</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+      <a class="toc-row" href="Адмін.html">
+        <span class="toc-num">№ 08</span>
+        <div class="toc-body">
+          <h2 class="toc-title">Адмінка — внутрішній інструмент бренду</h2>
+          <p class="toc-sub">Темний режим за замовчуванням. Мова проявлення для статусів: <em>Отримано · У прояві · Запаковано · Відправлено</em>. Бокова навігація, статистика, верхня панель фільтрів, суворої щільності таблиця замовлень, drawer для деталей.</p>
+          <div class="toc-meta">
+            <span class="toc-tag toc-tag--ready">Готово</span>
+            <span class="toc-tag">5 розділів</span>
+          </div>
+        </div>
+        <span class="toc-arrow">→</span>
+      </a>
+
+    </nav>
+
+    <section class="position-card">
+      <div>
+        <div class="position-eyebrow">Стратегічна рамка</div>
+        <h2>Одна марка,<br>одна <em>філософія</em>.</h2>
+      </div>
+      <div class="lines">
+        <p><strong>«Проявляти» — це філософія догляду за кадром</strong>, а не хімічний процес з минулого століття. Ми не вириваємо фото з принтера — ми ходимо біля нього: редагуємо, перевіряємо, вдосконалюємо.</p>
+        <p>Це виводить <strong>ПРОЯВ</strong> з категорії «друкарня» у категорію «майстерня догляду». Сучасне обладнання — Epson SureLab, якісний папір, оксамит. Але <em>рука</em> проходить по кожному кадру.</p>
+        <p>Брендбукові cotton-rag, edition 1/25, архівність 200+ років — це <strong>словник амбіції</strong>, не обіцянка на кожній картці продукту. В UI використовуємо язик догляду — без перевищення обіцянок.</p>
+
+        <div class="pos-two">
+          <div class="pos-line">
+            <div class="pos-line-role">Режим роботи</div>
+            <div class="pos-line-name">Ручна <em>перевірка</em></div>
+            <div class="pos-line-detail">Кожен кадр — на каліброваному моніторі, перед друком. Тон шкіри, гістограма, півтони.</div>
+          </div>
+          <div class="pos-line">
+            <div class="pos-line-role">Режим продукту</div>
+            <div class="pos-line-name">Одна <em>лінія</em></div>
+            <div class="pos-line-detail">4 набори: Момент (400 ₴), Спогад (600), Архів (900), Малюк (450). Без иѕэрархії «basic vs premium».</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="manifest">
+      Світло торкнулось матриці. Хтось натиснув затвор. А потім — тиша, у якій ми робимо свою справу: повертаємо світло у світ, тепер уже на папері, який переживе нас.
+    </div>
+
+    <div class="footer-meta">
+      <span>© ПРОЯВ · 2026</span>
+      <span>Brand book v.01</span>
+      <span>Research v2.0</span>
+      <span>Made with care</span>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Майстерня проявлення в Самборі</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* ════════════════════════════════════════════════════════════
+     ПРОЯВ · Головна · «Темна кімната»
+     Темна камера як фон. Кадр проявляється з чорноти.
+     Сепія для теплих акцентів, сафлайт для сигналу.
+     ════════════════════════════════════════════════════════════ */
+
+  body {
+    background: var(--ink-darkroom);
+    color: var(--silver-500);
+    overflow-x: hidden;
+  }
+
+  /* ── Subtle grain over whole page ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, transparent 0, transparent 2px,
+      rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px
+    );
+  }
+
+  .page { position: relative; z-index: 1; }
+
+  /* ════════════════ NAV ════════════════ */
+  nav.top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    padding: 18px clamp(20px, 4vw, 56px);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(26, 24, 23, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(243, 238, 230, 0.06);
+    transition: padding var(--dur-normal) var(--ease-fade), background var(--dur-normal) var(--ease-fade);
+  }
+  nav.top.scrolled { padding: 12px clamp(20px, 4vw, 56px); background: rgba(26, 24, 23, 0.92); }
+
+  .nav-mark { display: flex; align-items: center; gap: 12px; }
+  .nav-mark-icon { width: 26px; height: 26px; border: 1.5px solid var(--paper); border-radius: 50%; position: relative; flex-shrink: 0; }
+  .nav-mark-icon::before { content:''; position:absolute; inset:4px; border:1px solid var(--paper-30); border-radius:50%; }
+  .nav-mark-icon::after  { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--paper); border-radius:50%; transform:translate(-50%,-50%); }
+  .nav-wordmark { font-family: var(--font-display); font-size: 14px; font-weight: 500; letter-spacing: 0.4em; color: var(--paper); }
+
+  .nav-links { display: none; gap: 32px; }
+  @media (min-width: 800px) { .nav-links { display: flex; } }
+  .nav-links a {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50); text-decoration: none;
+    transition: color var(--dur-quick) var(--ease-fade);
+  }
+  .nav-links a:hover { color: var(--paper); }
+
+  .nav-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 40px; padding: 0 18px;
+    border-radius: 999px;
+    background: var(--paper); color: var(--ink-graphite);
+    font-family: var(--font-body); font-weight: 500; font-size: 13px;
+    text-decoration: none;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .nav-cta:hover { background: var(--sepia); }
+  .nav-cta:active { transform: scale(0.97); }
+
+  /* Safelight indicator — pulses */
+  .safelight-dot {
+    width: 6px; height: 6px; background: var(--safelight); border-radius: 50%;
+    box-shadow: 0 0 8px var(--safelight);
+    animation: safelight 2.4s ease-in-out infinite;
+  }
+  @keyframes safelight { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ════════════ VERTICAL RIBBON · only on desktop ════════════ */
+  .ribbon {
+    display: none;
+    position: fixed; top: 0; bottom: 0; left: 0;
+    width: 40px; z-index: 40;
+    border-right: 1px solid rgba(243, 238, 230, 0.06);
+    flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 80px 0 32px;
+    background: rgba(0,0,0,0.2);
+  }
+  @media (min-width: 1100px) { .ribbon { display: flex; } }
+  .ribbon-vert {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--paper-30);
+  }
+  .ribbon-meta { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  .ribbon-meta .label { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--paper-30); }
+
+  /* ════════════ HERO ════════════ */
+  .hero {
+    min-height: 100vh;
+    padding: 120px clamp(20px, 4vw, 56px) 80px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-7);
+    align-items: center;
+    position: relative;
+  }
+  @media (min-width: 1100px) {
+    .hero { padding-left: clamp(76px, 6vw, 96px); grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 80px; }
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--safelight);
+    margin-bottom: 28px;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(48px, 9vw, 104px);
+    line-height: 0.96;
+    letter-spacing: -0.018em;
+    color: var(--paper);
+    margin-bottom: clamp(20px, 3vw, 32px);
+    overflow-wrap: anywhere;
+  }
+  .hero h1 em { font-style: italic; color: var(--sepia); }
+  .hero h1 .acc { color: var(--silver-300); }
+
+  .hero-lead {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: clamp(16px, 1.6vw, 20px); line-height: 1.5;
+    color: var(--paper-70);
+    max-width: 520px;
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+  .hero-lead em { font-style: italic; color: var(--sepia); font-weight: 400; }
+
+  .hero-cta-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 48px; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 28px;
+    border-radius: 999px;
+    background: var(--safelight); color: var(--paper);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+    box-shadow: 0 0 0 0 rgba(178, 58, 44, 0.3);
+  }
+  .btn-primary:hover { background: #962d22; box-shadow: 0 0 24px -4px rgba(178, 58, 44, 0.4); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary .arrow { font-family: var(--font-mono); font-weight: 500; }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 26px;
+    border-radius: 999px;
+    background: transparent; color: var(--paper);
+    border: 1.5px solid var(--paper-30);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    text-decoration: none;
+    transition: border-color var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade);
+  }
+  .btn-ghost:hover { border-color: var(--paper); }
+
+  .hero-meta {
+    display: flex; gap: clamp(20px, 3vw, 40px); flex-wrap: wrap;
+    padding-top: 28px; padding-bottom: 12px;
+    border-top: 1px solid var(--paper-15);
+  }
+  .hero-meta-item { display: flex; flex-direction: column; gap: 4px; }
+  .hero-meta-val { font-family: var(--font-display); font-style: italic; font-size: clamp(22px, 2.2vw, 28px); color: var(--paper); line-height: 1; }
+  .hero-meta-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+
+  /* Hero photo — develops on load */
+  .hero-photo-wrap {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    max-width: 480px;
+    justify-self: center;
+  }
+  .hero-photo {
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(ellipse at 35% 40%, rgba(196, 149, 108, 0.4) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 75%, rgba(178, 58, 44, 0.18) 0%, transparent 50%),
+      linear-gradient(160deg, #3a3733 0%, #1a1817 80%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+    animation: developIn 2400ms var(--ease-emerge) backwards;
+  }
+  @keyframes developIn {
+    0% { opacity: 0; filter: blur(20px) brightness(0.4); transform: scale(1.05); }
+    60% { opacity: 0.85; filter: blur(6px) brightness(0.7); }
+    100% { opacity: 1; filter: blur(0) brightness(1); transform: scale(1); }
+  }
+  .hero-photo::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px);
+    pointer-events: none;
+  }
+  .hero-photo-label {
+    position: absolute; bottom: 16px; left: 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-70);
+    background: rgba(0,0,0, 0.5); padding: 6px 10px;
+    backdrop-filter: blur(4px);
+  }
+  .hero-photo-num {
+    position: absolute; top: 16px; right: 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+  }
+  .hero-photo-caption {
+    position: absolute; bottom: -24px; right: 0;
+    font-family: var(--font-display); font-style: italic; font-size: 14px;
+    color: var(--paper-50);
+  }
+
+  /* ════════════ SECTIONS · shared ════════════ */
+  section.band {
+    padding: clamp(80px, 12vw, 144px) clamp(20px, 4vw, 56px);
+    position: relative;
+  }
+  @media (min-width: 1100px) {
+    section.band { padding-left: clamp(76px, 6vw, 96px); }
+  }
+
+  .section-eyebrow {
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--paper-50);
+    margin-bottom: clamp(32px, 5vw, 56px);
+  }
+  .section-eyebrow .num { color: var(--sepia); }
+  .section-eyebrow .line { flex: 1; max-width: 320px; height: 1px; background: var(--paper-15); }
+
+  .section-title {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(36px, 5.5vw, 64px);
+    line-height: 1.0; letter-spacing: -0.015em;
+    color: var(--paper);
+    max-width: 800px;
+    margin-bottom: clamp(24px, 3vw, 32px);
+    overflow-wrap: anywhere;
+  }
+  .section-title em { font-style: italic; color: var(--sepia); }
+
+  .section-lead {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: clamp(16px, 1.4vw, 18px); line-height: 1.55;
+    color: var(--paper-70);
+    max-width: 620px;
+    margin-bottom: clamp(40px, 6vw, 64px);
+  }
+
+  /* ════════════ PHILOSOPHY ════════════ */
+  .philosophy-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px;
+    background: var(--paper-15);
+    border: 1px solid var(--paper-15);
+  }
+  @media (min-width: 800px) { .philosophy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .philosophy-card {
+    background: var(--ink-darkroom);
+    padding: clamp(28px, 4vw, 48px);
+    display: flex; flex-direction: column; gap: 20px;
+    transition: background var(--dur-normal) var(--ease-fade);
+  }
+  .philosophy-card:hover { background: #221f1d; }
+
+  .philosophy-num {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--sepia);
+  }
+  .philosophy-title {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: clamp(24px, 2.5vw, 32px); line-height: 1.1;
+    color: var(--paper);
+  }
+  .philosophy-title em { font-style: italic; color: var(--sepia); }
+  .philosophy-body {
+    font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+    color: var(--paper-70);
+  }
+
+  /* ════════════ PRODUCTS ════════════ */
+  .products-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px;
+  }
+  @media (min-width: 700px) { .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1100px) { .products-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .product {
+    background: rgba(243, 238, 230, 0.03);
+    border: 1px solid var(--paper-15);
+    padding: 28px 24px;
+    display: flex; flex-direction: column;
+    transition: border-color var(--dur-normal) var(--ease-fade), background var(--dur-normal) var(--ease-fade);
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+  }
+  .product:hover { border-color: var(--sepia); background: rgba(196, 149, 108, 0.04); }
+  .product:hover .product-cta { color: var(--sepia); }
+
+  .product-mock {
+    aspect-ratio: 4 / 5;
+    margin-bottom: 24px;
+    background:
+      linear-gradient(135deg, #2a2522 0%, #1a1817 100%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .product-mock-inner {
+    width: 60%; height: 75%;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.35) 0%, transparent 60%),
+      linear-gradient(180deg, #4a4540 0%, #2c2a28 100%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .product-mock-inner::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0, transparent 18px, rgba(255,255,255,0.04) 18px, rgba(255,255,255,0.04) 19px);
+  }
+  .product-mock-tag {
+    position: absolute; top: 12px; left: 12px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--paper-50);
+  }
+
+  .product-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 8px; }
+  .product-title { font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.1; color: var(--paper); margin-bottom: 4px; }
+  .product-title em { font-style: italic; color: var(--sepia); }
+  .product-desc { font-family: var(--font-body); font-size: 13px; line-height: 1.55; color: var(--paper-70); margin-bottom: 20px; flex: 1; }
+  .product-foot { display: flex; justify-content: space-between; align-items: baseline; padding-top: 16px; border-top: 1px solid var(--paper-15); }
+  .product-price { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); }
+  .product-cta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); transition: color var(--dur-quick) var(--ease-fade); }
+
+  /* ════════════ PROCESS ════════════ */
+  .process-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  @media (min-width: 800px) { .process-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .process-step {
+    padding: 32px 24px;
+    border-top: 1px solid var(--paper-15);
+    position: relative;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  @media (min-width: 800px) {
+    .process-step { border-top: 1px solid var(--paper-15); border-right: 1px solid var(--paper-15); padding: 40px 32px; }
+    .process-step:last-child { border-right: 0; }
+  }
+
+  .process-num {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 64px; line-height: 1; color: var(--silver-200);
+  }
+  .process-title { font-family: var(--font-display); font-weight: 500; font-size: 22px; line-height: 1.15; color: var(--paper); }
+  .process-body { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--paper-70); }
+  .process-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sepia); }
+
+  /* ════════════ FOR PHOTOGRAPHERS ════════════ */
+  .photographers-band {
+    margin: 0 clamp(20px, 4vw, 56px);
+    padding: clamp(56px, 8vw, 96px) clamp(28px, 5vw, 80px);
+    background: var(--paper);
+    color: var(--ink-graphite);
+    border-radius: 0;
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (min-width: 1100px) { .photographers-band { margin-left: clamp(76px, 6vw, 96px); grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
+
+  .photographers-band .eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--safelight);
+    margin-bottom: 24px;
+  }
+  .photographers-band h2 {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(36px, 5vw, 56px); line-height: 1.0; letter-spacing: -0.01em;
+    color: var(--ink-graphite); margin-bottom: 24px;
+    overflow-wrap: anywhere;
+  }
+  .photographers-band h2 em { font-style: italic; color: var(--sepia); }
+  .photographers-band p {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: 17px; line-height: 1.55; color: var(--ink-70);
+    margin-bottom: 32px; max-width: 480px;
+  }
+
+  .photographers-cta { display: inline-flex; align-items: center; gap: 10px; }
+
+  .btn-dark {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 28px;
+    border-radius: 999px;
+    background: var(--ink-graphite); color: var(--paper);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .btn-dark:hover { background: var(--ink-darkroom); }
+  .btn-dark:active { transform: scale(0.97); }
+
+  .btn-dark-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 24px;
+    border-radius: 999px;
+    background: transparent; color: var(--ink-graphite);
+    border: 1.5px solid var(--ink-30);
+    font-family: var(--font-body); font-weight: 500; font-size: 15px;
+    text-decoration: none;
+    transition: border-color var(--dur-quick) var(--ease-fade);
+  }
+  .btn-dark-ghost:hover { border-color: var(--ink-graphite); }
+
+  .photographers-stats { display: flex; flex-direction: column; gap: 1px; background: var(--ink-15); border: 1px solid var(--ink-15); }
+  .pho-stat { background: var(--paper); padding: 20px 24px; display: flex; justify-content: space-between; align-items: baseline; }
+  .pho-stat-key { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-50); }
+  .pho-stat-val { font-family: var(--font-display); font-style: italic; font-size: 28px; color: var(--ink-graphite); line-height: 1; }
+  .pho-stat-val span { font-style: normal; font-size: 16px; color: var(--ink-50); font-family: var(--font-mono); letter-spacing: 0.15em; }
+
+  /* ════════════ GALLERY / ARCHIVE ════════════ */
+  .archive-row {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 40px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--paper-50);
+  }
+  .archive-row .line { flex: 1; height: 1px; background: var(--paper-15); }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (min-width: 700px) { .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 1100px) { .gallery { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+  .gallery-item { display: flex; flex-direction: column; gap: 10px; cursor: zoom-in; }
+  .gallery-img {
+    aspect-ratio: 4 / 5;
+    background: linear-gradient(170deg, #3a3733 0%, #1a1817 80%);
+    border: 1px solid var(--paper-15);
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--dur-normal) var(--ease-emerge), border-color var(--dur-quick) var(--ease-fade);
+  }
+  .gallery-item:hover .gallery-img { border-color: var(--sepia); transform: scale(1.01); }
+  .gallery-img::before {
+    content:''; position:absolute; inset:0;
+    background: repeating-linear-gradient(135deg, transparent 0, transparent 24px, rgba(255,255,255,0.025) 24px, rgba(255,255,255,0.025) 25px);
+  }
+  .gallery-img.tone-a { background: radial-gradient(ellipse at 30% 30%, rgba(196,149,108,0.35) 0%, transparent 55%), linear-gradient(180deg, #3a3733 0%, #1a1817 80%); }
+  .gallery-img.tone-b { background: radial-gradient(ellipse at 60% 40%, rgba(178,58,44,0.20) 0%, transparent 55%), linear-gradient(180deg, #2a2522 0%, #1a1817 80%); }
+  .gallery-img.tone-c { background: radial-gradient(ellipse at 50% 60%, rgba(217,211,200,0.18) 0%, transparent 50%), linear-gradient(180deg, #2c2a28 0%, #1a1817 80%); }
+  .gallery-img.tone-d { background: radial-gradient(ellipse at 70% 30%, rgba(196,149,108,0.25) 0%, transparent 50%), linear-gradient(180deg, #3a3733 0%, #1a1817 90%); }
+
+  .gallery-meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+  .gallery-title { font-family: var(--font-display); font-style: italic; font-size: 16px; line-height: 1.2; color: var(--paper); }
+
+  /* ════════════ TESTIMONIAL ════════════ */
+  .testimonial {
+    padding: clamp(72px, 10vw, 120px) clamp(20px, 4vw, 56px);
+    text-align: left;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  @media (min-width: 1100px) { .testimonial { padding-left: clamp(76px, 6vw, 96px); } }
+  .testimonial-mark {
+    font-family: var(--font-display); font-style: italic; font-size: 120px;
+    line-height: 0.7; color: var(--sepia);
+    margin-bottom: 16px;
+  }
+  .testimonial-text {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: clamp(22px, 3.5vw, 40px); line-height: 1.3;
+    color: var(--paper); letter-spacing: -0.01em;
+    margin-bottom: 32px;
+    overflow-wrap: anywhere;
+  }
+  .testimonial-text strong { font-style: normal; font-weight: 400; color: var(--sepia); }
+
+  .testimonial-sig {
+    display: flex; align-items: center; gap: 16px;
+    padding-top: 24px; border-top: 1px solid var(--paper-15);
+  }
+  .testimonial-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--sepia) 0%, #8a5a30 100%);
+    flex-shrink: 0;
+  }
+  .testimonial-sig-info { display: flex; flex-direction: column; gap: 4px; }
+  .testimonial-sig-name { font-family: var(--font-display); font-size: 18px; color: var(--paper); }
+  .testimonial-sig-role { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); }
+
+  /* ════════════ FAQ ════════════ */
+  .faq-list { max-width: 800px; }
+  .faq-item {
+    border-top: 1px solid var(--paper-15);
+    padding: 24px 0;
+    cursor: pointer;
+    transition: background var(--dur-quick) var(--ease-fade);
+  }
+  .faq-item:last-child { border-bottom: 1px solid var(--paper-15); }
+  .faq-q {
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    font-family: var(--font-display); font-weight: 500; font-size: clamp(18px, 2vw, 22px); line-height: 1.3;
+    color: var(--paper);
+  }
+  .faq-q .toggle {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border: 1px solid var(--paper-30); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 14px; color: var(--paper-70);
+    transition: transform var(--dur-normal) var(--ease-emerge), border-color var(--dur-quick) var(--ease-fade);
+  }
+  .faq-item[open] .faq-q .toggle { transform: rotate(45deg); border-color: var(--sepia); color: var(--sepia); }
+  .faq-a {
+    font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+    color: var(--paper-70); margin-top: 16px; padding-right: 60px;
+    max-width: 620px;
+  }
+
+  /* ════════════ FOOTER ════════════ */
+  footer.foot {
+    padding: clamp(64px, 10vw, 120px) clamp(20px, 4vw, 56px) 32px;
+    border-top: 1px solid var(--paper-15);
+  }
+  @media (min-width: 1100px) { footer.foot { padding-left: clamp(76px, 6vw, 96px); } }
+
+  .manifest {
+    font-family: var(--font-display); font-style: italic; font-weight: 300;
+    font-size: clamp(20px, 2.5vw, 28px); line-height: 1.45;
+    color: var(--paper-70);
+    max-width: 800px;
+    margin-bottom: clamp(48px, 8vw, 80px);
+    overflow-wrap: anywhere;
+  }
+  .manifest strong { font-style: normal; font-weight: 500; color: var(--paper); }
+  .manifest::before { content:'«'; color: var(--sepia); margin-right: 4px; }
+  .manifest::after { content:'»'; color: var(--sepia); margin-left: 4px; }
+
+  .foot-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--paper-15);
+  }
+  @media (min-width: 800px) { .foot-grid { grid-template-columns: 1.4fr repeat(3, 1fr); } }
+
+  .foot-col h4 {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--paper-50);
+    margin-bottom: 18px;
+  }
+  .foot-col a, .foot-col p, .foot-col span {
+    display: block;
+    font-family: var(--font-body); font-size: 14px; line-height: 1.8;
+    color: var(--paper-70); text-decoration: none;
+    transition: color var(--dur-quick) var(--ease-fade);
+  }
+  .foot-col a:hover { color: var(--paper); }
+
+  .foot-brand-name { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.35em; color: var(--paper); margin-bottom: 12px; }
+
+  .foot-bottom {
+    margin-top: 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--paper-30);
+  }
+
+  /* ── Generic emerge animation for scroll-revealed elements ── */
+  [data-reveal] { opacity: 0; transform: translateY(20px); transition: opacity 800ms var(--ease-emerge), transform 800ms var(--ease-emerge); }
+  [data-reveal].in { opacity: 1; transform: translateY(0); }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-photo { animation: none; }
+    [data-reveal] { opacity: 1; transform: none; transition: none; }
+    .safelight-dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════ FIXED NAV ════════════ -->
+<nav class="top" id="topnav">
+  <a href="#hero" class="nav-mark" style="text-decoration: none;">
+    <span class="nav-mark-icon" aria-hidden="true"></span>
+    <span class="nav-wordmark">ПРОЯВ</span>
+  </a>
+  <div class="nav-links">
+    <a href="#philosophy">Філософія</a>
+    <a href="#products">Набори</a>
+    <a href="#process">Процес</a>
+    <a href="#photographers">Фотографам</a>
+    <a href="#archive">Архів</a>
+  </div>
+  <a href="#products" class="nav-cta">
+    <span class="safelight-dot"></span>
+    Замовити
+  </a>
+</nav>
+
+<!-- Vertical metadata ribbon — desktop only -->
+<aside class="ribbon" aria-hidden="true">
+  <div class="ribbon-vert">ПРОЯВ · МАЙСТЕРНЯ · САМБІР · EST 2026</div>
+  <div class="ribbon-meta">
+    <span class="safelight-dot"></span>
+    <span class="label">SAFELIGHT ON</span>
+  </div>
+  <div class="ribbon-vert">ISO 100 · F/1.4 · ARCHIVE</div>
+</aside>
+
+<div class="page">
+
+  <!-- ════════════ HERO ════════════ -->
+  <section class="hero" id="hero">
+    <div>
+      <div class="hero-eyebrow">
+        <span class="safelight-dot"></span>
+        Майстерня проявлення · Самбір
+      </div>
+      <h1>Світло,<br>яке <em>залишилось</em>.</h1>
+      <p class="hero-lead">Цифровий файл стає об'єктом, який можна тримати в руках. Ми <em>проявляємо</em> кожен кадр — редагуємо, перевіряємо тон шкіри, друкуємо з турботою і пакуємо в оксамит. Через вашого фотографа або напряму.</p>
+
+      <div class="hero-cta-row">
+        <a href="#products" class="btn-primary">Замовити проявлення <span class="arrow">→</span></a>
+        <a href="#photographers" class="btn-ghost">Я фотограф</a>
+      </div>
+
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <span class="hero-meta-val">48 годин</span>
+          <span class="hero-meta-key">проявляємо</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-val">Epson SureLab</span>
+          <span class="hero-meta-key">фотолаб якість</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-val">Оксамит</span>
+          <span class="hero-meta-key">пакування</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="hero-meta-val">Нова Пошта</span>
+          <span class="hero-meta-key">по всій Україні</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-photo-wrap">
+      <div class="hero-photo">
+        <span class="hero-photo-num">№ 014</span>
+        <span class="hero-photo-label">Кадр · АТЕЛЬЄ · травень 2026</span>
+      </div>
+      <span class="hero-photo-caption">кадр Олени Кравець</span>
+    </div>
+  </section>
+
+  <!-- ════════════ PHILOSOPHY ════════════ -->
+  <section class="band" id="philosophy">
+    <div class="section-eyebrow">
+      <span class="num">01</span> · ФІЛОСОФІЯ
+      <span class="line"></span>
+    </div>
+    <h2 class="section-title">Що означає <em>проявляти</em> кадр.</h2>
+    <p class="section-lead">Сучасний друк не потребує мокрої хімії — і це добре. Але філософія темної кімнати залишилась: <em>не вирвати з принтера</em>, а доглянути. Перевірити кожен тон. Подати на гідних матеріалах. Закласти у конверт як архів, а не як замовлення з маркетплейсу.</p>
+
+    <div class="philosophy-grid" data-reveal>
+      <div class="philosophy-card">
+        <div class="philosophy-num">i · РЕДАГУЄМО</div>
+        <h3 class="philosophy-title">Ручна корекція <em>кожного</em> кадру</h3>
+        <p class="philosophy-body">Калібрований монітор. Перевірка гістограми. Тон шкіри як на оригіналі. Жодного автоматичного pipeline — кожне фото відкриваємо вручну, обговорюємо з фотографом нюанси півтонів.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-num">ii · ДРУКУЄМО</div>
+        <h3 class="philosophy-title">Epson SureLab — <em>фотолабораторний</em> рівень</h3>
+        <p class="philosophy-body">Не звичайний офіс-принтер. Професійна машина того ж класу, що використовують фотолаборанти. Глянець або мат — за вашим вибором. Кольоровий друк або чорно-білий.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-num">iii · ПАКУЄМО</div>
+        <h3 class="philosophy-title">Оксамитовий конверт з <em>тисненням</em></h3>
+        <p class="philosophy-body">Не пластиковий пакет, не картонна коробка з друкарні. Оксамитовий конверт з тисненням, калька між кадрами, картка з ручним підписом. Ритуал розпакування — частина продукту.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ PRODUCTS ════════════ -->
+  <section class="band" id="products">
+    <div class="section-eyebrow">
+      <span class="num">02</span> · НАБОРИ
+      <span class="line"></span>
+    </div>
+    <h2 class="section-title">Чотири <em>набори</em>.<br>Один <em>обряд</em>.</h2>
+    <p class="section-lead">Усі набори — фотолабораторний друк 10×15&nbsp;см, оксамитове пакування і картка з підписом ательє. Готові за 48 годин. Доставка Новою Поштою по всій Україні.</p>
+
+    <div class="products-grid">
+      <a href="order.html" class="product">
+        <div class="product-mock">
+          <span class="product-mock-tag">10 КАДРІВ</span>
+          <div class="product-mock-inner"></div>
+        </div>
+        <div class="product-eyebrow">НАБІР № 01</div>
+        <h3 class="product-title"><em>Момент</em></h3>
+        <p class="product-desc">10 кадрів 10×15 · оксамитовий конверт · картка з підписом ательє.</p>
+        <div class="product-foot">
+          <span class="product-price">400 ₴</span>
+          <span class="product-cta">Обрати →</span>
+        </div>
+      </a>
+
+      <a href="order.html" class="product">
+        <div class="product-mock">
+          <span class="product-mock-tag">20 КАДРІВ</span>
+          <div class="product-mock-inner" style="width: 64%; height: 80%;"></div>
+        </div>
+        <div class="product-eyebrow">НАБІР № 02</div>
+        <h3 class="product-title"><em>Спогад</em></h3>
+        <p class="product-desc">20 кадрів 10×15 · оксамитовий конверт · картка · вкладка з номером архіву.</p>
+        <div class="product-foot">
+          <span class="product-price">600 ₴</span>
+          <span class="product-cta">Обрати →</span>
+        </div>
+      </a>
+
+      <a href="order.html" class="product">
+        <div class="product-mock">
+          <span class="product-mock-tag">50 КАДРІВ</span>
+          <div class="product-mock-inner" style="width: 70%; height: 85%;"></div>
+        </div>
+        <div class="product-eyebrow">НАБІР № 03</div>
+        <h3 class="product-title"><em>Архів</em></h3>
+        <p class="product-desc">50 кадрів · преміальна коробка · 2 конверти (батькам) · картка з підписом. Для весіль.</p>
+        <div class="product-foot">
+          <span class="product-price">900 ₴</span>
+          <span class="product-cta">Обрати →</span>
+        </div>
+      </a>
+
+      <a href="order.html" class="product" style="border-color: var(--sepia);">
+        <div class="product-mock">
+          <span class="product-mock-tag">10 КАДРІВ · ⚭</span>
+          <div class="product-mock-inner" style="background: radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.45) 0%, transparent 60%), linear-gradient(180deg, #5a4536 0%, #2c2a28 100%);"></div>
+        </div>
+        <div class="product-eyebrow" style="color: var(--sepia);">НАБІР № 04 · СПЕЦІАЛЬНИЙ</div>
+        <h3 class="product-title"><em>Малюк</em></h3>
+        <p class="product-desc">10 кадрів · конверт з ведмедиком · картка «З народженням». Для ньюборн-сесій.</p>
+        <div class="product-foot">
+          <span class="product-price">450 ₴</span>
+          <span class="product-cta">Обрати →</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ════════════ PROCESS ════════════ -->
+  <section class="band" id="process">
+    <div class="section-eyebrow">
+      <span class="num">03</span> · ПРОЦЕС
+      <span class="line"></span>
+    </div>
+    <h2 class="section-title">Як <em>відбувається</em> проявлення.</h2>
+    <p class="section-lead">Чотири кроки. Без додатків. Через посилання від фотографа або напряму з цієї сторінки.</p>
+
+    <div class="process-grid" data-reveal>
+      <div class="process-step">
+        <div class="process-num">i.</div>
+        <div>
+          <div class="process-title">Надсилаєте кадри</div>
+          <p class="process-body">Через лінк від фотографа або з кнопки «Замовити». До 25&nbsp;МБ за кадр, JPG / PNG / HEIC. Можна вибрати глянець або мат, кольорове чи чорно-біле.</p>
+        </div>
+        <div class="process-meta">~ 5 хв</div>
+      </div>
+
+      <div class="process-step">
+        <div class="process-num">ii.</div>
+        <div>
+          <div class="process-title">Перевіряємо вручну</div>
+          <p class="process-body">Відкриваємо файл на каліброваному моніторі. Перевіряємо роздільність, експозицію, тон шкіри. Якщо щось спірне — пишемо вам або фотографу.</p>
+        </div>
+        <div class="process-meta">2 — 4 години</div>
+      </div>
+
+      <div class="process-step">
+        <div class="process-num">iii.</div>
+        <div>
+          <div class="process-title">Друкуємо й пакуємо</div>
+          <p class="process-body">Друкуємо на Epson SureLab. Перевіряємо кожен кадр під різним світлом. Складаємо в оксамитовий конверт з калькою між кадрами. Картка з підписом.</p>
+        </div>
+        <div class="process-meta">24 — 48 годин</div>
+      </div>
+
+      <div class="process-step">
+        <div class="process-num">iv.</div>
+        <div>
+          <div class="process-title">Відправляємо</div>
+          <p class="process-body">Новою Поштою у відділення чи поштомат, або самовивіз у Самборі. Надсилаємо ТТН в SMS і Telegram. Готово за 48 годин від моменту вашої заявки.</p>
+        </div>
+        <div class="process-meta">1 — 2 дні</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ FOR PHOTOGRAPHERS ════════════ -->
+  <section class="band" id="photographers" style="padding-left: 0; padding-right: 0;">
+    <div class="photographers-band">
+      <div>
+        <div class="eyebrow"><span class="safelight-dot" style="display:inline-block; vertical-align:middle; margin-right:8px;"></span>Партнерство · для авторів</div>
+        <h2>Ваш кадр.<br><em>Наша майстерня</em>.</h2>
+        <p>Ви рекомендуєте — ми робимо. Ваш клієнт отримує об'єкт, який гідний фотосесії. Ви отримуєте 12% від суми замовлення. <strong style="color: var(--ink-graphite); font-weight: 500;">Перший пробний відбиток — безкоштовно</strong>, з ваших власних кадрів. Без зобов'язань.</p>
+
+        <div class="photographers-cta">
+          <a href="partner.html" class="btn-dark">Стати співавтором →</a>
+          <a href="#process" class="btn-dark-ghost">Як це працює</a>
+        </div>
+      </div>
+
+      <div class="photographers-stats">
+        <div class="pho-stat">
+          <span class="pho-stat-key">Комісія</span>
+          <span class="pho-stat-val">12<span> %</span></span>
+        </div>
+        <div class="pho-stat">
+          <span class="pho-stat-key">Пробний відбиток</span>
+          <span class="pho-stat-val">0<span> ₴</span></span>
+        </div>
+        <div class="pho-stat">
+          <span class="pho-stat-key">Виплата</span>
+          <span class="pho-stat-val">1<span> — 2 дні</span></span>
+        </div>
+        <div class="pho-stat">
+          <span class="pho-stat-key">Час від вас</span>
+          <span class="pho-stat-val">2<span> хв · рекомендація</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ ARCHIVE / GALLERY ════════════ -->
+  <section class="band" id="archive">
+    <div class="archive-row">
+      <span><span style="color: var(--sepia);">04</span> · АРХІВ ОСТАННІХ КАДРІВ</span>
+      <span class="line"></span>
+      <span>N+8</span>
+    </div>
+
+    <div class="gallery">
+      <div class="gallery-item">
+        <div class="gallery-img tone-a"></div>
+        <div class="gallery-title">Тиша перед світанком</div>
+        <div class="gallery-meta"><span>№ 014 · 11.05.26</span><span>АРХІВ · 10</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-b"></div>
+        <div class="gallery-title">Ньюборн · Софійка</div>
+        <div class="gallery-meta"><span>№ 013 · 09.05.26</span><span>МАЛЮК · 10</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-c"></div>
+        <div class="gallery-title">Травневе весілля</div>
+        <div class="gallery-meta"><span>№ 012 · 04.05.26</span><span>АРХІВ · 50</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-d"></div>
+        <div class="gallery-title">Сімейний альбом</div>
+        <div class="gallery-meta"><span>№ 011 · 28.04.26</span><span>СПОГАД · 20</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-b"></div>
+        <div class="gallery-title">Love story · Трускавець</div>
+        <div class="gallery-meta"><span>№ 010 · 22.04.26</span><span>МОМЕНТ · 10</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-a"></div>
+        <div class="gallery-title">Портрет матері</div>
+        <div class="gallery-meta"><span>№ 009 · 18.04.26</span><span>МОМЕНТ · 10</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-c"></div>
+        <div class="gallery-title">Перший рік</div>
+        <div class="gallery-meta"><span>№ 008 · 12.04.26</span><span>МАЛЮК · 10</span></div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img tone-d"></div>
+        <div class="gallery-title">Літо у Дрогобичі</div>
+        <div class="gallery-meta"><span>№ 007 · 05.04.26</span><span>СПОГАД · 20</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ TESTIMONIAL ════════════ -->
+  <section class="testimonial">
+    <div class="testimonial-mark">«</div>
+    <p class="testimonial-text">Я думала — це просто <strong>друк</strong>. А отримала <strong>обряд</strong>: оксамитовий конверт, карточка з підписом, кадри, що пахнуть свіжим папером. Чоловік відкривав мовчки, по одному. Це більше, ніж фото — це <strong>спогад, який можна тримати в руках</strong>.</p>
+    <div class="testimonial-sig">
+      <div class="testimonial-avatar"></div>
+      <div class="testimonial-sig-info">
+        <span class="testimonial-sig-name">Оксана Г.</span>
+        <span class="testimonial-sig-role">МАМА · НЬЮБОРН-СЕСІЯ · ДРОГОБИЧ</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ FAQ ════════════ -->
+  <section class="band" id="faq">
+    <div class="section-eyebrow">
+      <span class="num">05</span> · ЗАПИТАННЯ
+      <span class="line"></span>
+    </div>
+    <h2 class="section-title">Що часто <em>запитують</em>.</h2>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Я не маю фотографа-партнера. Можу замовити напряму?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">Так. Через кнопку «Замовити проявлення» вгорі сторінки. Ви оберете набір, надішлете свої кадри і отримаєте готовий конверт за 1–2 дні. Якщо ваш фотограф ще не з нами — ми будемо раді з ним познайомитись.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Чи можу я замовити чорно-білий друк?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">Так, окремо для кожного кадру або для всього набору. Доступно у формі замовлення. Чорно-біле проявлення передає тон шкіри і градації сірого точніше, ніж кольорове — для портретів часто рекомендуємо саме його.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Скільки часу займає виготовлення?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">48 годин від моменту, коли ви надіслали кадри, до відправки Новою Поштою. У пік сезону (літо) — може бути до 72 годин. Терміни завжди підтверджуємо в Telegram після заявки.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Як я зрозумію, що мої кадри придатні для друку?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">У формі замовлення кожен ваш кадр автоматично перевіряється на роздільність. Якщо файл замалий або тон підозрілий — побачите попередження. Якщо все ОК — статус «у прояві». Ми додатково перевіряємо вручну і пишемо, якщо є питання.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Що з оплатою?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">Оплата при отриманні (накладений платіж Нової Пошти) або переказ на картку Monobank/Privat одразу. Для замовлень через фотографа-партнера — фотограф підтверджує оплату нам, ми надсилаємо ТТН. Без передоплат для постійних клієнтів.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ════════════ FINAL CTA ════════════ -->
+  <section class="band" style="padding-top: clamp(48px, 6vw, 80px); padding-bottom: clamp(64px, 10vw, 120px); text-align: left;">
+    <div style="max-width: 720px;">
+      <div class="hero-eyebrow">
+        <span class="safelight-dot"></span>
+        Готові проявити свої кадри
+      </div>
+      <h2 class="section-title">Дайте кадрам <em>друге життя</em>.</h2>
+      <p class="section-lead">Це не реклама. Це запрошення. Ваші фото з телефону достойні чогось більшого, ніж черговий слот у галереї.</p>
+      <div class="hero-cta-row">
+        <a href="#products" class="btn-primary">Замовити проявлення <span class="arrow">→</span></a>
+        <a href="#photographers" class="btn-ghost">Я фотограф</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ FOOTER ════════════ -->
+  <footer class="foot">
+    <div class="manifest">
+      Світло торкнулось матриці. <strong>Хтось натиснув затвор.</strong> А потім — тиша, у якій ми робимо свою справу: повертаємо світло у світ, тепер уже на папері.
+    </div>
+
+    <div class="foot-grid">
+      <div class="foot-col">
+        <div class="foot-brand-name">ПРОЯВ</div>
+        <p>Майстерня проявлення. Самбір, Львівська область.</p>
+        <p style="margin-top: 8px;">Доставка по всій Україні Новою Поштою.</p>
+      </div>
+
+      <div class="foot-col">
+        <h4>МАЙСТЕРНЯ</h4>
+        <a href="#philosophy">Філософія</a>
+        <a href="#process">Процес</a>
+        <a href="#archive">Архів</a>
+        <a href="#faq">Запитання</a>
+      </div>
+
+      <div class="foot-col">
+        <h4>ЗАМОВЛЕННЯ</h4>
+        <a href="#products">Набори</a>
+        <a href="order.html">Замовити напряму</a>
+        <a href="index.html">Завантажити кадри</a>
+      </div>
+
+      <div class="foot-col">
+        <h4>КОНТАКТ</h4>
+        <a href="#">@proyav · Instagram</a>
+        <a href="#">Telegram</a>
+        <a href="partner.html">Кабінет фотографа</a>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <span>© ПРОЯВ · 2026</span>
+      <span>MADE WITH CARE · SAMBIR</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ── Sticky nav background on scroll ──
+const nav = document.getElementById('topnav');
+const onScroll = () => {
+  if (window.scrollY > 40) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+};
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ── Smooth scroll on anchor links ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1);
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView ? el.scrollIntoView({ behavior: 'smooth', block: 'start' }) :
+      window.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' });
+  });
+});
+
+// Override scrollIntoView usage above with safer manual scroll (the design guidelines
+// warn against scrollIntoView). Replace with offsetTop-based scroll:
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.onclick = e => {
+    const id = a.getAttribute('href').slice(1);
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    e.preventDefault();
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+  };
+});
+
+// ── Intersection-observer reveal ──
+const io = new IntersectionObserver(entries => {
+  entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('in'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

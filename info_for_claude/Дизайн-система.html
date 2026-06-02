@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Дизайн-система</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--paper); }
+
+  .doc { max-width: 1280px; margin: 0 auto; padding: var(--s-6) var(--gutter) var(--s-9); }
+
+  /* ── TOP BAR ── (reused from audit) */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding-bottom:var(--s-5); border-bottom:1px solid var(--ink-graphite); margin-bottom:var(--s-8); flex-wrap:wrap; gap:var(--s-3); }
+  .topbar-left { display:flex; align-items:center; gap:var(--s-4); }
+  .topbar-mark { width:32px; height:32px; border:1.5px solid var(--ink-graphite); border-radius:50%; position:relative; }
+  .topbar-mark::before { content:''; position:absolute; inset:5px; border:1px solid var(--ink-30); border-radius:50%; }
+  .topbar-mark::after { content:''; position:absolute; top:50%; left:50%; width:3px; height:3px; background:var(--ink-graphite); border-radius:50%; transform:translate(-50%,-50%); }
+  .topbar-brand { font-family: var(--font-display); font-size:16px; font-weight:500; letter-spacing:0.3em; }
+  .topbar-meta  { font-family: var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .back-link { font-family: var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-60); text-decoration:none; }
+  .back-link:hover { color:var(--ink-graphite); }
+
+  /* ── HERO ── */
+  .doc-hero { display:grid; grid-template-columns:1fr; gap:var(--s-6); margin-bottom:var(--s-9); padding-bottom:var(--s-7); border-bottom:var(--bd-hairline); }
+  @media (min-width:900px) { .doc-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-9); } }
+  .doc-hero h1, .chapter-title { overflow-wrap: anywhere; }
+  .doc-eyebrow { font-family:var(--font-mono); font-size:11px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); display:flex; align-items:center; gap:var(--s-3); margin-bottom:var(--s-5); }
+  .doc-eyebrow .line { flex:0 0 32px; height:1px; background:var(--ink-graphite); }
+  .doc-hero h1 { font-family:var(--font-display); font-weight:400; font-size:clamp(44px, 6vw, 80px); line-height:0.98; letter-spacing:-0.015em; color:var(--ink-graphite); margin-bottom:var(--s-4); }
+  .doc-hero h1 em { font-style:italic; color:var(--silver-300); }
+  .doc-hero .lead { font-size:var(--t-lead); line-height:var(--lh-lead); color:var(--ink-70); font-weight:300; }
+  .doc-summary { display:flex; flex-direction:column; gap:var(--s-3); padding-top:var(--s-4); }
+  .doc-summary-row { display:grid; grid-template-columns:120px 1fr; gap:var(--s-4); padding:var(--s-3) 0; border-top:var(--bd-hairline); }
+  .doc-summary-row:last-child { border-bottom:var(--bd-hairline); }
+  .doc-summary-key { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); padding-top:4px; }
+  .doc-summary-val { font-size:14px; line-height:1.55; color:var(--ink-graphite); }
+  .doc-summary-val strong { font-weight:500; }
+
+  /* ── CHAPTER ── */
+  section.chapter { margin-bottom:var(--s-9); }
+  .chapter-head { display:grid; grid-template-columns:auto 1fr; gap:var(--s-5); align-items:baseline; padding-bottom:var(--s-5); border-bottom:1px solid var(--ink-graphite); margin-bottom:var(--s-6); }
+  .chapter-num   { font-family:var(--font-mono); font-size:11px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--silver-300); white-space:nowrap; }
+  .chapter-title { font-family:var(--font-display); font-weight:400; font-size:clamp(28px, 3.5vw, 44px); line-height:1.05; color:var(--ink-graphite); }
+  .chapter-title em { font-style:italic; color:var(--silver-300); }
+  .chapter-sub { font-size:var(--t-small); color:var(--ink-60); margin-top:var(--s-2); max-width:600px; }
+
+  /* ══════════ COLOR ══════════ */
+  .color-group { margin-bottom:var(--s-6); }
+  .color-group-h {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding-bottom:var(--s-3); border-bottom:var(--bd-hairline); margin-bottom:var(--s-4);
+  }
+  .color-group-h h3 { font-family:var(--font-display); font-weight:500; font-size:20px; }
+  .color-group-h .ratio { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+
+  .swatch-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:var(--s-3); }
+  .swatch { display:flex; flex-direction:column; }
+  .swatch-block { aspect-ratio: 4 / 3; border:1px solid var(--ink-15); display:flex; flex-direction:column; justify-content:space-between; padding:var(--s-3); position:relative; transition: transform var(--dur-normal) var(--ease-emerge); }
+  .swatch:hover .swatch-block { transform: translateY(-2px); }
+  .swatch-name-tone { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; align-self:flex-start; }
+  .swatch-hex { font-family:var(--font-mono); font-size:11px; align-self:flex-end; }
+  .swatch-meta { padding:var(--s-3) 0; }
+  .swatch-uk { font-family:var(--font-display); font-style:italic; font-size:18px; line-height:1.15; color:var(--ink-graphite); }
+  .swatch-rgb { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; color:var(--ink-50); margin-top:4px; }
+  .swatch-role { font-size:12px; color:var(--ink-60); margin-top:4px; line-height:1.5; }
+
+  /* Tone scale strip */
+  .tone-strip { display:grid; grid-template-columns: repeat(6, 1fr); height:120px; border:1px solid var(--ink-15); margin-top:var(--s-4); }
+  .tone-step { display:flex; flex-direction:column; justify-content:flex-end; padding:var(--s-3); }
+  .tone-step .label { font-family:var(--font-mono); font-size:9px; letter-spacing:var(--ls-mono); text-transform:uppercase; }
+
+  /* The 70/25/5 illustrative bar */
+  .ratio-bar { display:flex; height:48px; margin-top:var(--s-4); border:1px solid var(--ink-15); }
+  .ratio-bar > span { display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; }
+
+  /* ══════════ TYPOGRAPHY ══════════ */
+  .type-list { display:flex; flex-direction:column; }
+  .type-row { display:grid; grid-template-columns: 140px 1fr 160px; gap:var(--s-5); padding:var(--s-5) 0; border-bottom:var(--bd-hairline); align-items:baseline; }
+  @media (max-width:700px) { .type-row { grid-template-columns: 1fr; gap:var(--s-3); padding:var(--s-4) 0; } }
+  .type-tag { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); padding-top:8px; }
+  .type-sample { color:var(--ink-graphite); overflow:hidden; }
+  .type-meta { font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; color:var(--ink-50); text-align:right; padding-top:12px; line-height:1.6; }
+  @media (max-width:700px) { .type-meta { text-align:left; } }
+
+  /* Font specimens */
+  .font-spec { margin-top:var(--s-6); display:grid; grid-template-columns:1fr; gap:var(--s-4); }
+  @media (min-width:900px) { .font-spec { grid-template-columns: repeat(3, 1fr); } }
+  .font-card { padding:var(--s-5); border:1px solid var(--ink-15); display:flex; flex-direction:column; gap:var(--s-3); }
+  .font-card .label { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .font-card .name  { font-family:var(--font-display); font-size:32px; font-weight:500; color:var(--ink-graphite); line-height:1; }
+  .font-card .name-mono { font-family:var(--font-mono); font-size:24px; font-weight:500; }
+  .font-card .name-inter { font-family:var(--font-body); font-size:30px; font-weight:500; }
+  .font-card .glyphs { font-size:14px; line-height:1.6; color:var(--ink-60); border-top:var(--bd-hairline); padding-top:var(--s-3); margin-top:var(--s-3); }
+  .font-card .weights { display:flex; gap:var(--s-3); flex-wrap:wrap; }
+  .font-card .weights span { font-family:var(--font-mono); font-size:10px; color:var(--ink-50); }
+  .font-card .glyphs-mono { font-family:var(--font-mono); letter-spacing:0.15em; }
+
+  /* ══════════ COMPONENTS ══════════ */
+  .component-row { display:grid; grid-template-columns:1fr; gap:var(--s-5); padding:var(--s-6) 0; border-bottom:var(--bd-hairline); }
+  @media (min-width:900px) { .component-row { grid-template-columns: 240px minmax(0, 1fr); gap:var(--s-7); } }
+  .component-row:last-child { border-bottom:0; }
+  .component-meta { display:flex; flex-direction:column; gap:var(--s-2); }
+  .component-meta h4 { font-family:var(--font-display); font-weight:500; font-size:22px; line-height:1.15; }
+  .component-meta p  { font-size:13px; line-height:1.55; color:var(--ink-60); }
+  .component-meta .tag { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); margin-top:var(--s-2); }
+  .component-demo { display:flex; flex-direction:column; gap:var(--s-4); padding:var(--s-5); background:var(--ink-02); border:var(--bd-hairline); }
+
+  /* ─── Buttons ─── */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--s-2); height:48px; padding:0 var(--s-5); border:0; border-radius:var(--r-pill); font-family:var(--font-body); font-weight:500; font-size:14px; cursor:pointer; transition: background var(--dur-quick) var(--ease-fade), color var(--dur-quick) var(--ease-fade), transform var(--dur-quick) var(--ease-emerge); white-space:nowrap; }
+  .btn:active { transform: scale(.98); }
+
+  .btn--primary { background: var(--ink-graphite); color: var(--paper); }
+  .btn--primary:hover { background: var(--ink-darkroom); }
+
+  .btn--safelight { background: var(--safelight); color: var(--paper); }
+  .btn--safelight:hover { background: #962d22; }
+
+  .btn--ghost { background: transparent; color: var(--ink-graphite); border: 1.5px solid var(--ink-15); }
+  .btn--ghost:hover { border-color: var(--ink-graphite); }
+
+  .btn--text { background: transparent; color: var(--ink-graphite); padding: 0 var(--s-3); height: auto; border-radius:0; border-bottom: 1px solid var(--ink-30); border-radius:0; }
+  .btn--text:hover { border-bottom-color: var(--ink-graphite); }
+
+  .btn--mono { font-family:var(--font-mono); font-size:11px; letter-spacing:var(--ls-mono); text-transform:uppercase; border-radius:0; background:transparent; color:var(--ink-graphite); border:1px solid var(--ink-graphite); padding:0 var(--s-4); height:36px; }
+  .btn--mono:hover { background:var(--ink-graphite); color:var(--paper); }
+
+  /* ─── Inputs ─── */
+  .input { display:flex; flex-direction:column; gap:6px; max-width:340px; }
+  .input label { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .input input { height:48px; padding:0 var(--s-4); background:var(--paper); border:1.5px solid var(--ink-15); border-radius:var(--r-2); font-family:var(--font-body); font-size:15px; color:var(--ink-graphite); outline:none; transition: border-color var(--dur-quick) var(--ease-fade); }
+  .input input:focus { border-color:var(--ink-graphite); box-shadow: 0 0 0 3px rgba(44,42,40,.05); }
+  .input input::placeholder { color: var(--ink-30); }
+
+  /* ─── Card ─── */
+  .card { background:var(--paper); border:1px solid var(--ink-15); padding:var(--s-5); display:flex; flex-direction:column; gap:var(--s-3); transition: border-color var(--dur-quick) var(--ease-fade); max-width:340px; }
+  .card:hover { border-color: var(--ink-graphite); }
+  .card-eyebrow { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .card-title { font-family:var(--font-display); font-weight:500; font-size:24px; line-height:1.15; }
+  .card-body  { font-size:13px; line-height:1.55; color:var(--ink-60); }
+  .card-meta  { display:flex; justify-content:space-between; padding-top:var(--s-3); border-top:var(--bd-hairline); font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+
+  /* ─── Status badges ─── */
+  .badges { display:flex; flex-wrap:wrap; gap:var(--s-2); }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:var(--r-pill); font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; }
+  .badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+  .badge--received { background: var(--silver-500); color: var(--ink-graphite); }
+  .badge--received::before { background: var(--silver-300); }
+  .badge--developing { background: rgba(196,149,108,.18); color: #6e4a20; }
+  .badge--developing::before { background: var(--sepia); animation: pulse 1.6s ease-in-out infinite; }
+  .badge--packed { background: var(--ink-graphite); color: var(--paper); }
+  .badge--packed::before { background: var(--paper); }
+  .badge--sent { background: rgba(44,42,40,.08); color: var(--ink-graphite); border: 1px solid var(--ink-graphite); }
+  .badge--sent::before { background: var(--ink-graphite); }
+  .badge--closed { background: transparent; color: var(--ink-60); border: 1px dashed var(--ink-30); }
+  .badge--closed::before { background: var(--ink-30); }
+  .badge--alert { background: var(--safelight); color: var(--paper); }
+  .badge--alert::before { background: var(--paper); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ─── Certificate component ─── */
+  .cert { background:var(--paper); border:1px solid var(--ink-graphite); padding:var(--s-6); display:grid; grid-template-columns:1fr; gap:var(--s-3); position:relative; max-width:420px; }
+  .cert::before { content:''; position:absolute; top:8px; left:8px; right:8px; bottom:8px; border:1px solid var(--ink-15); pointer-events:none; }
+  .cert > * { position:relative; z-index:1; }
+  .cert-h { display:flex; justify-content:space-between; align-items:baseline; }
+  .cert-h .left { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .cert-h .right { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .cert-title { font-family:var(--font-display); font-style:italic; font-weight:400; font-size:24px; line-height:1.2; color:var(--ink-graphite); margin-top:var(--s-3); }
+  .cert-quote { font-family:var(--font-display); font-style:italic; font-size:14px; color:var(--ink-60); padding:var(--s-3) 0; border-top:1px solid var(--ink-15); border-bottom:1px solid var(--ink-15); margin:var(--s-3) 0; }
+  .cert-meta { display:grid; grid-template-columns: 1fr 1fr; gap:var(--s-3); font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; color:var(--ink-60); }
+  .cert-meta dt { color:var(--ink-50); text-transform:uppercase; }
+  .cert-meta dd { color:var(--ink-graphite); margin-top:2px; }
+  .cert-sig { display:flex; justify-content:space-between; align-items:flex-end; margin-top:var(--s-4); padding-top:var(--s-3); border-top:1px solid var(--ink-15); }
+  .cert-sig .name { font-family:var(--font-display); font-style:italic; font-size:18px; color:var(--ink-graphite); }
+  .cert-sig .num  { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+
+  /* ── VOICE ── */
+  .voice-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); margin-top:var(--s-5); }
+  @media (min-width:700px) { .voice-grid { grid-template-columns: 1fr 1fr; } }
+  .voice-card { padding:var(--s-5); border:1px solid var(--ink-15); display:flex; flex-direction:column; gap:var(--s-3); }
+  .voice-card.dont { background: rgba(178,58,44,.04); }
+  .voice-h { display:flex; align-items:center; gap:var(--s-2); font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; }
+  .voice-do .voice-h { color: #6e4a20; }
+  .voice-dont .voice-h { color: var(--safelight); }
+  .voice-card .line { font-family:var(--font-display); font-style:italic; font-size:18px; line-height:1.35; color:var(--ink-graphite); padding:var(--s-2) 0; border-top:var(--bd-hairline); }
+  .voice-card .line:first-of-type { border-top:0; padding-top:0; }
+  .voice-card.dont .line { text-decoration: line-through; text-decoration-color: var(--safelight); color: var(--ink-60); font-style:normal; font-family:var(--font-body); font-size:15px; }
+
+  /* ── DICTIONARY ── */
+  .dict { display:grid; grid-template-columns:1fr; margin-top:var(--s-5); border-top:1px solid var(--ink-graphite); }
+  .dict-row { display:grid; grid-template-columns:1fr auto 1fr; gap:var(--s-5); align-items:baseline; padding:var(--s-4) 0; border-bottom:var(--bd-hairline); }
+  @media (max-width:600px) { .dict-row { grid-template-columns:1fr; gap:var(--s-1); padding:var(--s-3) 0; } }
+  .dict-from { font-family:var(--font-body); font-size:16px; color:var(--ink-60); text-decoration: line-through; text-decoration-color: var(--silver-300); }
+  .dict-arrow { font-family:var(--font-mono); font-size:14px; color:var(--silver-300); }
+  .dict-to { font-family:var(--font-display); font-style:italic; font-size:22px; line-height:1.2; color:var(--ink-graphite); }
+
+  /* ── MOTION ── */
+  .motion-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); margin-top:var(--s-5); }
+  @media (min-width:700px) { .motion-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  .motion-card { padding:var(--s-5); border:1px solid var(--ink-15); display:flex; flex-direction:column; gap:var(--s-3); }
+  .motion-card .lbl { font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .motion-card .name { font-family:var(--font-display); font-style:italic; font-size:22px; }
+  .motion-card .demo { height:80px; background:var(--ink-darkroom); position:relative; overflow:hidden; margin-top:var(--s-2); }
+  .motion-card .demo::after { content:''; position:absolute; width:24px; height:24px; background:var(--paper); top:50%; left:0; transform:translate(0,-50%); border-radius:50%; }
+  .motion-card.develop .demo::after { animation: develop 2.4s var(--ease-emerge) infinite; }
+  .motion-card.emerge  .demo::after { animation: emergeAnim 2.4s var(--ease-emerge) infinite; }
+  .motion-card.fade    .demo::after { animation: fadeAnim 2.4s var(--ease-fade) infinite; }
+  @keyframes develop { 0% { left:0; opacity:0; transform:translate(0,-50%) scale(.6); filter:blur(8px); } 50% { left:50%; opacity:.5; filter:blur(2px); } 100% { left:calc(100% - 24px); opacity:1; transform:translate(0,-50%) scale(1); filter:blur(0); } }
+  @keyframes emergeAnim { 0% { left:-30px; opacity:0; } 30% { opacity:1; } 100% { left:calc(100% + 6px); opacity:0; } }
+  @keyframes fadeAnim { 0%,100% { opacity:0; left:50%; } 50% { opacity:1; } }
+  .motion-card .num { font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; color:var(--ink-60); margin-top:var(--s-2); }
+  .motion-card .desc { font-size:12px; line-height:1.55; color:var(--ink-60); }
+
+  /* ── LOGO ── */
+  .logo-bank { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:var(--s-4); margin-top:var(--s-5); }
+  .logo-card { aspect-ratio:1.4; border:1px solid var(--ink-15); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:var(--s-3); padding:var(--s-4); position:relative; }
+  .logo-card.dark { background: var(--ink-darkroom); color: var(--paper); border-color: var(--ink-darkroom); }
+  .logo-card.sepia { background: var(--sepia); color: var(--ink-darkroom); border-color: var(--sepia); }
+  .logo-card .tag { position:absolute; bottom:8px; left:8px; font-family:var(--font-mono); font-size:9px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50); }
+  .logo-card.dark .tag, .logo-card.sepia .tag { color: rgba(255,255,255,.5); }
+  .logo-mark-large { width:48px; height:48px; border:2px solid currentColor; border-radius:50%; position:relative; }
+  .logo-mark-large::before { content:''; position:absolute; inset:7px; border:1px solid currentColor; border-radius:50%; opacity:.5; }
+  .logo-mark-large::after { content:''; position:absolute; top:50%; left:50%; width:4px; height:4px; background:currentColor; border-radius:50%; transform:translate(-50%,-50%); }
+  .logo-wordmark { font-family:var(--font-display); font-weight:500; letter-spacing:0.4em; font-size:18px; }
+
+  /* ── CODE ── */
+  .code-block { background:var(--ink-darkroom); color:var(--silver-500); padding:var(--s-4) var(--s-5); font-family:var(--font-mono); font-size:11px; line-height:1.7; border-left:3px solid var(--sepia); margin-top:var(--s-4); overflow-x:auto; }
+  .code-block .c { color: var(--silver-300); }
+  .code-block .k { color: var(--sepia); }
+
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-mark" aria-hidden="true"></div>
+      <div class="topbar-brand">ПРОЯВ</div>
+      <div class="topbar-meta">Дизайн-система · № 02 · v.01</div>
+    </div>
+    <a class="back-link" href="Прояв.html">← Робоча кімната</a>
+  </header>
+
+  <!-- ── HERO ── -->
+  <section class="doc-hero">
+    <div>
+      <div class="doc-eyebrow"><span class="line"></span>Витяг з брендбуку · у код</div>
+      <h1>Палітра<br>темної <em>кімнати</em>.</h1>
+      <p class="lead">Кожен токен має технічне обґрунтування й емоційну роль. Це не «UI-кит» — це <strong>каталог матеріалів майстерні</strong>: кольори з лабораторії, шрифти як інструменти, компоненти як готові вузли.</p>
+    </div>
+
+    <div class="doc-summary">
+      <div class="doc-summary-row"><div class="doc-summary-key">Файл</div><div class="doc-summary-val"><strong>tokens.css</strong> — 175 рядків, без зайвого. Підключити в кожен HTML через <code>&lt;link rel="stylesheet" href="tokens.css"&gt;</code>.</div></div>
+      <div class="doc-summary-row"><div class="doc-summary-key">Шрифти</div><div class="doc-summary-val">3 родини: <strong>Cormorant</strong> (display), <strong>Inter</strong> (body), <strong>JetBrains Mono</strong> (technical). Усі — Google Fonts.</div></div>
+      <div class="doc-summary-row"><div class="doc-summary-key">Кольорів</div><div class="doc-summary-val">3 core, 2 accent, 1 neutral, шкала з 6 тонів. Усього 12. <strong>Більше не додавати.</strong></div></div>
+      <div class="doc-summary-row"><div class="doc-summary-key">Правило</div><div class="doc-summary-val"><strong>70 · 25 · 5</strong> — це не пропозиція, це закон. Сепія й Сафлайт не можуть займати більше 5% площі.</div></div>
+    </div>
+  </section>
+
+  <!-- ════════════ COLOR ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 01 · Колір</div>
+      <h2 class="chapter-title">Палітра — <em>з лабораторії</em></h2>
+    </div>
+
+    <!-- CORE -->
+    <div class="color-group">
+      <div class="color-group-h">
+        <h3>Core · носій тиші</h3>
+        <span class="ratio">70% площі · фон, друк</span>
+      </div>
+
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-block" style="background:#1A1817; color:var(--paper-70);">
+            <span class="swatch-name-tone">#1A1817</span>
+            <span class="swatch-hex">PANTONE BLACK 6 C</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Темна камера</div>
+            <div class="swatch-rgb">RGB 26 · 24 · 23 · CMYK 0 · 8 · 12 · 90</div>
+            <div class="swatch-role">Фон темного режиму, splash, фотонегативні стани. Не використовувати на тексті ≤14px.</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="swatch-block" style="background:#2C2A28; color:var(--paper-70);">
+            <span class="swatch-name-tone">#2C2A28</span>
+            <span class="swatch-hex">RGB 44 · 42 · 40</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Графіт</div>
+            <div class="swatch-rgb">CMYK 0 · 5 · 9 · 83</div>
+            <div class="swatch-role">Основний колір тексту, заголовків, primary-кнопок. Один з найважливіших токенів.</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="swatch-block" style="background:#F3EEE6; color:var(--ink-graphite); border:1px solid var(--ink-15);">
+            <span class="swatch-name-tone">#F3EEE6</span>
+            <span class="swatch-hex">PANTONE WARM GRAY 1 C</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Папір</div>
+            <div class="swatch-rgb">RGB 243 · 238 · 230 · CMYK 0 · 2 · 5 · 5</div>
+            <div class="swatch-role">Основний фон сайту. Не #FFFFFF — папір ніколи не білий. Теплий, з ледь жовтуватою хімією.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCENTS -->
+    <div class="color-group">
+      <div class="color-group-h">
+        <h3>Акценти · підкреслюють фото</h3>
+        <span class="ratio">5% площі · CTA, сигнал</span>
+      </div>
+
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-block" style="background:#C4956C; color:var(--ink-darkroom);">
+            <span class="swatch-name-tone">#C4956C</span>
+            <span class="swatch-hex">PANTONE 7508 C</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Сепія</div>
+            <div class="swatch-rgb">RGB 196 · 149 · 108 · CMYK 0 · 24 · 45 · 23</div>
+            <div class="swatch-role">Теплий акцент: hover, sub-CTA, лапки, шапки сертифіката. Натяк на тон fixer-ванни.</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="swatch-block" style="background:#B23A2C; color:var(--paper);">
+            <span class="swatch-name-tone">#B23A2C</span>
+            <span class="swatch-hex">PANTONE 1805 C</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Сафлайт</div>
+            <div class="swatch-rgb">RGB 178 · 58 · 44 · CMYK 0 · 67 · 75 · 30</div>
+            <div class="swatch-role">Сигнальний акцент. Primary-CTA в темному режимі, помилки, статуси «alert». Червоне світло безпечної лампи.</div>
+          </div>
+        </div>
+
+        <div class="swatch">
+          <div class="swatch-block" style="background:#8A8580; color:var(--paper);">
+            <span class="swatch-name-tone">#8A8580</span>
+            <span class="swatch-hex">RGB 138 · 133 · 128</span>
+          </div>
+          <div class="swatch-meta">
+            <div class="swatch-uk">Срібло-галогенід</div>
+            <div class="swatch-rgb">CMYK 0 · 4 · 7 · 46</div>
+            <div class="swatch-role">Нейтральний середній тон. Для розділювачів, дисциплінованих iconів, неактивних станів.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TONE SCALE -->
+    <div class="color-group">
+      <div class="color-group-h">
+        <h3>Шкала срібла · від темного до паперу</h3>
+        <span class="ratio">тон · текст, рамки, поверхні</span>
+      </div>
+
+      <div class="tone-strip">
+        <div class="tone-step" style="background:#3A3733; color:var(--paper);"><span class="label">100 · #3A3733</span></div>
+        <div class="tone-step" style="background:#5A554F; color:var(--paper);"><span class="label">200 · #5A554F</span></div>
+        <div class="tone-step" style="background:#8A8580; color:var(--paper);"><span class="label">300 · #8A8580</span></div>
+        <div class="tone-step" style="background:#B5AFA6; color:var(--ink-graphite);"><span class="label">400 · #B5AFA6</span></div>
+        <div class="tone-step" style="background:#D9D3C8; color:var(--ink-graphite);"><span class="label">500 · #D9D3C8</span></div>
+        <div class="tone-step" style="background:#F3EEE6; color:var(--ink-graphite); border-left:1px solid var(--ink-15);"><span class="label">600 · #F3EEE6</span></div>
+      </div>
+
+      <!-- 70/25/5 illustrative bar -->
+      <div class="ratio-bar">
+        <span style="flex:70; background:var(--paper); color:var(--ink-graphite);">70 · ПАПІР / ТЕМНА КАМЕРА</span>
+        <span style="flex:25; background:var(--silver-200); color:var(--paper);">25 · ГРАФІТ / СРІБЛО</span>
+        <span style="flex:5;  background:var(--safelight); color:var(--paper);">5 · АКЦЕНТ</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ TYPOGRAPHY ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 02 · Типографіка</div>
+      <h2 class="chapter-title">Серіф мовчить <em>голосно</em>.</h2>
+    </div>
+
+    <div class="font-spec">
+      <div class="font-card">
+        <span class="label">DISPLAY</span>
+        <span class="name">Cormorant</span>
+        <p class="font-card .glyphs" style="font-size:13px; color:var(--ink-60); line-height:1.55;">Заголовки, монограма, цитати. Контрастні штрихи перегукуються з сріблом-галогенідом.</p>
+        <div class="weights"><span>300</span><span>400</span><span>500</span><span>600</span><span>Italic</span></div>
+        <div class="glyphs">А Б В Г Д Е Є Ж З И І Ї Й · A B C D · 0 1 2 3 4 5</div>
+      </div>
+
+      <div class="font-card">
+        <span class="label">BODY</span>
+        <span class="name-inter">Inter</span>
+        <p style="font-size:13px; color:var(--ink-60); line-height:1.55;">Основний текст, UI, описи. Тільки <strong>Light&nbsp;300</strong> і <strong>Regular&nbsp;400</strong>. Medium 500 — лише для кнопок і підписів.</p>
+        <div class="weights"><span>300</span><span>400</span><span>500 — лише UI</span></div>
+        <div class="glyphs">А Б В Г Д Е Є Ж З И · A B C D E F G · 0 1 2 3</div>
+      </div>
+
+      <div class="font-card">
+        <span class="label">TECHNICAL</span>
+        <span class="name-mono">JetBrains Mono</span>
+        <p style="font-size:13px; color:var(--ink-60); line-height:1.55;">Нумерація, метадані, технічні специфікації, нав-крихти. Завжди UPPERCASE з трекінгом <code>0.25em</code>.</p>
+        <div class="weights"><span>400</span><span>500</span></div>
+        <div class="glyphs glyphs-mono">ISO 100 · F/1.4 · 1/250S · 308GSM</div>
+      </div>
+    </div>
+
+    <!-- Type scale -->
+    <div class="type-list" style="margin-top:var(--s-7);">
+      <div class="type-row">
+        <span class="type-tag">H1 · DISPLAY</span>
+        <span class="type-sample" style="font-family:var(--font-display); font-weight:400; font-size:clamp(56px,8vw,96px); line-height:.95; letter-spacing:-.02em;">Проявляємо <em style="font-style:italic; color:var(--silver-300);">спогади</em></span>
+        <span class="type-meta">96 / 96 / -.02em<br>Cormorant 400</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">H2 · TITLE</span>
+        <span class="type-sample" style="font-family:var(--font-display); font-weight:500; font-size:clamp(36px,5vw,56px); line-height:1.05;">Як це працює в світі</span>
+        <span class="type-meta">56 / 60 / 0<br>Cormorant 500</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">H3 · SUBTITLE</span>
+        <span class="type-sample" style="font-family:var(--font-display); font-weight:500; font-size:32px; line-height:1.15;">Турбота · Майстерність · Партнерство</span>
+        <span class="type-meta">32 / 38 / 0<br>Cormorant 500</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">LEAD</span>
+        <span class="type-sample" style="font-family:var(--font-body); font-size:22px; line-height:1.45; font-weight:300; color:var(--ink-70);">Cotton-rag папір 310 г/м², пігментні чорнила, калібровані монітори.</span>
+        <span class="type-meta">22 / 32 / 0<br>Inter Light 300</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">BODY</span>
+        <span class="type-sample" style="font-size:16px; line-height:1.55;">Ми друкуємо на cotton-rag папері 310 г/м², використовуємо пігментні чорнила Epson UltraChrome PRO12 та калібруємо кольори вручну під кожен кадр.</span>
+        <span class="type-meta">16 / 25 / 0<br>Inter Regular 400</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">CAPTION</span>
+        <span class="type-sample" style="font-size:12px; color:var(--ink-50); line-height:1.4;">Архівна стійкість понад 200 років</span>
+        <span class="type-meta">12 / 17 / 0<br>Inter Regular 400</span>
+      </div>
+      <div class="type-row">
+        <span class="type-tag">MONO</span>
+        <span class="type-sample" style="font-family:var(--font-mono); font-size:12px; letter-spacing:.25em; text-transform:uppercase; color:var(--ink-60);">· ISO 100 · F/1.4 · 1/250s · paper Hahnemühle Photo Rag 308 · edition № 001 / 025</span>
+        <span class="type-meta">12 / 17 / .25em<br>JetBrains Mono · UPPER</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ LOGO ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 03 · Знак</div>
+      <h2 class="chapter-title">Знак як <em>діафрагма</em></h2>
+    </div>
+
+    <div class="prose" style="max-width:680px;">
+      <p style="font-size:16px; line-height:1.6; color:var(--ink-graphite);">Монограма побудована на геометрії об'єктива: концентричні кола діафрагми, центральна точка фокусу, хрест калібрування. Знак працює як <strong>самостійна позначка якості</strong> — штамп майстра на звороті відбитка.</p>
+    </div>
+
+    <div class="logo-bank">
+      <div class="logo-card">
+        <div class="logo-mark-large" style="color:var(--ink-graphite);"></div>
+        <div class="logo-wordmark" style="color:var(--ink-graphite);">ПРОЯВ</div>
+        <span class="tag">Primary · vertical</span>
+      </div>
+      <div class="logo-card dark">
+        <div class="logo-mark-large"></div>
+        <div class="logo-wordmark">ПРОЯВ</div>
+        <span class="tag">Inverse · darkroom</span>
+      </div>
+      <div class="logo-card sepia">
+        <div class="logo-mark-large"></div>
+        <div class="logo-wordmark">ПРОЯВ</div>
+        <span class="tag">Sepia · packaging</span>
+      </div>
+      <div class="logo-card" style="aspect-ratio:1;">
+        <div class="logo-mark-large" style="color:var(--ink-graphite); width:64px; height:64px;"></div>
+        <span class="tag">Mark only · stamp</span>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="c">/* Мінімальні правила (з брендбуку) */</span>
+<span class="k">·</span> охоронна зона   <span class="c">// половина висоти знака</span>
+<span class="k">·</span> мінімальний друк <span class="c">// 14 мм висоти</span>
+<span class="k">·</span> мінімальний цифровий <span class="c">// 18 px</span>
+<span class="k">·</span> заборонено      <span class="c">// обертати, нахиляти, змінювати трекінг літер</span>
+<span class="k">·</span> заборонено      <span class="c">// накладати на фото без затемнюючої підкладки</span>
+    </div>
+  </section>
+
+  <!-- ════════════ COMPONENTS ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 04 · Компоненти</div>
+      <h2 class="chapter-title">Базові <em>вузли</em></h2>
+    </div>
+
+    <!-- Buttons -->
+    <div class="component-row">
+      <div class="component-meta">
+        <h4>Кнопки</h4>
+        <p>Округлені — pill (тільки для основних дій). Звичайні — гострі кути. Mono-кнопка — для технічних дій (експорт, копіювання ТТН).</p>
+        <span class="tag">.btn · .btn--primary · .btn--safelight · .btn--ghost · .btn--mono</span>
+      </div>
+      <div class="component-demo">
+        <div style="display:flex; gap:var(--s-3); flex-wrap:wrap;">
+          <button class="btn btn--primary">Замовити проявлення</button>
+          <button class="btn btn--safelight">Скасувати замовлення</button>
+          <button class="btn btn--ghost">Зберегти чернетку</button>
+        </div>
+        <div style="display:flex; gap:var(--s-3); flex-wrap:wrap;">
+          <button class="btn btn--mono">ISO · EXPORT</button>
+          <button class="btn btn--mono" style="background:var(--ink-graphite); color:var(--paper);">COPY TTN</button>
+          <button class="btn btn--text">Назад до кадрів</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="component-row">
+      <div class="component-meta">
+        <h4>Поля вводу</h4>
+        <p>Лейбли — у JetBrains Mono UPPERCASE, як на лабораторній картці. Фокус — тонке кольцо в графіті, без яскравих обрамлень.</p>
+        <span class="tag">.input · label + input</span>
+      </div>
+      <div class="component-demo">
+        <div class="input">
+          <label>Ім'я автора</label>
+          <input type="text" placeholder="Олена Коваль" value="Олена Коваль">
+        </div>
+        <div class="input">
+          <label>Контакт у Direct</label>
+          <input type="text" placeholder="@your_nickname">
+        </div>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="component-row">
+      <div class="component-meta">
+        <h4>Картка набору</h4>
+        <p>Базова картка — без тіні, з тонкою рамкою. Лейбли — Mono UPPERCASE. Назва — Cormorant. Hover змінює рамку, не тінь.</p>
+        <span class="tag">.card · .card-eyebrow · .card-title · .card-body · .card-meta</span>
+      </div>
+      <div class="component-demo">
+        <div class="card">
+          <div class="card-eyebrow">ЛІНІЯ · СТУДІЯ</div>
+          <div class="card-title">Малий «Момент»</div>
+          <p class="card-body">10 кадрів 10×15 · оксамитовий конверт · картка з підписом ательє.</p>
+          <div class="card-meta"><span>EPSON SURELAB</span><span>400 ₴</span></div>
+        </div>
+        <div class="card" style="border-color:var(--ink-graphite);">
+          <div class="card-eyebrow" style="color:var(--sepia);">ЛІНІЯ · АТЕЛЬЄ</div>
+          <div class="card-title">Edition 1/25</div>
+          <p class="card-body">Cotton-rag 310 г/м² · підпис автора · сертифікат архівності · 200+ років.</p>
+          <div class="card-meta"><span>HAHNEMÜHLE</span><span>1 900 ₴</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status badges -->
+    <div class="component-row">
+      <div class="component-meta">
+        <h4>Статуси проявлення</h4>
+        <p>Замість технічних <em>new / uploaded / sent</em> — мова процесу. Колір тільки з палітри: срібло, сепія, графіт, сафлайт.</p>
+        <span class="tag">.badge · received · developing · packed · sent · closed · alert</span>
+      </div>
+      <div class="component-demo">
+        <div class="badges">
+          <span class="badge badge--received">Отримано</span>
+          <span class="badge badge--developing">У прояві</span>
+          <span class="badge badge--packed">Запаковано</span>
+          <span class="badge badge--sent">Відправлено · ТТН</span>
+          <span class="badge badge--closed">Закрито</span>
+          <span class="badge badge--alert">Помилка зображення</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certificate -->
+    <div class="component-row">
+      <div class="component-meta">
+        <h4>Сертифікат архівності</h4>
+        <p>Дві рамки (зовнішня + внутрішня), цитата всередині, метадані в Mono, підпис автора Italic. Шаблон під цифровий та паперовий формат A5.</p>
+        <span class="tag">.cert · з шаблону Hahnemühle</span>
+      </div>
+      <div class="component-demo">
+        <div class="cert">
+          <div class="cert-h">
+            <span class="left">FINE ART PRINT № 014</span>
+            <span class="right">CERTIFICATE OF ARCHIVAL</span>
+          </div>
+          <div class="cert-title">Тиша<br>перед світанком</div>
+          <div class="cert-quote">«Цей кадр було проявлено в нашій майстерні з турботою, на матеріалах, які переживуть нас.»</div>
+          <dl class="cert-meta">
+            <div><dt>Папір</dt><dd>Hahnemühle Photo Rag 308</dd></div>
+            <div><dt>Edition</dt><dd>№ 3 / 25</dd></div>
+            <div><dt>Розмір</dt><dd>30 × 40 см</dd></div>
+            <div><dt>Дата</dt><dd>11.05.2026</dd></div>
+          </dl>
+          <div class="cert-sig">
+            <div>
+              <div class="num" style="margin-bottom:4px;">АВТОР · ОЛЕНА КРАВЕЦЬ</div>
+              <div class="name">Олена К.</div>
+            </div>
+            <div class="num">SIGNED · С. К.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ MOTION ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 05 · Рух</div>
+      <h2 class="chapter-title">Повільність — <em>як хімія</em></h2>
+    </div>
+
+    <div class="prose" style="max-width:680px;">
+      <p style="font-size:16px; line-height:1.6; color:var(--ink-graphite);">Рух у ПРОЯВ — повільніший, ніж стандартні UI-анімації. Зображення <strong>проявляються</strong>, не «з'являються». Елементи <em>виходять у кадр</em>, не «всплывают». Три головні easing-функції покривають усі стани.</p>
+    </div>
+
+    <div class="motion-grid">
+      <div class="motion-card develop">
+        <span class="lbl">PHOTO LOAD</span>
+        <span class="name">Проявлення</span>
+        <div class="demo"></div>
+        <div class="num">1 200 ms · ease-emerge · blur 8 → 0 px</div>
+        <p class="desc">Для появи фото після завантаження. Імітує мокру фотопластину, що сохне в фіксері.</p>
+      </div>
+      <div class="motion-card emerge">
+        <span class="lbl">UI ENTRY</span>
+        <span class="name">Вихід у кадр</span>
+        <div class="demo"></div>
+        <div class="num">320 ms · cubic-bezier(.22,1,.36,1)</div>
+        <p class="desc">Дефолтна анімація появи UI: панелі, тости, кроки. Швидко, але без посмикувань.</p>
+      </div>
+      <div class="motion-card fade">
+        <span class="lbl">STATE</span>
+        <span class="name">Затемнення</span>
+        <div class="demo"></div>
+        <div class="num">180 ms · cubic-bezier(.4,0,.2,1)</div>
+        <p class="desc">Для змін стану кнопок, hover, focus. Найшвидша — реакція має бути миттєвою.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ VOICE ════════════ -->
+  <section class="chapter">
+    <div class="chapter-head">
+      <div class="chapter-num">№ 06 · Голос</div>
+      <h2 class="chapter-title">Як ми <em>говоримо</em></h2>
+    </div>
+
+    <div class="prose" style="max-width:680px;">
+      <p style="font-size:16px; line-height:1.6; color:var(--ink-graphite);">Шепіт куратора в галереї, не голос менеджера з продажу. Чотири якості голосу:  <strong>тихо</strong>, <strong>тепло</strong>, <strong>точно</strong>, <strong>з повагою</strong>.</p>
+    </div>
+
+    <div class="voice-grid">
+      <div class="voice-card voice-do">
+        <div class="voice-h">✓ Так говоримо</div>
+        <div class="line">Цей кадр заслуговує на cotton rag.</div>
+        <div class="line">Проявляємо те, що варто пам'ятати.</div>
+        <div class="line">Передаємо тон шкіри як на оригіналі.</div>
+        <div class="line">Готово за 48 годин — з турботою про кожен мікрон.</div>
+      </div>
+      <div class="voice-card voice-dont dont">
+        <div class="voice-h">✕ Так не говоримо</div>
+        <div class="line">Замовте друк зі знижкою 20%!</div>
+        <div class="line">Найкращий друк фото в місті.</div>
+        <div class="line">Яскраві кольори, чіткі деталі!</div>
+        <div class="line">Терміново замовляйте, акція до кінця тижня!</div>
+      </div>
+    </div>
+
+    <!-- Dictionary -->
+    <h3 style="font-family:var(--font-display); font-weight:500; font-size:24px; margin-top:var(--s-8);">Словник бренду</h3>
+    <p style="font-size:13px; color:var(--ink-60); margin-top:var(--s-2);">Заборонена ліва колонка. Обов'язкова — права. Кожна точка контакту, де є ліве слово — це борг проти бренду.</p>
+
+    <div class="dict">
+      <div class="dict-row"><div class="dict-from">друк</div><div class="dict-arrow">→</div><div class="dict-to">проявлення</div></div>
+      <div class="dict-row"><div class="dict-from">клієнт</div><div class="dict-arrow">→</div><div class="dict-to">автор</div></div>
+      <div class="dict-row"><div class="dict-from">довговічний</div><div class="dict-arrow">→</div><div class="dict-to">архівний</div></div>
+      <div class="dict-row"><div class="dict-from">фотографія</div><div class="dict-arrow">→</div><div class="dict-to">кадр</div></div>
+      <div class="dict-row"><div class="dict-from">друкарня</div><div class="dict-arrow">→</div><div class="dict-to">майстерня</div></div>
+      <div class="dict-row"><div class="dict-from">зображення</div><div class="dict-arrow">→</div><div class="dict-to">спогад</div></div>
+      <div class="dict-row"><div class="dict-from">замовлення</div><div class="dict-arrow">→</div><div class="dict-to">кадри в роботі</div></div>
+      <div class="dict-row"><div class="dict-from">студія друку</div><div class="dict-arrow">→</div><div class="dict-to">майстерня проявлення</div></div>
+    </div>
+  </section>
+
+  <!-- ════════════ CLOSER ════════════ -->
+  <section style="margin-top:var(--s-9); padding-top:var(--s-7); border-top:1px solid var(--ink-graphite);">
+    <p style="font-family:var(--font-display); font-style:italic; font-weight:300; font-size:clamp(20px,2.5vw,28px); line-height:1.4; color:var(--ink-70); max-width:720px;">
+      Брендова система живе там, де її використовують щодня. <strong style="font-style:normal; font-weight:500; color:var(--ink-graphite);">Підключіть tokens.css в усі чотири існуючі сторінки</strong> — і половина роботи з аудиту вже зроблена.
+    </p>
+    <div style="margin-top:var(--s-5); font-family:var(--font-mono); font-size:10px; letter-spacing:var(--ls-mono); text-transform:uppercase; color:var(--ink-50);">— Кінець документу № 02 · ПРОЯВ · v.01 · 2026</div>
+  </section>
+
+</div>
+
+</body>
+</html>
