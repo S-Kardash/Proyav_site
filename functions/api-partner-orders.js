@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, randomToken } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, randomToken, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -21,27 +21,25 @@ export async function onRequest(context) {
       limit:   200,
     });
 
-    const ph = await client.query('photographers', {
-      filters: { id: `eq.${phId}` },
-      select:  'commission_pct',
-      single:  true,
-    }).catch(() => null);
-
-    const commPct = ph?.commission_pct || 12;
+    // Tier-based commission — grows with lifetime activity (config.js / _utils).
+    const totalOrders = (orders || []).length;
+    const tier    = commissionFor(totalOrders);
+    const commPct = tier.pct;
     const now     = new Date();
     const thisMonth = (orders || []).filter(o => {
       const d = new Date(o.created_at);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
-    const monthRevenue    = thisMonth.reduce((s, o) => s + (o.total_amount || 0), 0);
-    const allTimeRevenue  = (orders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
+    const monthRevenue   = thisMonth.reduce((s, o) => s + (o.total_amount || 0), 0);
+    const allTimeRevenue = (orders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
 
     return ok({
       orders: orders || [],
       stats: {
-        total:              (orders || []).length,
+        total:              totalOrders,
         this_month:         thisMonth.length,
         commission_pct:     commPct,
+        tier:               tier,
         month_revenue:      monthRevenue,
         month_commission:   Math.round(monthRevenue * commPct / 100),
         alltime_commission: Math.round(allTimeRevenue * commPct / 100),

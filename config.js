@@ -67,13 +67,39 @@
     };
   }
 
+  // ── Партнерські рівні ───────────────────────────────────────────────
+  // Комісія — НЕ головний гачок (головне: преміум + захист роботи фотографа).
+  // Але вона росте з активністю й НІКОЛИ не знижується — відчуття прогресу.
+  // За зростанням minOrders (lifetime виконаних замовлень).
+  var commissionTiers = [
+    { level: 1, name: 'Партнер',    minOrders: 0,  pct: 12 },
+    { level: 2, name: 'Майстер',    minOrders: 5,  pct: 15 },
+    { level: 3, name: 'Архіваріус', minOrders: 15, pct: 20 },
+  ];
+
+  // Поточний рівень + скільки замовлень до наступного.
+  function commissionFor(orderCount) {
+    var n = Number(orderCount) || 0;
+    var cur = commissionTiers[0];
+    for (var i = 0; i < commissionTiers.length; i++) {
+      if (n >= commissionTiers[i].minOrders) cur = commissionTiers[i];
+    }
+    var next = commissionTiers[commissionTiers.indexOf(cur) + 1] || null;
+    return {
+      level: cur.level, name: cur.name, pct: cur.pct,
+      next: next ? { name: next.name, pct: next.pct, ordersLeft: Math.max(0, next.minOrders - n) } : null,
+    };
+  }
+
   window.PROYAV = {
     packages: packages,
     printPrice: printPrice,
     stdChain: stdChain,
     order: ['small', 'medium', 'large', 'baby'],
+    commissionTiers: commissionTiers,
     fitPackage: fitPackage,
     photoCap: photoCap,
     computeOrder: computeOrder,
+    commissionFor: commissionFor,
   };
 })();
