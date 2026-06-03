@@ -281,3 +281,23 @@ export function packagePrice(productType, qtyTotal) {
   }
   return { productType: pt, price: PACKAGES[pt].price };
 }
+
+// Партнерські рівні (KEEP IN SYNC з /config.js). Комісія росте з активністю.
+export const COMMISSION_TIERS = [
+  { level: 1, name: 'Партнер',    minOrders: 0,  pct: 12 },
+  { level: 2, name: 'Майстер',    minOrders: 5,  pct: 15 },
+  { level: 3, name: 'Архіваріус', minOrders: 15, pct: 20 },
+];
+
+// Рівень + комісія за кількістю виконаних замовлень.
+export function commissionFor(orderCount) {
+  const n = Number(orderCount) || 0;
+  let cur = COMMISSION_TIERS[0];
+  for (const t of COMMISSION_TIERS) { if (n >= t.minOrders) cur = t; }
+  const idx = COMMISSION_TIERS.indexOf(cur);
+  const next = COMMISSION_TIERS[idx + 1] || null;
+  return {
+    level: cur.level, name: cur.name, pct: cur.pct,
+    next: next ? { name: next.name, pct: next.pct, ordersLeft: Math.max(0, next.minOrders - n) } : null,
+  };
+}

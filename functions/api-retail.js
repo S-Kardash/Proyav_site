@@ -10,7 +10,7 @@ export async function onRequest(context) {
 
   const {
     name, phone, product_type, message, source,
-    client_instagram,
+    client_instagram, photographer_id, free,
     order_ref, photo_count, qty_total,
   } = body;
 
@@ -34,6 +34,11 @@ export async function onRequest(context) {
     const pp = packagePrice(product_type, qty_total);
     if (pp) { finalSource = 'package'; finalType = pp.productType; finalTotal = pp.price; }
   }
+  // Reusable referral link → attribute the order to the photographer.
+  const photographerId = photographer_id || null;
+  if (photographerId) finalSource = 'photographer';
+  // Free trial print (self-serve onboarding) — owner fulfils, zero charge.
+  if (free) finalTotal = 0;
 
   let order = null;
   let dbError = null;
@@ -48,8 +53,9 @@ export async function onRequest(context) {
         client_instagram: client_instagram?.trim().replace('@', '') || null,
         product_type:     finalType,
         source:           finalSource,
+        photographer_id:  photographerId,
         status:           hasPhotos ? 'uploaded' : 'new',
-        notes:            message?.trim() || null,
+        notes:            free ? ('🎁 Безкоштовний пробний відбиток. ' + (message?.trim() || '')).trim() : (message?.trim() || null),
         photo_count:      photo_count || null,
         qty_total:        qty_total   || null,
         total_amount:     finalTotal,
@@ -73,9 +79,9 @@ export async function onRequest(context) {
       `👤 <b>${name.trim()}</b>`,
       `📞 ${phone.trim()}`,
       client_instagram ? `📸 @${client_instagram.replace('@','')}` : null,
-      `📦 ${productLabel} · ${finalSource === 'package' ? 'пакет' : 'роздріб'}`,
+      `📦 ${productLabel} · ${finalSource === 'photographer' ? 'фотограф' : finalSource === 'package' ? 'пакет' : 'роздріб'}`,
       photo_count ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
-      `💰 Сума: ${finalTotal} грн`,
+      free ? `🎁 Безкоштовний пробний відбиток` : `💰 Сума: ${finalTotal} грн`,
       order_ref ? `🆔 Ref: ${order_ref}` : null,
       message   ? `💬 ${message.trim()}` : null,
       ``,

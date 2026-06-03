@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   /* ════════════════════════════════════════════════════════════
      ПРОЯВ · Замовлення · 5-step flow (refactor of index.html).
@@ -832,7 +831,7 @@
           </div>
         </div>
         <h1 class="success-title">Кадри прийняті <em>в роботу</em>.</h1>
-        <p class="success-text">Ми відкриємо кожен кадр на каліброваному моніторі, перевіримо тон шкіри, надрукуємо на Epson SureLab і запакуємо в оксамитовий конверт з тисненням. Готово за 48 годин від цієї хвилини.</p>
+        <p class="success-text">Ми відкриємо кожен кадр на каліброваному моніторі, проконтролюємо друк, щоб відбиток точно відповідав файлу, надрукуємо на Epson SureLab і запакуємо в оксамитовий конверт з тисненням. Готово за 48 годин від цієї хвилини.</p>
 
         <div class="success-order-id">
           <span class="lbl">НОМЕР ЗАМОВЛЕННЯ</span>
@@ -864,21 +863,9 @@
 </div>
 
 <script>
-/* ╔══════════════════════════════════════════════════════════╗
-   ║            НАЛАШТУВАННЯ EMAILJS                          ║
-   ║  1. Зайди на https://emailjs.com → зареєструйся         ║
-   ║  2. Add Service → підключи Gmail                        ║
-   ║  3. Email Templates → Create Template                   ║
-   ║     Змінні в шаблоні: {{order_id}} {{ident}} {{name}}   ║
-   ║     {{phone}} {{email}} {{delivery}} {{city}}           ║
-   ║     {{photos_info}} {{total_qty}} {{total_price}}        ║
-   ║  4. Account → API Keys → Public Key                     ║
-   ╚══════════════════════════════════════════════════════════╝ */
-
-const EMAILJS_PUBLIC_KEY  = 'OKVIg2JMHnfpoJMXj';
-const EMAILJS_SERVICE_ID  = 'service_kr5v41g';
-const EMAILJS_TEMPLATE_ID = 'template_ysrji1b';
-const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
+/* EmailJS прибрано (MARKETING_CONTEXT 8.1): сповіщення власнику йдуть через
+   Telegram (серверна функція /send-order) + замовлення зберігається в Supabase.
+   Жодних сторонніх ключів і особистих адрес у клієнтському коді. */
 
 const PRICE = (window.PROYAV && PROYAV.printPrice) || 15; // ₴ за відбиток (роздріб); пакети мають фікс-ціну
 
@@ -989,11 +976,14 @@ function hideUndoToast() {
 
 const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', cityRef:'', cityName:'', warehouse:'', photos:[],
   // Напрямок замовлення: 'retail' (à la carte, 15₴/відбиток) | 'package' (фікс-ціна набору)
-  mode:'retail', productType:null, source:'retail' };
+  mode:'retail', productType:null, source:'retail',
+  photographerId:null, isTrial:false };
 
 /* Центральний підрахунок — єдина точка істини для ціни в усіх місцях UI/повідомлень. */
 function orderTotals() {
   const qty = S.photos.reduce((s, p) => s + p.qty, 0);
+  // Безкоштовний пробний відбиток (онбординг фотографа): 1 кадр, 0₴.
+  if (S.isTrial) return { qty, mode:'trial', productType:null, price:0, name:'Пробний відбиток', photos:1, cap:1, upgradedFrom:null };
   if (window.PROYAV) {
     const r = PROYAV.computeOrder(S.mode, S.productType, qty);
     return Object.assign({ qty }, r);
@@ -1153,6 +1143,24 @@ function showPackageBanner(pkgKey) {
   banner.classList.add('show');
 }
 
+// Безкоштовний пробний відбиток (фотограф тестує якість руками)
+function showTrialBanner() {
+  const banner = document.getElementById('magic-banner');
+  if (!banner) return;
+  document.getElementById('magic-greeting').textContent = 'Безкоштовний пробний відбиток';
+  document.getElementById('magic-product').textContent  = 'Надішліть один свій кадр — надрукуємо й відправимо вам безкоштовно';
+  banner.classList.add('show');
+}
+
+// Клієнт прийшов за багаторазовим посиланням фотографа
+function showRefBanner() {
+  const banner = document.getElementById('magic-banner');
+  if (!banner) return;
+  document.getElementById('magic-greeting').textContent = 'Друк через вашого фотографа';
+  document.getElementById('magic-product').textContent  = 'Ваш кадр проявимо в оксамиті — задум збережено';
+  banner.classList.add('show');
+}
+
 function dismissPhotoBanner() {
   const b = document.getElementById('photo-recovery-banner');
   if (b) { b.style.animation = 'bannerOut .25s ease forwards'; setTimeout(() => b.remove(), 260); }
@@ -1160,21 +1168,26 @@ function dismissPhotoBanner() {
 
 /* ─ Init ─ */
 window.addEventListener('DOMContentLoaded', () => {
-  // Guard: EmailJS is loaded from a CDN and is only a backup channel.
-  // If the CDN is blocked/offline, init must NOT crash the whole app boot.
-  try { if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC_KEY); }
-  catch (e) { console.warn('[emailjs] init skipped:', e && e.message); }
-
   // ── Magic link: validate token from URL ──
   if (MAGIC_TOKEN) {
     validateMagicToken();
   }
-  // ── Self-serve package (Напрямок 2): /order?pkg=small ──
+  // ── Self-serve entry points (no magic token): ?pkg=, ?ph=<photographer>, ?trial=1 ──
   else if (window.PROYAV) {
-    const pkgParam = new URLSearchParams(location.search).get('pkg');
+    const params   = new URLSearchParams(location.search);
+    const phRef    = params.get('ph');
+    const isTrial  = params.get('trial') === '1';
+    const pkgParam = params.get('pkg');
+    if (phRef)   { S.photographerId = phRef; S.source = 'photographer'; }
+    if (isTrial) { S.isTrial = true; }
     if (pkgParam && PROYAV.packages[pkgParam]) {
-      S.mode = 'package'; S.productType = pkgParam; S.source = 'package';
+      S.mode = 'package'; S.productType = pkgParam;
+      if (!phRef) S.source = 'package';
       showPackageBanner(pkgParam);
+    } else if (isTrial) {
+      showTrialBanner();
+    } else if (phRef) {
+      showRefBanner();
     }
   }
 
@@ -1848,6 +1861,7 @@ function buildPhotoCard(ph) {
     updateSummary(); saveDraft();
   });
   card.querySelector('.qty-plus').addEventListener('click', () => {
+    if (S.isTrial) { showToast('⚠ Пробний відбиток — лише 1 кадр'); return; }
     if (S.mode === 'package' && window.PROYAV) {
       const cap = PROYAV.photoCap(S.productType);
       const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
@@ -1937,8 +1951,13 @@ async function addPhotos(files) {
       break;
     }
 
+    // Trial print: exactly one frame
+    if (S.isTrial) {
+      const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
+      if (curQty + 1 > 1) { showToast('⚠ Пробний відбиток — лише 1 кадр'); break; }
+    }
     // Package mode: enforce the набір cap (std авто-апгрейдиться до 50; baby — до 10)
-    if (S.mode === 'package' && window.PROYAV) {
+    else if (S.mode === 'package' && window.PROYAV) {
       const cap = PROYAV.photoCap(S.productType);
       const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
       if (curQty + 1 > cap) {
@@ -2677,6 +2696,8 @@ async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
     // package mode → the (auto-upgraded) набір; à la carte → null (no package)
     product_type: S.mode === 'package' ? S.productType : null,
     source:       S.source || (S.mode === 'package' ? 'package' : 'retail'),
+    photographer_id: S.photographerId || null,
+    free:         S.isTrial || undefined,
     order_ref:    orderId,
     photo_count:  photoCount,
     qty_total:    qtyTotal,
@@ -2720,10 +2741,9 @@ async function submitOrder(e) {
     );
   }
 
-  let   tgOk    = false;
-  let   emailOk = false;
+  let tgOk = false;
 
-  /* 1. Text summary → Netlify Function → Telegram */
+  /* 1. Text summary → Cloudflare Function → Telegram */
   try {
     await tgSendText(buildOrderMessage(orderId, tq));
     tgOk = true;
@@ -2746,35 +2766,9 @@ async function submitOrder(e) {
     }
   }
 
-  /* 3. EmailJS backup */
-  try {
-    const photosInfo = S.photos.map((p, i) =>
-      'Foto ' + (i+1) + ': ' +
-      (p.color === 'color' ? 'Kolyorove' : 'Chorno-bile') + ', ' +
-      (p.paper === 'mat'   ? 'Mat' : 'Glyants') + ', x' + p.qty +
-      (p.hasError ? ' (!)' : '')
-    ).join('\n');
-
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:    YOUR_EMAIL,
-      order_id:    orderId,
-      ident:       (S.identType === 'instagram' ? '@' : '') + S.ident,
-      name:        S.name,
-      phone:       S.phone,
-      email:       S.email || '-',
-      delivery:    S.delivery === 'nova' ? 'Nova Poshta' : 'Samovyviz',
-      city:        S.city || '-',
-      photos_info: photosInfo,
-      total_qty:   tq,
-      total_price: totalAmt + ' grn',
-    });
-    emailOk = true;
-  } catch (err) {
-    console.error('[submit] email failed:', err.message);
-  }
-
-  /* Result */
-  if (!tgOk && !emailOk) {
+  /* Result — order is also persisted to Supabase (finalize/retail above);
+     Telegram is the live ping to the owner. No third-party email from the client. */
+  if (!tgOk) {
     btn.disabled = false;
     btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg> Надіслати замовлення';
     showToast("Помилка з'єднання. Спробуйте ще раз.");
@@ -2835,7 +2829,7 @@ function celebrate() {
 /* ─ Reset ─ */
 function resetApp() {
   S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
-  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[],mode:'retail',productType:null,source:'retail'});
+  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[],mode:'retail',productType:null,source:'retail',photographerId:null,isTrial:false});
   ['ident-input','inp-name','inp-phone','inp-email','inp-city','inp-warehouse'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
   const whReset=document.getElementById('inp-warehouse'); if(whReset){whReset.disabled=true;whReset.placeholder='Спершу оберіть місто';}
   document.getElementById('city-picked')?.classList.remove('show');
