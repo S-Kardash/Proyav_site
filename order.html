@@ -7,6 +7,7 @@
 <title>ПРОЯВ · Замовлення друку</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   /* ════════════════════════════════════════════════════════════
@@ -102,14 +103,12 @@
     width: 26px; height: 26px;
     border: 1px solid var(--paper-30); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-display); font-size: 13px;
+    font-family: var(--font-display); font-size: 13px; line-height: 1;
     color: var(--paper-50); flex-shrink: 0;
     transition: background var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick), transform var(--dur-quick) var(--ease-emerge);
   }
   .step-bubble.active { background: var(--sepia); border-color: var(--sepia); color: var(--ink-graphite); transform: scale(1.08); }
   .step-bubble.done { background: var(--paper); border-color: var(--paper); color: var(--ink-graphite); }
-  .step-bubble.done::after { content: '✓'; font-family: var(--font-body); font-size: 11px; font-weight: 600; }
-  .step-bubble.done span { display: none; }
   .step-line {
     width: 18px; height: 1px;
     background: var(--paper-15);
@@ -482,10 +481,11 @@
 /* ══ COMPAT: working-code components (dark room) ══ */
 .dots-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4}
 .main{flex:1;padding:0 24px;position:relative;z-index:1}
-.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;transition:transform .35s cubic-bezier(.22,1,.36,1);max-width:calc(100% - 32px)}
-.undo-toast.show{transform:translateX(-50%) translateY(0)}
+.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(calc(100% + 40px));z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s ease,visibility .35s;max-width:calc(100% - 32px)}
+.undo-toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible;pointer-events:auto}
 .undo-toast-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.undo-progress{position:absolute;bottom:0;left:0;height:2px;background:rgba(243,238,230,.5);border-radius:0 0 999px 999px;animation:undoCountdown 5s linear forwards}
+.undo-progress{position:absolute;bottom:0;left:0;height:2px;background:rgba(243,238,230,.5);border-radius:0 0 999px 999px}
+.undo-toast.show .undo-progress{animation:undoCountdown 5s linear forwards}
 @keyframes undoCountdown{from{width:100%}to{width:0}}
 #undo-toast{background:var(--ink-graphite);color:var(--paper);border-radius:999px}
 .undo-btn{background:rgba(243,238,230,.14);color:var(--paper);font-family:var(--font-body)}
@@ -880,7 +880,7 @@ const EMAILJS_SERVICE_ID  = 'service_kr5v41g';
 const EMAILJS_TEMPLATE_ID = 'template_ysrji1b';
 const YOUR_EMAIL          = 'kardashsashaa2004@gmail.com';
 
-const PRICE = 12; // грн за відбиток
+const PRICE = (window.PROYAV && PROYAV.printPrice) || 15; // ₴ за відбиток (роздріб); пакети мають фікс-ціну
 
 /* ── Telegram: calls go through Cloudflare Function (token stays server-side) ── */
 const ORDER_API  = '/send-order';
@@ -987,7 +987,19 @@ function hideUndoToast() {
 }
 
 
-const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', cityRef:'', cityName:'', warehouse:'', photos:[] };
+const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', cityRef:'', cityName:'', warehouse:'', photos:[],
+  // Напрямок замовлення: 'retail' (à la carte, 15₴/відбиток) | 'package' (фікс-ціна набору)
+  mode:'retail', productType:null, source:'retail' };
+
+/* Центральний підрахунок — єдина точка істини для ціни в усіх місцях UI/повідомлень. */
+function orderTotals() {
+  const qty = S.photos.reduce((s, p) => s + p.qty, 0);
+  if (window.PROYAV) {
+    const r = PROYAV.computeOrder(S.mode, S.productType, qty);
+    return Object.assign({ qty }, r);
+  }
+  return { qty, mode:'retail', productType:null, price: qty * PRICE, name:'Роздрібний друк', cap:Infinity, upgradedFrom:null };
+}
 let pid = 0;
 
 /* ═══════════════════════════════════════════════════════
@@ -1015,6 +1027,9 @@ function saveDraft() {
     cityRef:     S.cityRef,
     cityName:    S.cityName,
     warehouse:   S.warehouse,
+    mode:        S.mode,
+    productType: S.productType,
+    source:      S.source,
     // store photo metadata so user knows what to re-upload
     photosMeta:  S.photos.map(p => ({
       id:       p.id,
@@ -1055,6 +1070,15 @@ function applyDraft(d) {
   S.cityRef   = d.cityRef   || '';
   S.cityName  = d.cityName  || '';
   S.warehouse = d.warehouse || '';
+  // Restore the ordering mode — unless ?pkg= in the URL already set it (explicit intent wins).
+  if (!new URLSearchParams(location.search).get('pkg')) {
+    S.mode        = d.mode        || 'retail';
+    S.productType = d.productType || null;
+    S.source      = d.source      || 'retail';
+    if (S.mode === 'package' && S.productType && window.PROYAV && PROYAV.packages[S.productType]) {
+      showPackageBanner(S.productType);
+    }
+  }
 
   // Restore form fields
   setIdentType(S.identType);
@@ -1117,6 +1141,18 @@ function showPhotoBanner(meta) {
   screen3.insertBefore(banner, screen3.firstChild);
 }
 
+// Banner shown when the client picked a package on the site (self-serve, Напрямок 2)
+function showPackageBanner(pkgKey) {
+  if (!window.PROYAV) return;
+  const pkg = PROYAV.packages[pkgKey];
+  if (!pkg) return;
+  const banner = document.getElementById('magic-banner');
+  if (!banner) return;
+  document.getElementById('magic-greeting').textContent = 'Набір: ' + pkg.name;
+  document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
+  banner.classList.add('show');
+}
+
 function dismissPhotoBanner() {
   const b = document.getElementById('photo-recovery-banner');
   if (b) { b.style.animation = 'bannerOut .25s ease forwards'; setTimeout(() => b.remove(), 260); }
@@ -1124,11 +1160,22 @@ function dismissPhotoBanner() {
 
 /* ─ Init ─ */
 window.addEventListener('DOMContentLoaded', () => {
-  emailjs.init(EMAILJS_PUBLIC_KEY);
+  // Guard: EmailJS is loaded from a CDN and is only a backup channel.
+  // If the CDN is blocked/offline, init must NOT crash the whole app boot.
+  try { if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC_KEY); }
+  catch (e) { console.warn('[emailjs] init skipped:', e && e.message); }
 
   // ── Magic link: validate token from URL ──
   if (MAGIC_TOKEN) {
     validateMagicToken();
+  }
+  // ── Self-serve package (Напрямок 2): /order?pkg=small ──
+  else if (window.PROYAV) {
+    const pkgParam = new URLSearchParams(location.search).get('pkg');
+    if (pkgParam && PROYAV.packages[pkgParam]) {
+      S.mode = 'package'; S.productType = pkgParam; S.source = 'package';
+      showPackageBanner(pkgParam);
+    }
   }
 
   renderStepper();
@@ -1200,11 +1247,10 @@ function renderStepper() {
   [1,2,3,4].forEach((s,i) => {
     const done = S.step>s || (IS_MAGIC && s === 1), active = S.step===s;
     const inner = done
-      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="1,6 5,10 11,2"/></svg>`
+      ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,6 5,10 11,2"/></svg>`
       : s;
-    h += `<div class="step-item"><div class="step-bubble ${done?'done':active?'active':''}">${inner}</div>`;
-    if (i<3) h += `<div class="step-line ${done?'done':''}"></div>`;
-    h += `</div>`;
+    h += `<div class="step-bubble ${done?'done':active?'active':''}">${inner}</div>`;
+    if (i < 3) h += `<div class="step-line ${done?'done':''}"></div>`;
   });
   document.getElementById('stepper').innerHTML = h;
 }
@@ -1421,7 +1467,7 @@ async function onCityInput() {
       const items = data.items || [];
       if (!items.length) { dd.innerHTML = '<div class="np-empty">Нічого не знайдено</div>'; return; }
       dd.innerHTML = items.map(it =>
-        `<div class="np-item" onclick="pickCity('${it.ref}', ${JSON.stringify(it.present).replace(/'/g, "\\'")} )">
+        `<div class="np-item" data-ref="${escapeHtml(it.ref)}" data-present="${escapeHtml(it.present)}">
            <div class="np-item-main">${escapeHtml(it.name)}</div>
            <div class="np-item-sub">${escapeHtml(it.area ? it.area + ' обл.' : it.present)}</div>
          </div>`).join('');
@@ -1469,7 +1515,7 @@ async function onWarehouseInput() {
       const items = data.items || [];
       if (!items.length) { dd.innerHTML = '<div class="np-empty">Відділень не знайдено</div>'; return; }
       dd.innerHTML = items.slice(0, 50).map(w =>
-        `<div class="np-item" onclick="pickWarehouse(${JSON.stringify(w.name).replace(/'/g, "\\'")})">
+        `<div class="np-item" data-name="${escapeHtml(w.name)}">
            <div class="np-item-main">${escapeHtml(w.name)}</div>
          </div>`).join('');
     } catch (e) {
@@ -1493,6 +1539,16 @@ function escapeHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// Pick city / warehouse via event delegation (robust against quotes in NP names)
+document.getElementById('city-dropdown').addEventListener('click', e => {
+  const item = e.target.closest('.np-item');
+  if (item && item.dataset.ref) pickCity(item.dataset.ref, item.dataset.present || '');
+});
+document.getElementById('wh-dropdown').addEventListener('click', e => {
+  const item = e.target.closest('.np-item');
+  if (item && item.dataset.name != null) pickWarehouse(item.dataset.name);
+});
 
 // Close NP dropdowns on outside click
 document.addEventListener('click', e => {
@@ -1792,6 +1848,11 @@ function buildPhotoCard(ph) {
     updateSummary(); saveDraft();
   });
   card.querySelector('.qty-plus').addEventListener('click', () => {
+    if (S.mode === 'package' && window.PROYAV) {
+      const cap = PROYAV.photoCap(S.productType);
+      const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
+      if (curQty + 1 > cap) { showToast('⚠ Досягнуто ліміту набору'); return; }
+    }
     ph.qty++; qtyEl.textContent = ph.qty; bumpQty(qtyEl);
     if (ph._refreshApplyLabel) ph._refreshApplyLabel();
     updateSummary(); saveDraft();
@@ -1874,6 +1935,17 @@ async function addPhotos(files) {
     if (S.photos.length >= MAX_PHOTOS) {
       showToast(`⚠ Максимум ${MAX_PHOTOS} фото в одному замовленні`);
       break;
+    }
+
+    // Package mode: enforce the набір cap (std авто-апгрейдиться до 50; baby — до 10)
+    if (S.mode === 'package' && window.PROYAV) {
+      const cap = PROYAV.photoCap(S.productType);
+      const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
+      if (curQty + 1 > cap) {
+        const isBaby = PROYAV.packages[S.productType] && PROYAV.packages[S.productType].family === 'baby';
+        showToast(isBaby ? '⚠ Набір «Малюк» — до 10 фото' : '⚠ Максимум 50 фото у наборі. Для більшого — оберіть роздрібний друк.');
+        break;
+      }
     }
 
     // Basic format filter before heavy checks
@@ -2051,18 +2123,27 @@ function updateUploadVisibility() {
 }
 
 function updateSummary() {
-  const totalQty = S.photos.reduce((s, p) => s + p.qty, 0);
+  const t = orderTotals();
   const errCount = S.photos.filter(p => p.hasError).length;
+  // У режимі пакета фіксуємо S.productType на авто-апгрейдженому наборі (10→20→50).
+  if (S.mode === 'package' && t.productType) S.productType = t.productType;
+
   const countEl = document.getElementById('photos-count');
   const printsEl = document.getElementById('photos-prints');
   if (countEl) countEl.textContent = S.photos.length;
   if (printsEl) {
-    let txt = totalQty + ' ВІДБИТКІВ';
+    let txt;
+    if (S.mode === 'package') {
+      txt = t.name.toUpperCase() + ' · ' + t.price + '₴';
+      if (t.upgradedFrom) txt += ' ↑';
+    } else {
+      txt = t.qty + ' ВІДБИТКІВ · ' + t.price + '₴';
+    }
     if (errCount > 0) txt += ' · ⚠ ' + errCount;
     printsEl.textContent = txt;
   }
   const legacyEl = document.getElementById('photos-summary');
-  if (legacyEl) legacyEl.textContent = `${S.photos.length} фото · ${totalQty} відбитків`;
+  if (legacyEl) legacyEl.textContent = `${S.photos.length} фото · ${t.qty} відбитків`;
 }
 
 /* ═══ VIEW MODE ═══ */
@@ -2444,9 +2525,12 @@ function renderReview() {
       <img src="${ph.previewUrl}" alt="" loading="lazy">
       <div class="review-photo-badge">${ph.color==='color'?'Колір':'Ч/Б'} · ${ph.paper==='mat'?'Мат':'Глянець'} · ×${ph.qty}</div>
     </div>`).join('');
-  const tq=S.photos.reduce((s,p)=>s+p.qty,0);
-  document.getElementById('rv-total-qty').textContent=tq;
-  document.getElementById('rv-total-price').textContent=`${tq*PRICE} ₴`;
+  const t = orderTotals();
+  document.getElementById('rv-total-qty').textContent = t.qty;
+  document.getElementById('rv-total-price').textContent = `${t.price} ₴`;
+  // У режимі пакета показуємо назву набору в заголовку секції фото
+  const photosTitle = document.getElementById('rv-photos-title');
+  if (photosTitle && S.mode === 'package') photosTitle.textContent = `${t.name.toUpperCase()} · ${t.qty}/${t.photos} ФОТО`;
 }
 
 /* ══ SUBMIT ══ */
@@ -2568,25 +2652,21 @@ function buildOrderMessage(orderId, tq) {
     '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
     '\n👤 <b>Клієнт</b>\n' +
     identStr + '\n' +
-    'Ім\'\xd1�: ' + S.name + '\n' +
+    "Ім'я: " + S.name + '\n' +
     'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
     '📦 Доставка: ' + cityLine + '\n' +
     '\n🖼 <b>Фото: ' + S.photos.length + ' шт / ' + tq + ' відбитків</b>\n' +
     photoLines + '\n' +
-    '\n💰 <b>Вартість: ' + (tq * PRICE) + ' грн</b>\n' +
+    '\n📦 <b>' + orderTotals().name + '</b>\n' +
+    '💰 <b>Вартість: ' + orderTotals().price + ' грн</b>\n' +
     '🕐 ' + time
   );
 }
 
 /* ── Save retail order to Supabase via /api-retail ── */
 async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
-  // Build a human-readable product guess from photo count
-  let product_type = 'small';
   const photoCount = S.photos.length;
-  if (photoCount >= 40)      product_type = 'large';
-  else if (photoCount >= 18) product_type = 'medium';
-
   const identField = S.identType === 'instagram'
     ? { client_instagram: S.ident }
     : {};
@@ -2594,8 +2674,9 @@ async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
   const payload = {
     name:         S.name  || S.ident || 'Клієнт',
     phone:        S.phone || '',
-    product_type,
-    source:       'retail',
+    // package mode → the (auto-upgraded) набір; à la carte → null (no package)
+    product_type: S.mode === 'package' ? S.productType : null,
+    source:       S.source || (S.mode === 'package' ? 'package' : 'retail'),
     order_ref:    orderId,
     photo_count:  photoCount,
     qty_total:    qtyTotal,
@@ -2623,12 +2704,14 @@ async function submitOrder(e) {
   btn.disabled = true;
   btn.innerHTML = '<div class="btn-spinner"></div> Надсилаємо...';
 
-  const orderId = 'ПРЯ-' + Date.now().toString().slice(-6);
-  const tq      = S.photos.reduce((s, p) => s + p.qty, 0);
-  const totalAmt = tq * PRICE;
+  const orderId  = 'ПРЯ-' + Date.now().toString().slice(-6);
+  const t        = orderTotals();
+  const tq       = t.qty;
+  const totalAmt = t.price;
 
-  // Finalize magic link order in Supabase (non-blocking)
-  finalizeWithToken(S.photos.length, tq, totalAmt);
+  // Finalize magic link order in Supabase (non-blocking).
+  // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
+  finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
 
   // Save retail order to Supabase (non-blocking, non-fatal)
   if (!MAGIC_TOKEN) {
@@ -2683,7 +2766,7 @@ async function submitOrder(e) {
       city:        S.city || '-',
       photos_info: photosInfo,
       total_qty:   tq,
-      total_price: tq * PRICE + ' grn',
+      total_price: totalAmt + ' grn',
     });
     emailOk = true;
   } catch (err) {
@@ -2752,7 +2835,7 @@ function celebrate() {
 /* ─ Reset ─ */
 function resetApp() {
   S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
-  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[]});
+  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[],mode:'retail',productType:null,source:'retail'});
   ['ident-input','inp-name','inp-phone','inp-email','inp-city','inp-warehouse'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
   const whReset=document.getElementById('inp-warehouse'); if(whReset){whReset.disabled=true;whReset.placeholder='Спершу оберіть місто';}
   document.getElementById('city-picked')?.classList.remove('show');
@@ -2804,6 +2887,11 @@ async function validateMagicToken() {
 
     MAGIC_ORDER = d;
 
+    // Photographer-directed order = a fixed package agreed in advance.
+    S.mode        = 'package';
+    S.productType = d.product_type || 'small';
+    S.source      = 'photographer';
+
     // Pre-fill state with client data from token
     S.name  = d.client_name  || '';
     S.phone = d.client_phone || '';
@@ -2841,7 +2929,7 @@ async function validateMagicToken() {
           '<div class="magic-locked-ic">' +
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f5efe4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
           '</div>' +
-          '<div class="magic-locked-txt"><b>' + (d.client_name || 'Ваше замовлення') + '</b><span>' + who + '</span></div>' +
+          '<div class="magic-locked-txt"><b>' + escapeHtml(d.client_name || 'Ваше замовлення') + '</b><span>' + escapeHtml(who) + '</span></div>' +
         '</div>';
       lockWrap.style.display = '';
     }
@@ -2855,7 +2943,7 @@ async function validateMagicToken() {
   }
 }
 
-async function finalizeWithToken(photoCount, qtyTotal, totalAmount) {
+async function finalizeWithToken(photoCount, qtyTotal, totalAmount, productType) {
   if (!MAGIC_TOKEN) return; // no token = old flow, skip
   try {
     await fetchWithTimeout(FINAL_API, {
@@ -2866,6 +2954,7 @@ async function finalizeWithToken(photoCount, qtyTotal, totalAmount) {
         photo_count:  photoCount,
         qty_total:    qtyTotal,
         total_amount: totalAmount,
+        product_type: productType || null, // (auto-upgraded) набір; бекенд перерахує ціну від нього
       }),
     });
   } catch (e) {

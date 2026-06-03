@@ -70,6 +70,7 @@ tr:hover td{background:#fdfaf7;cursor:pointer}
 .badge-sent{background:#e8f5e9;color:var(--green)}
 .badge-paid{background:#e8f5e9;color:#1e8449;border:1px solid #a9dfbf}
 .badge-retail{background:#f3e5f5;color:var(--purple)}
+.badge-package{background:#fdf3e7;color:var(--gold-d)}
 .badge-photographer{background:#e3f2fd;color:var(--blue)}
 .empty{text-align:center;padding:60px 20px;color:var(--mid)}
 
@@ -335,6 +336,15 @@ const STATUS_LABEL = { new:'Нове', uploaded:'Фото отримано', in_
 const STATUS_CLASS  = { new:'badge-new', uploaded:'badge-uploaded', in_progress:'badge-in_progress', sent:'badge-sent', paid:'badge-paid' };
 const PRODUCT_LABEL = { small:'Малий набір', medium:'Середній набір', large:'Великий набір', baby:'Спогади малюка' };
 
+// Escape user-controlled strings before inserting into innerHTML.
+// Retail orders carry client_name/phone submitted from the PUBLIC order form,
+// so this list is a real stored-XSS sink, not just self-data.
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────
 async function login() {
   const pwd = document.getElementById('pwd-inp').value.trim();
@@ -397,11 +407,23 @@ function renderStats() {
   const newC    = allOrders.filter(o => o.status === 'new').length;
   const uploaded= allOrders.filter(o => o.status === 'uploaded').length;
   const revenue = allOrders.filter(o => o.status === 'paid').reduce((s,o) => s+(o.total_amount||0),0);
+  // Channel breakdown — "звідки найбільше йде замовлень"
+  const chPhoto   = allOrders.filter(o => o.source === 'photographer').length;
+  const chPackage = allOrders.filter(o => o.source === 'package').length;
+  const chRetail  = allOrders.filter(o => !o.source || o.source === 'retail').length;
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Всього замовлень</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${newC}</div><div class="stat-lbl">Нових (без фото)</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--orange)">${uploaded}</div><div class="stat-lbl">Фото є, в обробці</div></div>
     <div class="stat-card"><div class="stat-val" style="color:var(--green)">${revenue} грн</div><div class="stat-lbl">Оплачено</div></div>
+    <div class="stat-card" style="grid-column:1/-1">
+      <div class="stat-lbl" style="margin-bottom:10px">Звідки замовлення</div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:baseline">
+        <span style="font-size:15px"><b style="font-size:20px;color:var(--blue)">${chPhoto}</b> &nbsp;Фотограф</span>
+        <span style="font-size:15px"><b style="font-size:20px;color:var(--gold-d)">${chPackage}</b> &nbsp;Пакет</span>
+        <span style="font-size:15px"><b style="font-size:20px;color:var(--purple)">${chRetail}</b> &nbsp;Роздріб</span>
+      </div>
+    </div>
   `;
 }
 
@@ -437,12 +459,14 @@ function renderOrders() {
     const date = new Date(o.created_at).toLocaleDateString('uk-UA', {day:'2-digit',month:'2-digit'});
     const src  = o.source === 'photographer'
       ? `<span class="badge badge-photographer">Фотограф</span>`
+      : o.source === 'package'
+      ? `<span class="badge badge-package">Пакет</span>`
       : `<span class="badge badge-retail">Роздріб</span>`;
-    return `<tr onclick="openDetail('${o.id}')">
-      <td><b>${o.client_name}</b><div style="font-size:12px;color:var(--mid)">${o.client_phone||''}</div></td>
-      <td>${PRODUCT_LABEL[o.product_type]||o.product_type}</td>
-      <td><span class="badge ${STATUS_CLASS[o.status]||''}">${STATUS_LABEL[o.status]||o.status}</span></td>
-      <td>${src}${o.photographers?`<div style="font-size:12px;color:var(--mid)">${o.photographers.name}</div>`:''}</td>
+    return `<tr onclick="openDetail('${esc(o.id)}')">
+      <td><b>${esc(o.client_name)}</b><div style="font-size:12px;color:var(--mid)">${esc(o.client_phone||'')}</div></td>
+      <td>${PRODUCT_LABEL[o.product_type] || (o.product_type ? esc(o.product_type) : 'Роздрібний друк')}</td>
+      <td><span class="badge ${STATUS_CLASS[o.status]||''}">${STATUS_LABEL[o.status]||esc(o.status)}</span></td>
+      <td>${src}${o.photographers?`<div style="font-size:12px;color:var(--mid)">${esc(o.photographers.name)}</div>`:''}</td>
       <td>${o.total_amount?o.total_amount+' грн':'—'}</td>
       <td>${date}</td>
     </tr>`;
@@ -460,11 +484,11 @@ function openDetail(id) {
 
   const ph = currentOrder.photographers;
   document.getElementById('detail-grid').innerHTML = `
-    <div class="detail-item"><label>Телефон</label><span>${currentOrder.client_phone||'—'}</span></div>
-    <div class="detail-item"><label>Instagram</label><span>${currentOrder.client_instagram?'@'+currentOrder.client_instagram:'—'}</span></div>
-    <div class="detail-item"><label>Фотографій завантажено</label><span>${currentOrder.photo_count||'—'}</span></div>
-    <div class="detail-item"><label>Відбитків</label><span>${currentOrder.qty_total||'—'}</span></div>
-    <div class="detail-item"><label>Фотограф</label><span>${ph?ph.name+' ('+ph.city+')':'Прямий клієнт'}</span></div>
+    <div class="detail-item"><label>Телефон</label><span>${esc(currentOrder.client_phone||'—')}</span></div>
+    <div class="detail-item"><label>Instagram</label><span>${currentOrder.client_instagram?'@'+esc(currentOrder.client_instagram):'—'}</span></div>
+    <div class="detail-item"><label>Фотографій завантажено</label><span>${esc(currentOrder.photo_count||'—')}</span></div>
+    <div class="detail-item"><label>Відбитків</label><span>${esc(currentOrder.qty_total||'—')}</span></div>
+    <div class="detail-item"><label>Фотограф</label><span>${ph?esc(ph.name+' ('+ph.city+')'):'Прямий клієнт'}</span></div>
     <div class="detail-item"><label>Дата замовлення</label><span>${new Date(currentOrder.created_at).toLocaleString('uk-UA')}</span></div>
   `;
 

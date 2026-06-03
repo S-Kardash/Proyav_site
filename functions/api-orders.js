@@ -85,7 +85,12 @@ export async function onRequest(context) {
     if (!id) return fail('id обов\'язковий');
 
     const updates = {};
-    if (status       !== undefined) updates.status       = status;
+    if (status !== undefined) {
+      updates.status = status;
+      // Stamp funnel timestamps for analytics (revenue/lead-time reporting).
+      if (status === 'paid') updates.paid_at    = new Date().toISOString();
+      if (status === 'sent') updates.shipped_at = new Date().toISOString();
+    }
     if (ttn          !== undefined) updates.ttn          = ttn;
     if (notes        !== undefined) updates.notes        = notes;
     if (total_amount !== undefined) updates.total_amount = total_amount;

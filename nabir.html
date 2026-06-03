@@ -3,168 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Прояв — Замовити набір</title>
+<title>ПРОЯВ — Оберіть формат</title>
+<link rel="stylesheet" href="tokens.css">
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{
-  --cream:#f5f0ea;--white:#fff;--dark:#3d3530;--mid:#7a6e68;
-  --gold:#c9a96e;--gold-d:#a8834a;--green:#27ae60;--red:#e74c3c;
-  --radius:16px;--shadow:0 2px 16px rgba(61,53,48,.10);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-.card{background:var(--white);border-radius:var(--radius);padding:36px 32px;max-width:440px;width:100%;box-shadow:var(--shadow)}
-.logo{font-size:22px;font-weight:700;letter-spacing:.1em;margin-bottom:6px}
-.tagline{font-size:14px;color:var(--mid);margin-bottom:28px}
-.section-title{font-size:16px;font-weight:700;margin-bottom:16px}
-.form-row{margin-bottom:14px}
-.form-row label{display:block;font-size:13px;font-weight:600;color:var(--mid);margin-bottom:5px}
-.inp{width:100%;border:1.5px solid #e0d8d0;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;transition:.2s;background:#fff;color:var(--dark)}
-.inp:focus{border-color:var(--gold)}
-textarea.inp{height:80px;resize:vertical}
-/* Product cards */
-.products{display:grid;gap:10px;margin-bottom:4px}
-.prod-card{border:1.5px solid #e0d8d0;border-radius:12px;padding:14px 16px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:12px}
-.prod-card:hover{border-color:var(--gold)}
-.prod-card.selected{border-color:var(--dark);background:#fdfaf7}
-.prod-card input[type=radio]{accent-color:var(--dark)}
-.prod-info{flex:1}
-.prod-name{font-size:14px;font-weight:600}
-.prod-desc{font-size:12px;color:var(--mid);margin-top:2px}
-.prod-price{font-size:15px;font-weight:700;color:var(--dark);white-space:nowrap}
-/* Submit */
-.submit-btn{width:100%;background:var(--dark);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:600;cursor:pointer;margin-top:20px;transition:.15s}
-.submit-btn:hover{background:var(--gold-d)}
-.submit-btn:disabled{opacity:.5;cursor:not-allowed}
-/* Success */
-.success{display:none;text-align:center;padding:10px 0}
-.success-icon{font-size:48px;margin-bottom:16px}
-.success-title{font-size:20px;font-weight:700;margin-bottom:10px}
-.success-text{font-size:14px;color:var(--mid);line-height:1.6}
-/* Error */
-.form-err{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
-/* Trust badges */
-.trust{display:flex;gap:16px;margin-top:24px;padding-top:20px;border-top:1px solid #f0ebe5}
-.trust-item{flex:1;text-align:center;font-size:12px;color:var(--mid)}
-.trust-item strong{display:block;color:var(--dark);font-size:13px;margin-top:2px}
+  body { background: var(--ink-darkroom); color: var(--paper); min-height: 100vh; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  .head-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo); font-size: 20px; text-align: center; color: var(--paper); }
+  .head-rule { width: 40px; height: 1px; background: var(--paper-30); margin: 14px auto 36px; }
+
+  .h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(32px, 8vw, 44px); line-height: 1.05; letter-spacing: -0.01em; margin-bottom: 10px; }
+  .h1 em { font-style: italic; color: var(--sepia); }
+  .sub { font-size: 14px; line-height: 1.6; color: var(--paper-70); margin-bottom: 32px; max-width: 38ch; }
+
+  .section-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); margin: 0 0 14px; }
+
+  .cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+  .card {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid var(--paper-15); border-radius: var(--r-2);
+    background: var(--paper-08); color: var(--paper);
+    text-decoration: none; cursor: pointer;
+    transition: border-color var(--dur-quick) var(--ease-fade), background var(--dur-quick), transform var(--dur-quick) var(--ease-emerge);
+  }
+  .card:hover { border-color: var(--sepia); background: rgba(243,238,230,.11); transform: translateY(-1px); }
+  .card.accent { border-color: rgba(196,149,108,.5); }
+  .card-body { flex: 1; min-width: 0; }
+  .card-name { font-family: var(--font-display); font-size: 19px; font-weight: 500; }
+  .card-desc { font-size: 12.5px; color: var(--paper-50); margin-top: 3px; }
+  .card-price { font-family: var(--font-display); font-size: 22px; font-weight: 500; white-space: nowrap; color: var(--paper); }
+  .card-price .per { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--paper-50); display: block; text-align: right; margin-top: 2px; text-transform: uppercase; }
+  .card-arrow { color: var(--sepia); font-size: 18px; flex-shrink: 0; }
+
+  .divider { display: flex; align-items: center; gap: 14px; color: var(--paper-30); font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; margin: 0 0 18px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--paper-15); }
+
+  .footer-note { font-size: 12px; color: var(--paper-50); line-height: 1.6; text-align: center; margin-top: 8px; }
+  .footer-note a { color: var(--paper-70); }
+
+  .back { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); text-decoration: none; margin-bottom: 28px; }
+  .back:hover { color: var(--paper); }
 </style>
 </head>
-<body>
-<div class="card">
-  <div id="form-view">
-    <div class="logo">ПРОЯВ</div>
-    <div class="tagline">Твої фото заслуговують більшого, ніж лежати в телефоні</div>
+<body class="theme-dark">
+  <div class="wrap">
+    <div class="head-logo">ПРОЯВ</div>
+    <div class="head-rule"></div>
 
-    <div class="section-title">Оберіть набір</div>
-    <div class="products">
-      <label class="prod-card selected">
-        <input type="radio" name="product" value="small" checked>
-        <div class="prod-info">
-          <div class="prod-name">Малий набір</div>
-          <div class="prod-desc">10 фото 10×15 · оксамитовий конверт</div>
+    <a href="/" class="back">← На головну</a>
+
+    <h1 class="h1">Оберіть <em>формат</em>.</h1>
+    <p class="sub">Готовий набір у преміальному пакуванні — або просто друк ваших кадрів поштучно. Далі ви завантажите фото.</p>
+
+    <p class="section-label">Готові набори</p>
+    <div class="cards" id="package-cards"></div>
+
+    <div class="divider">або</div>
+
+    <p class="section-label">Окремі фото</p>
+    <div class="cards">
+      <a class="card accent" href="/order">
+        <div class="card-body">
+          <div class="card-name">Роздрібний друк</div>
+          <div class="card-desc" id="retail-desc">Будь-яка кількість · плата за кожен відбиток</div>
         </div>
-        <div class="prod-price">400 грн</div>
-      </label>
-      <label class="prod-card">
-        <input type="radio" name="product" value="medium">
-        <div class="prod-info">
-          <div class="prod-name">Середній набір</div>
-          <div class="prod-desc">20 фото 10×15 · оксамитовий конверт</div>
-        </div>
-        <div class="prod-price">600 грн</div>
-      </label>
-      <label class="prod-card">
-        <input type="radio" name="product" value="large">
-        <div class="prod-info">
-          <div class="prod-name">Великий набір</div>
-          <div class="prod-desc">50 фото · преміальна коробка</div>
-        </div>
-        <div class="prod-price">900 грн</div>
-      </label>
-      <label class="prod-card">
-        <input type="radio" name="product" value="baby">
-        <div class="prod-info">
-          <div class="prod-name">Спогади малюка</div>
-          <div class="prod-desc">10 фото · конверт з ведмедиком</div>
-        </div>
-        <div class="prod-price">450 грн</div>
-      </label>
+        <div class="card-price" id="retail-price">—<span class="per">за відбиток</span></div>
+        <span class="card-arrow">→</span>
+      </a>
     </div>
 
-    <div class="form-row" style="margin-top:20px">
-      <label>Ваше ім'я *</label>
-      <input class="inp" id="r-name" placeholder="Оксана">
-    </div>
-    <div class="form-row">
-      <label>Телефон *</label>
-      <input class="inp" id="r-phone" placeholder="+380" type="tel">
-    </div>
-    <div class="form-row">
-      <label>Повідомлення (необов'язково)</label>
-      <textarea class="inp" id="r-msg" placeholder="Розкажіть про вашу фотосесію або що маєте на увазі..."></textarea>
-    </div>
-    <div class="form-err" id="form-err"></div>
-
-    <button class="submit-btn" id="submit-btn" onclick="submitRetail()">Надіслати заявку</button>
-
-    <div class="trust">
-      <div class="trust-item">📸<strong>Epson SureLab</strong>Фотолаб якість</div>
-      <div class="trust-item">🤍<strong>Оксамит</strong>Преміум пакування</div>
-      <div class="trust-item">🚀<strong>1–2 дні</strong>Готово швидко</div>
-    </div>
+    <p class="footer-note">Маєте питання або хочете подарунковий сертифікат?<br><a href="/">Напишіть нам</a> — підкажемо.</p>
   </div>
-
-  <div class="success" id="success-view">
-    <div class="success-icon">🤍</div>
-    <div class="success-title">Заявку отримано!</div>
-    <div class="success-text">
-      Ми зв'яжемось з вами найближчим часом і надішлемо персональне посилання для завантаження фото.<br><br>
-      Зазвичай це займає до кількох годин.
-    </div>
-  </div>
-</div>
 
 <script>
-const API = '';
-
-// Product card selection
-document.querySelectorAll('.prod-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.prod-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-  });
-});
-
-async function submitRetail() {
-  const name    = document.getElementById('r-name').value.trim();
-  const phone   = document.getElementById('r-phone').value.trim();
-  const product = document.querySelector('input[name=product]:checked')?.value || 'small';
-  const msg     = document.getElementById('r-msg').value.trim();
-  const errEl   = document.getElementById('form-err');
-
-  errEl.textContent = '';
-  if (!name)  return (errEl.textContent = 'Введіть ваше ім\'я');
-  if (!phone) return (errEl.textContent = 'Введіть номер телефону');
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'Надсилаємо...';
-
-  try {
-    const r = await fetch(`${API}/api-retail`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, product_type: product, message: msg }),
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Помилка');
-    document.getElementById('form-view').style.display = 'none';
-    document.getElementById('success-view').style.display = 'block';
-  } catch (e) {
-    errEl.textContent = e.message;
-    btn.disabled = false;
-    btn.textContent = 'Надіслати заявку';
-  }
-}
+(function () {
+  if (!window.PROYAV) return;
+  // Render package cards from the single source of truth (config.js)
+  const order = PROYAV.order.filter(k => k); // small, medium, large, baby
+  const html = order.map(key => {
+    const p = PROYAV.packages[key];
+    return `<a class="card" href="/order?pkg=${encodeURIComponent(key)}">
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-desc">${p.desc}</div>
+      </div>
+      <div class="card-price">${p.price}₴</div>
+      <span class="card-arrow">→</span>
+    </a>`;
+  }).join('');
+  document.getElementById('package-cards').innerHTML = html;
+  document.getElementById('retail-price').innerHTML = PROYAV.printPrice + '₴<span class="per">за відбиток</span>';
+})();
 </script>
 </body>
 </html>

@@ -183,6 +183,12 @@ const STATUS_LABEL = { new:'Нове', uploaded:'Фото є', in_progress:'В �
 const STATUS_CLASS  = { new:'badge-new', uploaded:'badge-uploaded', in_progress:'badge-in_progress', sent:'badge-sent', paid:'badge-paid' };
 const PRICE_MAP     = { small:400, medium:600, large:900, baby:450 };
 
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────
 async function login() {
   const email = document.getElementById('email-inp').value.trim();
@@ -270,8 +276,8 @@ function renderOrders() {
     const link = `${SITE}/order?t=${o.token}`;
     return `<div class="order-item">
       <div class="order-info">
-        <div class="order-name">${o.client_name}</div>
-        <div class="order-meta">${o.client_phone || ''} · ${date}</div>
+        <div class="order-name">${esc(o.client_name)}</div>
+        <div class="order-meta">${esc(o.client_phone || '')} · ${date}</div>
       </div>
       <span class="order-badge ${STATUS_CLASS[o.status]||''}">${STATUS_LABEL[o.status]||o.status}</span>
       <button class="order-link" onclick="copyOrderLink('${link}',this)">Скопіювати лінк</button>

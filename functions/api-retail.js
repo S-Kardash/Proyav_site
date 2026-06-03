@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -9,9 +9,9 @@ export async function onRequest(context) {
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
 
   const {
-    name, phone, product_type, message,
+    name, phone, product_type, message, source,
     client_instagram,
-    order_ref, photo_count, qty_total, total_amount,
+    order_ref, photo_count, qty_total,
   } = body;
 
   if (!name?.trim())  return fail("Ім'я обов'язкове");
@@ -19,6 +19,21 @@ export async function onRequest(context) {
 
   const client = db(env);
   const token  = randomToken(8);
+
+  // A lead with no photos yet → fresh "new" order, not "uploaded".
+  // The order.html path sends photos via Telegram first → "uploaded".
+  const hasPhotos = Number(photo_count) > 0;
+
+  // ── Server-authoritative price (mirrors /config.js) ─────────────────────
+  // package → fixed price of the (auto-upgraded) набір; retail → qty × printPrice.
+  const isPackage = source === 'package' || !!PACKAGES[product_type];
+  let finalSource = 'retail';
+  let finalType   = null;
+  let finalTotal  = (Number(qty_total) || 0) * PRINT_PRICE;
+  if (isPackage) {
+    const pp = packagePrice(product_type, qty_total);
+    if (pp) { finalSource = 'package'; finalType = pp.productType; finalTotal = pp.price; }
+  }
 
   let order = null;
   let dbError = null;
@@ -31,14 +46,14 @@ export async function onRequest(context) {
         client_name:      name.trim(),
         client_phone:     phone.replace(/\D/g, ''),
         client_instagram: client_instagram?.trim().replace('@', '') || null,
-        product_type:     product_type || 'small',
-        source:           'retail',
-        status:           'uploaded',           // photos already sent via TG
+        product_type:     finalType,
+        source:           finalSource,
+        status:           hasPhotos ? 'uploaded' : 'new',
         notes:            message?.trim() || null,
-        photo_count:      photo_count  || null,
-        qty_total:        qty_total    || null,
-        total_amount:     total_amount || null,
-        uploaded_at:      new Date().toISOString(),
+        photo_count:      photo_count || null,
+        qty_total:        qty_total   || null,
+        total_amount:     finalTotal,
+        uploaded_at:      hasPhotos ? new Date().toISOString() : null,
       },
     });
   } catch (e) {
@@ -46,9 +61,10 @@ export async function onRequest(context) {
     console.error('[retail] Supabase INSERT failed:', dbError);
   }
 
+  const productLabel = finalType ? (PRODUCT_NAMES[finalType] || finalType) : 'Роздрібний друк';
+
   // ── Telegram notification to admin ──────────────────────────────────
   if (env.TG_TOKEN && env.TG_CHAT_ID) {
-    const product = PRODUCT_NAMES[product_type] || 'Не вказано';
     const text = [
       dbError
         ? `⚠️ <b>[ПРОЯВ] Заявка НЕ записалась у базу!</b>\n<i>Помилка: ${dbError}</i>\nДані замовлення нижче — внесіть вручну в /admin`
@@ -57,11 +73,11 @@ export async function onRequest(context) {
       `👤 <b>${name.trim()}</b>`,
       `📞 ${phone.trim()}`,
       client_instagram ? `📸 @${client_instagram.replace('@','')}` : null,
-      `📦 ${product}`,
-      photo_count  ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
-      total_amount ? `💰 Сума: ${total_amount} грн` : null,
-      order_ref    ? `🆔 Ref: ${order_ref}` : null,
-      message      ? `💬 ${message.trim()}` : null,
+      `📦 ${productLabel} · ${finalSource === 'package' ? 'пакет' : 'роздріб'}`,
+      photo_count ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
+      `💰 Сума: ${finalTotal} грн`,
+      order_ref ? `🆔 Ref: ${order_ref}` : null,
+      message   ? `💬 ${message.trim()}` : null,
       ``,
       `🔗 Токен: <code>${token}</code>`,
       `📋 /admin → Замовлення`,
@@ -79,18 +95,18 @@ export async function onRequest(context) {
   await sheetsAppend(env, [
     date,
     token.toUpperCase(),
-    'Роздріб (сайт)',
+    finalSource === 'package' ? 'Пакет (сайт)' : 'Роздріб (сайт)',
     name.trim(),
     phone.trim(),
     client_instagram ? '@' + client_instagram.replace('@','') : '',
-    '',                                        // photographer name — n/a for retail
+    '',                                        // photographer name — n/a
     '',                                        // photographer city
-    PRODUCT_NAMES[product_type] || product_type,
-    photo_count  || '',
-    qty_total    || '',
-    total_amount ? `${total_amount} грн` : '',
-    order_ref    || '',
-    'Фото отримано',
+    productLabel,
+    photo_count || '',
+    qty_total   || '',
+    `${finalTotal} грн`,
+    order_ref   || '',
+    hasPhotos ? 'Фото отримано' : 'Нова заявка',
     '',
   ]);
 
@@ -98,6 +114,8 @@ export async function onRequest(context) {
     ok:        !dbError,
     saved_db:  !dbError,
     token,
+    total_amount: finalTotal,
+    source:    finalSource,
     message:   dbError ? 'Заявку отримано (надіслано в Telegram).' : 'Заявку збережено.',
   });
 }

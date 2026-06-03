@@ -1,0 +1,9 @@
+# Local archive & reference material (not part of the deployed site)
+Proyav_site.zip
+_reference/
+_research_text.txt
+
+# Tooling / local
+.wrangler/
+node_modules/
+.dev.vars

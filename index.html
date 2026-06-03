@@ -720,7 +720,7 @@
     <p class="section-lead">Усі набори — фотолабораторний друк 10×15&nbsp;см, оксамитове пакування і картка з підписом ательє. Готові за 48 годин. Доставка Новою Поштою по всій Україні.</p>
 
     <div class="products-grid">
-      <a href="/order" class="product">
+      <a href="/order?pkg=small" class="product">
         <div class="product-mock">
           <span class="product-mock-tag">10 КАДРІВ</span>
           <div class="product-mock-inner"></div>
@@ -734,7 +734,7 @@
         </div>
       </a>
 
-      <a href="/order" class="product">
+      <a href="/order?pkg=medium" class="product">
         <div class="product-mock">
           <span class="product-mock-tag">20 КАДРІВ</span>
           <div class="product-mock-inner" style="width: 64%; height: 80%;"></div>
@@ -748,7 +748,7 @@
         </div>
       </a>
 
-      <a href="/order" class="product">
+      <a href="/order?pkg=large" class="product">
         <div class="product-mock">
           <span class="product-mock-tag">50 КАДРІВ</span>
           <div class="product-mock-inner" style="width: 70%; height: 85%;"></div>
@@ -762,7 +762,7 @@
         </div>
       </a>
 
-      <a href="/order" class="product" style="border-color: var(--sepia);">
+      <a href="/order?pkg=baby" class="product" style="border-color: var(--sepia);">
         <div class="product-mock">
           <span class="product-mock-tag">10 КАДРІВ · ⚭</span>
           <div class="product-mock-inner" style="background: radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.45) 0%, transparent 60%), linear-gradient(180deg, #5a4536 0%, #2c2a28 100%);"></div>
@@ -1013,7 +1013,7 @@
       <div class="foot-col">
         <h4>ЗАМОВЛЕННЯ</h4>
         <a href="#products">Набори</a>
-        <a href="/order">Замовити напряму</a>
+        <a href="/nabir">Обрати набір</a>
         <a href="/order">Завантажити кадри</a>
       </div>
 
@@ -1043,21 +1043,7 @@ const onScroll = () => {
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
-// ── Smooth scroll on anchor links ──
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const id = a.getAttribute('href').slice(1);
-    if (!id) return;
-    const el = document.getElementById(id);
-    if (!el) return;
-    e.preventDefault();
-    el.scrollIntoView ? el.scrollIntoView({ behavior: 'smooth', block: 'start' }) :
-      window.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' });
-  });
-});
-
-// Override scrollIntoView usage above with safer manual scroll (the design guidelines
-// warn against scrollIntoView). Replace with offsetTop-based scroll:
+// ── Smooth scroll on anchor links (single handler, offset for the sticky nav) ──
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.onclick = e => {
     const id = a.getAttribute('href').slice(1);

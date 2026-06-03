@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, sheetsAppend, PRODUCT_NAMES } from './_utils.js';
+import { ok, fail, preflight, db, sheetsAppend, PRODUCT_NAMES, packagePrice } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -8,7 +8,7 @@ export async function onRequest(context) {
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
 
-  const { token, photo_count, qty_total, total_amount } = body;
+  const { token, photo_count, qty_total, total_amount, product_type } = body;
   if (!token) return fail('token обов\'язковий');
 
   const client = db(env);
@@ -22,14 +22,23 @@ export async function onRequest(context) {
   if (!order) return fail('Замовлення не знайдено', 404);
   if (order.uploaded_at) return ok({ ok: true, already: true }); // idempotent
 
+  // ── Server-authoritative price ──────────────────────────────────────────
+  // A magic-link order is always a fixed package. Recompute price + the
+  // (auto-upgraded) package server-side — never trust the client total.
+  const chosenType = product_type || order.product_type || 'small';
+  const pp = packagePrice(chosenType, qty_total);
+  const finalType  = pp ? pp.productType : (order.product_type || null);
+  const finalTotal = pp ? pp.price : (total_amount || null);
+
   await client.query('orders', {
     method:  'PATCH',
     filters: { token: `eq.${token}` },
     body: {
       status:       'uploaded',
-      photo_count:  photo_count  || null,
-      qty_total:    qty_total    || null,
-      total_amount: total_amount || null,
+      photo_count:  photo_count || null,
+      qty_total:    qty_total   || null,
+      total_amount: finalTotal,
+      product_type: finalType,
       uploaded_at:  new Date().toISOString(),
     },
   });
@@ -45,14 +54,14 @@ export async function onRequest(context) {
     order.client_instagram ? '@' + order.client_instagram : '',
     order.photographers?.name || '',
     order.photographers?.city || '',
-    PRODUCT_NAMES[order.product_type] || order.product_type,
-    photo_count  || '',
-    qty_total    || '',
-    total_amount ? `${total_amount} грн` : '',
+    PRODUCT_NAMES[finalType] || finalType || '',
+    photo_count || '',
+    qty_total   || '',
+    finalTotal ? `${finalTotal} грн` : '',
     'Фото отримано',
     '',
     '',
   ]);
 
-  return ok({ ok: true });
+  return ok({ ok: true, total_amount: finalTotal, product_type: finalType });
 }

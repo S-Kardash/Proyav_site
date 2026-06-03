@@ -256,3 +256,28 @@ export const PRODUCT_NAMES = {
   large:  'Великий набір (50 фото)',
   baby:   'Спогади малюка',
 };
+
+// ── Authoritative pricing ───────────────────────────────────────────────────
+// KEEP IN SYNC with /config.js (frontend source of truth). Server recomputes
+// package prices so a tampered client total can never be trusted.
+export const PACKAGES = {
+  small:  { photos: 10, price: 400, family: 'std'  },
+  medium: { photos: 20, price: 600, family: 'std'  },
+  large:  { photos: 50, price: 900, family: 'std'  },
+  baby:   { photos: 10, price: 450, family: 'baby' },
+};
+export const PRINT_PRICE = 15; // ₴ per print (à la carte / retail)
+
+const STD_CHAIN = ['small', 'medium', 'large'];
+
+// Resolve the package after auto-upgrade by photo count, then its price.
+export function packagePrice(productType, qtyTotal) {
+  if (!PACKAGES[productType]) return null;
+  let pt = productType;
+  if (PACKAGES[pt].family === 'std') {
+    pt = STD_CHAIN[STD_CHAIN.length - 1]; // default: largest
+    for (const k of STD_CHAIN) { if (PACKAGES[k].photos >= (qtyTotal || 0)) { pt = k; break; } }
+    if (STD_CHAIN.indexOf(pt) < STD_CHAIN.indexOf(productType)) pt = productType;
+  }
+  return { productType: pt, price: PACKAGES[pt].price };
+}

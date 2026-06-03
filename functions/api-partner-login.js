@@ -20,22 +20,21 @@ export async function onRequest(context) {
       single:  true,
     });
   } catch (e) {
-    return fail('DB error: ' + e.message, 500);
+    console.error('[partner-login] DB error:', e.message);
+    return fail('Помилка сервера. Спробуйте ще раз.', 500);
   }
 
   if (!ph) return fail('Невірний email або пароль', 401);
 
-  let valid;
+  let valid = false;
   try {
     valid = await verifyPassword(password, ph.password_hash);
   } catch (e) {
-    return fail('Verify error: ' + e.message + ' | hash: ' + (ph.password_hash || '').slice(0, 20), 500);
+    console.error('[partner-login] verify error:', e.message);
+    return fail('Помилка входу. Спробуйте ще раз.', 500);
   }
 
-  if (!valid) {
-    // Return hash prefix for debugging (remove after fix)
-    return fail('Невірний email або пароль. Hash type: ' + (ph.password_hash || '').slice(0, 15), 401);
-  }
+  if (!valid) return fail('Невірний email або пароль', 401);
 
   if (!env.JWT_SECRET) return fail('JWT_SECRET не налаштовано', 500);
 
@@ -47,7 +46,8 @@ export async function onRequest(context) {
       604800
     );
   } catch (e) {
-    return fail('JWT error: ' + e.message, 500);
+    console.error('[partner-login] JWT error:', e.message);
+    return fail('Помилка сервера. Спробуйте ще раз.', 500);
   }
 
   return ok({
