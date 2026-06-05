@@ -75,14 +75,16 @@ export async function onRequest(context) {
       const ref = (url.searchParams.get('ref') || '').trim();
       if (!ref) return fail('Потрібен ref міста');
 
-      const props = {
-        SettlementRef: ref,
-        Limit:         '50',
-        Page:          '1',
-      };
-      if (q) props.FindByString = q;
+      const base = { Limit: '50', Page: '1' };
+      if (q) base.FindByString = q;
 
-      const data = await npCall(key, 'Address', 'getWarehouses', props);
+      // searchSettlements returns a DeliveryCity ref → getWarehouses expects CityRef.
+      // Passing it as SettlementRef returned empty for most cities (the original bug).
+      // Fall back to SettlementRef for villages / poshtomats indexed by settlement.
+      let data = await npCall(key, 'Address', 'getWarehouses', { CityRef: ref, ...base });
+      if (!data.length) {
+        data = await npCall(key, 'Address', 'getWarehouses', { SettlementRef: ref, ...base });
+      }
       const items = data.map(w => ({
         ref:    w.Ref,
         name:   w.Description,

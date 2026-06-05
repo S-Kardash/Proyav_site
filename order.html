@@ -579,9 +579,67 @@
 .add-more-btn:hover{border-color:var(--sepia);color:var(--sepia)}
 .apply-all-btn{height:36px;padding:0 14px;border-radius:999px;background:rgba(243,238,230,.06);border:1px solid var(--paper-15);color:var(--paper-70);cursor:pointer;font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;transition:.15s;white-space:nowrap}
 .apply-all-btn:hover{background:rgba(243,238,230,.12);color:var(--paper)}
-.apply-dropdown{background:var(--ink-graphite);border:1px solid var(--paper-15);border-radius:4px;padding:4px 0}
-.apply-dropdown-item{padding:12px 16px;color:var(--paper-70);font-size:13px;cursor:pointer}
-.apply-dropdown-item:hover{background:rgba(243,238,230,.06)}
+/* ── Apply-to-all: proper bottom sheet (was an unstyled block dumped at page end) ── */
+.apply-overlay{position:fixed;inset:0;z-index:200;background:rgba(26,24,23,.7);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s}
+.apply-overlay.show{opacity:1;pointer-events:auto}
+.apply-dropdown{position:fixed;bottom:0;left:0;right:0;z-index:201;max-width:480px;margin:0 auto;background:var(--ink-graphite);border:1px solid var(--paper-15);border-radius:14px 14px 0 0;padding:8px 0 24px;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);max-height:85vh;overflow-y:auto}
+.apply-dropdown.show{transform:translateY(0)}
+.apply-dropdown-handle{width:40px;height:4px;border-radius:999px;background:var(--paper-30);margin:6px auto 14px}
+.apply-dropdown-title{font-family:var(--font-display);font-size:20px;color:var(--paper);padding:0 20px 2px}
+.apply-dropdown-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 20px;cursor:pointer;color:var(--paper);transition:background .15s}
+.apply-dropdown-row:hover{background:rgba(243,238,230,.06)}
+.apply-dropdown-row svg{color:var(--sepia);flex-shrink:0}
+.apply-dropdown-row-label{font-size:14px;color:var(--paper)}
+.apply-dropdown-row-sub{font-size:12px;color:var(--paper-50);margin-top:2px}
+.apply-dropdown-cancel{display:block;width:calc(100% - 40px);margin:12px 20px 0;padding:13px;background:none;border:1px solid var(--paper-15);border-radius:999px;color:var(--paper-70);font-family:var(--font-body);font-size:14px;cursor:pointer}
+.apply-dropdown-cancel:hover{border-color:var(--paper-50);color:var(--paper)}
+
+/* ── Photo settings sheet (gear) — inner elements had NO css (huge img / tiny text) ── */
+.photo-sheet{max-width:480px;margin:0 auto;max-height:88vh;overflow-y:auto}
+.photo-sheet-handle{width:40px;height:4px;border-radius:999px;background:var(--paper-30);margin:0 auto 18px}
+.photo-sheet-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.photo-sheet-thumb{width:60px;height:60px;flex-shrink:0;border-radius:6px;overflow:hidden;border:1px solid var(--paper-15);background:#1a1817}
+.photo-sheet-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-sheet-info{min-width:0}
+.photo-sheet-title{font-family:var(--font-display);font-size:20px;color:var(--paper);line-height:1.1}
+.photo-sheet-sub{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--paper-50);margin-top:5px;text-transform:uppercase}
+.photo-sheet-label{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50);margin:0 0 8px}
+.photo-sheet-seg{display:flex;gap:0;background:rgba(243,238,230,.05);border:1px solid var(--paper-15);border-radius:6px;padding:3px;margin-bottom:18px}
+.photo-sheet-seg-btn{flex:1;padding:11px 8px;border:none;background:none;border-radius:4px;font-family:var(--font-body);font-size:14px;color:var(--paper-50);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+.photo-sheet-seg-btn.active{background:var(--paper);color:var(--ink-graphite)}
+.photo-sheet-qty{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;padding-top:16px;border-top:1px solid var(--paper-08)}
+.photo-sheet-qty-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50)}
+.photo-sheet-apply-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;margin-top:10px;background:var(--sepia);border:none;border-radius:999px;color:var(--ink-graphite);font-family:var(--font-body);font-weight:500;font-size:14px;cursor:pointer;transition:background .15s}
+.photo-sheet-apply-btn:hover{background:#d4a87c}
+.photo-sheet-apply-btn.secondary{background:none;border:1px solid var(--paper-15);color:var(--paper-70)}
+.photo-sheet-apply-btn.secondary:hover{background:rgba(243,238,230,.06);color:var(--paper)}
+
+/* ── Grid (compact) view — was toggled but had no css ── */
+.photos-list.grid-mode{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.photos-list.grid-mode .photo-controls,
+.photos-list.grid-mode .apply-card-btn,
+.photos-list.grid-mode .photo-status-bar{display:none}
+@media(min-width:560px){.photos-list.grid-mode{grid-template-columns:repeat(3,1fr)}}
+/* List view: corner badge is redundant (full controls shown below) */
+.photos-list:not(.grid-mode) .grid-settings-badge{display:none}
+
+/* ── Targeted fixes ── */
+.photo-status-bar{padding:8px 14px 10px}                 /* was 0 0 8px → no left padding */
+.apply-card-btn{padding:12px 14px}                       /* was 10px 0 → no left padding */
+#undo-toast{overflow:hidden}                             /* clip the countdown bar to the pill */
+.undo-btn{padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-size:13px;flex-shrink:0}
+#photos-prints{color:var(--paper);font-family:var(--font-mono);letter-spacing:.1em}  /* was dark (t-mono) → invisible */
+.grid-settings-badge{max-width:calc(100% - 16px)}
+/* Global panel: equal-width segments, no wrapping of «Чорно-біле» */
+.global-panel-row .photo-seg{width:230px;flex-shrink:0;border-radius:6px}
+.global-panel-row .photo-seg-btn{white-space:nowrap;border-radius:4px}
+@media(max-width:440px){.global-panel-row{flex-direction:column;align-items:stretch;gap:8px}.global-panel-row .photo-seg{width:100%}}
+/* Bottom action row: make both buttons the same height */
+.bottom-bar .apply-all-btn{height:auto;padding:0 16px;flex-shrink:0}
+.bottom-bar-actions{display:flex;gap:10px;align-items:stretch}
+.bottom-bar-actions .btn-primary{flex:1;margin-top:0}
+.bottom-bar-actions .apply-all-btn{display:flex;align-items:center}
+.add-more-btn{margin-top:6px}
 </style>
 </head>
 <body>
@@ -785,7 +843,7 @@
             <span>Кадрів у наборі</span>
             <span><strong id="photos-count">0</strong> · <span id="photos-prints" class="t-mono" style="font-size:10px">0 ВІДБИТКІВ</span></span>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div class="bottom-bar-actions">
             <button class="apply-all-btn" onclick="openApplyDropdown()" id="apply-all-main-btn" title="Масово змінити стиль">Стиль для всіх</button>
             <button class="btn-primary" onclick="goTo(4)" id="btn-to-review" style="margin-top:0">До підтвердження <span class="arrow">→</span></button>
           </div>
@@ -1781,9 +1839,7 @@ function buildPhotoCard(ph) {
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
       </button>
-      <div class="grid-settings-badge" id="gsb-${ph.id}">
-        <span class="gsb-label-color" id="gsb-color-${ph.id}">Колір</span><span class="gsb-abbr-color" id="gsb-acolor-${ph.id}">К</span>·<span class="gsb-label-paper" id="gsb-paper-${ph.id}">Мат</span><span class="gsb-abbr-paper" id="gsb-apaper-${ph.id}">М</span>·×<span id="gsb-qty-${ph.id}">1</span>
-      </div>
+      <div class="grid-settings-badge" id="gsb-${ph.id}">Колір · Мат · ×1</div>
       <button class="photo-delete" aria-label="Видалити фото">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
       </button>
@@ -2296,7 +2352,7 @@ function openApplyDropdown() {
   drop.innerHTML = `
     <div class="apply-dropdown-handle"></div>
     <div class="apply-dropdown-title">Стиль для всіх фото</div>
-    <div style="font-size:12px;color:var(--d50);padding:0 20px 10px;line-height:1.5">
+    <div style="font-size:12px;color:var(--paper-50);padding:0 20px 10px;line-height:1.5">
       Оберіть — і зміна застосується одразу до всіх ${S.photos.length} фото
     </div>
     <div class="apply-dropdown-row" onclick="applyGlobalToAll();closeApplyDropdown()">
@@ -2306,7 +2362,7 @@ function openApplyDropdown() {
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
-    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--d40,rgba(44,42,40,.4))">Колір</div>
+    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--paper-30)">Колір</div>
     <div class="apply-dropdown-row" onclick="applyColorToAll('color');closeApplyDropdown()">
       <div>
         <div class="apply-dropdown-row-label">Кольорове — для всіх</div>
@@ -2321,7 +2377,7 @@ function openApplyDropdown() {
       </div>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="3,7 6,10 11,4"/></svg>
     </div>
-    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--d40,rgba(44,42,40,.4))">Тип паперу</div>
+    <div style="padding:6px 20px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--paper-30)">Тип паперу</div>
     <div class="apply-dropdown-row" onclick="applyPaperToAll('mat');closeApplyDropdown()">
       <div>
         <div class="apply-dropdown-row-label">Мат — для всіх</div>
@@ -2340,11 +2396,18 @@ function openApplyDropdown() {
 
   document.body.appendChild(overlay);
   document.body.appendChild(drop);
+  document.body.style.overflow = 'hidden';
+  void drop.offsetHeight;
+  overlay.classList.add('show');
+  drop.classList.add('show');
 }
 
 function closeApplyDropdown() {
-  document.getElementById('apply-dropdown')?.remove();
-  document.querySelector('.apply-overlay')?.remove();
+  const drop = document.getElementById('apply-dropdown');
+  const ov   = document.querySelector('.apply-overlay');
+  if (drop) { drop.classList.remove('show'); setTimeout(() => drop.remove(), 300); }
+  if (ov)   { ov.classList.remove('show');   setTimeout(() => ov.remove(),   300); }
+  document.body.style.overflow = '';
 }
 
 function applyColorToAll(val) {
@@ -2366,27 +2429,18 @@ function applyPaperToAll(val) {
 
 /* ── Update grid overlay badge ── */
 function updateGridBadge(ph) {
-  const colorFull  = document.getElementById('gsb-color-'  + ph.id);
-  const colorShort = document.getElementById('gsb-acolor-' + ph.id);
-  const paperFull  = document.getElementById('gsb-paper-'  + ph.id);
-  const paperShort = document.getElementById('gsb-apaper-' + ph.id);
-  const qtyEl      = document.getElementById('gsb-qty-'    + ph.id);
-  const colorFull_t  = ph.color === 'color' ? 'Колір' : 'Ч/Б';
-  const colorShort_t = ph.color === 'color' ? 'К' : 'ЧБ';
-  const paperFull_t  = ph.paper === 'mat' ? 'Мат' : 'Глянець';
-  const paperShort_t = ph.paper === 'mat' ? 'М' : 'Гл';
-  if (colorFull)  colorFull.textContent  = colorFull_t;
-  if (colorShort) colorShort.textContent = colorShort_t;
-  if (paperFull)  paperFull.textContent  = paperFull_t;
-  if (paperShort) paperShort.textContent = paperShort_t;
-  if (qtyEl)      qtyEl.textContent      = ph.qty;
+  const badge = document.getElementById('gsb-' + ph.id);
+  if (!badge) return;
+  const c = ph.color === 'color' ? 'Колір' : 'Ч/Б';
+  const p = ph.paper === 'mat'   ? 'Мат'   : 'Глянець';
+  badge.textContent = `${c} · ${p} · ×${ph.qty}`;
 }
 
 /* ── Photo settings bottom sheet (used in grid mode) ── */
 function openPhotoSheet(ph) {
   // Overlay
   const overlay = document.createElement('div');
-  overlay.className = 'photo-sheet-overlay';
+  overlay.className = 'sheet-overlay';
   overlay.onclick   = closePhotoSheet;
 
   // Sheet
@@ -2451,6 +2505,11 @@ function openPhotoSheet(ph) {
 
   document.body.appendChild(overlay);
   document.body.appendChild(sheet);
+  document.body.style.overflow = 'hidden';
+  // Force reflow, then slide the sheet up (the .show class was never added before — bug fix)
+  void sheet.offsetHeight;
+  overlay.classList.add('show');
+  sheet.classList.add('show');
 
   // Wire color seg
   sheet.querySelectorAll('#ps-color .photo-sheet-seg-btn').forEach(btn => {
@@ -2518,8 +2577,11 @@ function updateSheetSubtitle(ph, sheet, idx) {
 }
 
 function closePhotoSheet() {
-  document.getElementById('photo-sheet')?.remove();
-  document.querySelector('.photo-sheet-overlay')?.remove();
+  const sheet   = document.getElementById('photo-sheet');
+  const overlay = document.querySelector('.sheet-overlay');
+  if (sheet)   { sheet.classList.remove('show');   setTimeout(() => sheet.remove(),   300); }
+  if (overlay) { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 300); }
+  document.body.style.overflow = '';
 }
 
 /* Legacy stubs — safe to call but do nothing harmful now */
