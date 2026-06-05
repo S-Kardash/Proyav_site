@@ -662,6 +662,15 @@
 .photo-seg,.photo-sheet-seg{border-radius:var(--r-2)}
 .global-panel-row .photo-seg{border-radius:var(--r-2)}
 .photo-seg-btn,.photo-sheet-seg-btn{border-radius:3px}
+
+/* ── Single radius system across the whole order flow ──
+   containers → 4px (--r-2) · bottom sheets → 12px · buttons → pill/circle (unchanged) */
+.input-field,.seg,.upload-zone,.photo-card,.review-card,.total-card,
+.success-order-id,.global-panel,.np-dropdown,.recovery-banner,.post-email,
+.magic-locked{border-radius:var(--r-2)}
+.seg-btn{border-radius:3px}
+.photo-sheet,.apply-dropdown{border-radius:12px 12px 0 0}
+.photo-size-badge,.grid-settings-badge,.review-photo-badge{border-radius:var(--r-2)}
 </style>
 </head>
 <body>
@@ -939,7 +948,7 @@
       </div>
     </div>
   </main>
-  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ · САМБІР</footer>
+  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ</footer>
 </div>
 
 <script>
