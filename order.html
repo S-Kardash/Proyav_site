@@ -640,6 +640,28 @@
 .bottom-bar-actions .btn-primary{flex:1;margin-top:0}
 .bottom-bar-actions .apply-all-btn{display:flex;align-items:center}
 .add-more-btn{margin-top:6px}
+
+/* ── Round 2 fixes (review screen, grid overlap, warning icon, radius consistency) ── */
+/* #4 Review thumbnails: renderReview uses .review-photo-thumb but css only had .review-photo → unstyled = giant */
+.review-photos{display:flex;flex-wrap:wrap;gap:8px}
+.review-photo-thumb{position:relative;width:72px;height:96px;flex:0 0 auto;border:1px solid var(--paper-15);border-radius:var(--r-2);overflow:hidden;background:#1a1817}
+.review-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.review-photo-badge{position:absolute;bottom:0;left:0;right:0;font-family:var(--font-mono);font-size:8px;letter-spacing:.04em;text-align:center;color:var(--paper);background:rgba(0,0,0,.65);padding:3px 2px;line-height:1.2}
+
+/* #3 Grid mode: hide the redundant «10×15 см» badge (it overlapped the settings badge) + smaller controls */
+.photos-list.grid-mode .photo-size-badge{display:none}
+.photos-list.grid-mode .grid-settings-btn{width:26px;height:26px}
+.photos-list.grid-mode .photo-delete{width:26px;height:26px}
+
+/* #2 Warning / status badge: icon aligned to the first text line, with a gap (was squished, no spacing) */
+.status-badge{display:flex;align-items:flex-start;gap:7px;line-height:1.45}
+.status-badge svg{flex-shrink:0;width:14px;height:14px;margin-top:1px}
+
+/* #1 Consistent radius across similar controls (brand --r-2 = 4px; buttons 3px) */
+.photo-card{border-radius:var(--r-2)}
+.photo-seg,.photo-sheet-seg{border-radius:var(--r-2)}
+.global-panel-row .photo-seg{border-radius:var(--r-2)}
+.photo-seg-btn,.photo-sheet-seg-btn{border-radius:3px}
 </style>
 </head>
 <body>
@@ -1298,6 +1320,9 @@ function showToast(msg) {
 
 /* ─ Navigation ─ */
 function goTo(step, back=false) {
+  // Close any open overlay so it can't persist across screens
+  if (typeof closePhotoSheet === 'function') closePhotoSheet();
+  if (typeof closeApplyDropdown === 'function') closeApplyDropdown();
   document.getElementById(`screen-${S.step}`)?.classList.remove('active');
   S.step = step;
   saveDraft();
