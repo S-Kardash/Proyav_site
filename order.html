@@ -2386,7 +2386,7 @@ function updateGridBadge(ph) {
 function openPhotoSheet(ph) {
   // Overlay
   const overlay = document.createElement('div');
-  overlay.className = 'photo-sheet-overlay';
+  overlay.className = 'sheet-overlay';
   overlay.onclick   = closePhotoSheet;
 
   // Sheet
@@ -2451,6 +2451,11 @@ function openPhotoSheet(ph) {
 
   document.body.appendChild(overlay);
   document.body.appendChild(sheet);
+  document.body.style.overflow = 'hidden';
+  // Force reflow, then slide the sheet up (the .show class was never added before — bug fix)
+  void sheet.offsetHeight;
+  overlay.classList.add('show');
+  sheet.classList.add('show');
 
   // Wire color seg
   sheet.querySelectorAll('#ps-color .photo-sheet-seg-btn').forEach(btn => {
@@ -2518,8 +2523,11 @@ function updateSheetSubtitle(ph, sheet, idx) {
 }
 
 function closePhotoSheet() {
-  document.getElementById('photo-sheet')?.remove();
-  document.querySelector('.photo-sheet-overlay')?.remove();
+  const sheet   = document.getElementById('photo-sheet');
+  const overlay = document.querySelector('.sheet-overlay');
+  if (sheet)   { sheet.classList.remove('show');   setTimeout(() => sheet.remove(),   300); }
+  if (overlay) { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 300); }
+  document.body.style.overflow = '';
 }
 
 /* Legacy stubs — safe to call but do nothing harmful now */
