@@ -72,6 +72,7 @@
     min-height: 100vh;
     display: flex; flex-direction: column;
     padding-bottom: 80px;
+    overflow-x: clip;            /* clip the full-bleed bottom-bar so it can't cause horizontal scroll */
     opacity: 0;
     animation: appIn 0.5s 1.35s ease forwards;
   }
