@@ -72,6 +72,7 @@
     min-height: 100vh;
     display: flex; flex-direction: column;
     padding-bottom: 80px;
+    overflow-x: clip;            /* clip the full-bleed bottom-bar so it can't cause horizontal scroll */
     opacity: 0;
     animation: appIn 0.5s 1.35s ease forwards;
   }
@@ -108,6 +109,7 @@
   }
   .step-bubble.active { background: var(--sepia); border-color: var(--sepia); color: var(--ink-graphite); transform: scale(1.08); }
   .step-bubble.done { background: var(--paper); border-color: var(--paper); color: var(--ink-graphite); }
+  .step-bubble svg { display: block; }
   .step-line {
     width: 18px; height: 1px;
     background: var(--paper-15);
@@ -480,7 +482,7 @@
 /* ══ COMPAT: working-code components (dark room) ══ */
 .dots-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4}
 .main{flex:1;padding:0 24px;position:relative;z-index:1}
-.undo-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(calc(100% + 40px));z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s ease,visibility .35s;max-width:calc(100% - 32px)}
+.undo-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%) translateY(calc(100% + 40px));z-index:1001;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;font-size:14px;opacity:0;visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s ease,visibility .35s;max-width:calc(100% - 32px)}
 .undo-toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible;pointer-events:auto}
 .undo-toast-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .undo-progress{position:absolute;bottom:0;left:0;height:2px;background:rgba(243,238,230,.5);border-radius:0 0 999px 999px}
@@ -662,6 +664,15 @@
 .photo-seg,.photo-sheet-seg{border-radius:var(--r-2)}
 .global-panel-row .photo-seg{border-radius:var(--r-2)}
 .photo-seg-btn,.photo-sheet-seg-btn{border-radius:3px}
+
+/* ── Single radius system across the whole order flow ──
+   containers → 4px (--r-2) · bottom sheets → 12px · buttons → pill/circle (unchanged) */
+.input-field,.seg,.upload-zone,.photo-card,.review-card,.total-card,
+.success-order-id,.global-panel,.np-dropdown,.recovery-banner,.post-email,
+.magic-locked{border-radius:var(--r-2)}
+.seg-btn{border-radius:3px}
+.photo-sheet,.apply-dropdown{border-radius:12px 12px 0 0}
+.photo-size-badge,.grid-settings-badge,.review-photo-badge{border-radius:var(--r-2)}
 </style>
 </head>
 <body>
@@ -939,7 +950,7 @@
       </div>
     </div>
   </main>
-  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ · САМБІР</footer>
+  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ</footer>
 </div>
 
 <script>
