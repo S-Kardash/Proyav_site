@@ -50,8 +50,27 @@
   .topbar { display: flex; align-items: center; gap: 12px; height: 60px; border-bottom: 1px solid var(--paper-15); position: sticky; top: 0; background: var(--ink-darkroom); z-index: 50; }
   .topbar-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo); font-size: 17px; }
   .topbar-name { color: var(--paper-50); font-size: 13px; }
-  .topbar-logout { margin-left: auto; background: none; border: 1px solid var(--paper-15); color: var(--paper-50); padding: 7px 14px; border-radius: var(--r-pill); cursor: pointer; font-size: 12px; }
+  .topbar-logout { background: none; border: 1px solid var(--paper-15); color: var(--paper-50); padding: 7px 14px; border-radius: var(--r-pill); cursor: pointer; font-size: 12px; }
   .topbar-logout:hover { border-color: var(--paper-50); color: var(--paper); }
+  .topbar-bell { position: relative; margin-left: auto; background: none; border: 1px solid var(--paper-15); color: var(--paper-50); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color var(--dur-quick), color var(--dur-quick); }
+  .topbar-bell:hover { border-color: var(--paper-50); color: var(--paper); }
+  .bell-badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--safelight); color: #fff; font-size: 11px; font-weight: 600; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--ink-darkroom); }
+
+  /* Activity feed */
+  .act-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--paper-08); }
+  .act-item:last-child { border-bottom: none; }
+  .act-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sepia); flex-shrink: 0; visibility: hidden; }
+  .act-item.unread .act-dot { visibility: visible; }
+  .act-ic { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--paper-08); color: var(--paper-50); }
+  .act-ic.act-paid { background: rgba(92,203,143,.15); color: #5ccb8f; }
+  .act-ic.act-sent { background: rgba(92,203,143,.12); color: #5ccb8f; }
+  .act-ic.act-uploaded { background: rgba(196,149,108,.16); color: var(--sepia); }
+  .act-ic.act-new { background: rgba(138,133,128,.18); color: var(--silver-400); }
+  .act-body { flex: 1; min-width: 0; }
+  .act-text { font-size: 14px; color: var(--paper); line-height: 1.4; }
+  .act-text strong { font-weight: 600; }
+  .act-time { font-size: 11px; color: var(--paper-50); margin-top: 2px; font-family: var(--font-mono); letter-spacing: .05em; }
+  .act-amount { font-family: var(--font-display); font-size: 17px; color: var(--sepia); white-space: nowrap; }
 
   section.block { padding: 26px 0; border-bottom: 1px solid var(--paper-08); }
   .block-h { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
@@ -157,6 +176,10 @@
     <div class="topbar">
       <span class="topbar-logo">ПРОЯВ</span>
       <span class="topbar-name" id="ph-name"></span>
+      <button class="topbar-bell" id="bell-btn" onclick="openActivity()" aria-label="Сповіщення" title="Сповіщення">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bell-badge hide" id="bell-badge">0</span>
+      </button>
       <button class="topbar-logout" onclick="logout()">Вийти</button>
     </div>
 
@@ -170,6 +193,12 @@
     <section class="block" style="border-bottom:none; padding-bottom:8px">
       <div class="level-card" id="level-card"></div>
       <div class="stats" id="stats"></div>
+    </section>
+
+    <!-- Activity feed -->
+    <section class="block" id="activity-block" style="display:none">
+      <h2 class="block-h">Активність</h2>
+      <div id="activity-feed" style="margin-top:14px"></div>
     </section>
 
     <!-- Free trial -->
@@ -310,9 +339,94 @@ async function loadOrders(){
   try{
     const r=await apiFetch(`${API}/api-partner-orders`);
     allOrders=r.orders||[];
-    renderStats(r.stats||{});
+    renderStats(r.stats||{});   // sets curPct (used by activity commission)
+    renderActivity(allOrders);
     renderOrders();
   }catch(e){ toast('Помилка: '+e.message); }
+}
+
+// ── Activity feed (in-cabinet notifications) ──────────────────────────────
+// Кабінет-перший двигун повторних рекомендацій: фотограф бачить «живі» події
+// (особливо оплати + комісію). Telegram-пуш — окремий шар (порція 2).
+const SEEN_KEY = 'partner_last_seen';
+const ACT_META = {
+  paid:     { cls:'act-paid',     svg:'<path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
+  sent:     { cls:'act-sent',     svg:'<path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
+  uploaded: { cls:'act-uploaded', svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>' },
+  new:      { cls:'act-new',      svg:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>' },
+};
+
+// Найновіша віха кожного замовлення → один елемент стрічки.
+function buildActivity(orders){
+  return (orders||[]).map(o=>{
+    let type, ts;
+    if (o.paid_at)          { type='paid';     ts=o.paid_at; }
+    else if (o.shipped_at)  { type='sent';     ts=o.shipped_at; }
+    else if (o.uploaded_at) { type='uploaded'; ts=o.uploaded_at; }
+    else                    { type='new';      ts=o.created_at; }
+    return { type, ts:new Date(ts).getTime(), o };
+  }).filter(a=>a.ts).sort((a,b)=>b.ts-a.ts);
+}
+
+function relTime(ms){
+  const s=Math.floor((Date.now()-ms)/1000);
+  if(s<60) return 'щойно';
+  const m=Math.floor(s/60); if(m<60) return m+' хв тому';
+  const h=Math.floor(m/60); if(h<24) return h+' год тому';
+  const d=Math.floor(h/24); if(d<7) return d===1?'учора':d+' дн тому';
+  return new Date(ms).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'});
+}
+
+function renderActivity(orders){
+  const block=document.getElementById('activity-block');
+  const feed=document.getElementById('activity-feed');
+  const acts=buildActivity(orders);
+  if(!acts.length){ block.style.display='none'; document.getElementById('bell-badge').classList.add('hide'); return; }
+  block.style.display='';
+
+  // Перший візит → беремо «зараз» за базу, щоб не залити лічильник усім підряд.
+  const stored=localStorage.getItem(SEEN_KEY);
+  const lastSeen = stored===null ? Date.now() : Number(stored);
+  if(stored===null) localStorage.setItem(SEEN_KEY, String(lastSeen));
+
+  let unread=0;
+  feed.innerHTML = acts.slice(0,8).map(a=>{
+    const isNew = a.ts > lastSeen;
+    if(isNew) unread++;
+    const meta = ACT_META[a.type];
+    const name = esc(a.o.client_name||'Клієнт');
+    let text, amount='';
+    if(a.type==='paid'){
+      const comm = a.o.total_amount ? Math.round(a.o.total_amount*curPct/100) : 0;
+      text = `<strong>${name}</strong> — оплачено`;
+      if(comm) amount = `<div class="act-amount">+${comm}₴</div>`;
+    } else if(a.type==='sent'){
+      text = `Замовлення <strong>${name}</strong> відправлено`;
+    } else if(a.type==='uploaded'){
+      text = `<strong>${name}</strong> завантажив кадри`;
+    } else {
+      text = `Нове замовлення — <strong>${name}</strong>`;
+    }
+    return `<div class="act-item ${isNew?'unread':''}">
+      <span class="act-dot"></span>
+      <div class="act-ic ${meta.cls}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg></div>
+      <div class="act-body"><div class="act-text">${text}</div><div class="act-time">${relTime(a.ts)}</div></div>
+      ${amount}
+    </div>`;
+  }).join('');
+
+  const badge=document.getElementById('bell-badge');
+  if(unread>0){ badge.textContent=unread>9?'9+':unread; badge.classList.remove('hide'); }
+  else badge.classList.add('hide');
+}
+
+// Клік по дзвіночку → прокрутка до стрічки + позначити прочитаним.
+function openActivity(){
+  const block=document.getElementById('activity-block');
+  if(block && block.style.display!=='none') block.scrollIntoView({behavior:'smooth',block:'start'});
+  localStorage.setItem(SEEN_KEY, String(Date.now()));
+  document.getElementById('bell-badge').classList.add('hide');
+  document.querySelectorAll('.act-item.unread').forEach(el=>el.classList.remove('unread'));
 }
 
 function renderStats(s){
