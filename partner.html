@@ -27,6 +27,12 @@
   .inp { width: 100%; background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: var(--r-2); padding: 13px 15px; font-family: var(--font-body); font-size: 15px; color: var(--paper); outline: none; transition: border-color var(--dur-quick); }
   .inp::placeholder { color: var(--paper-30); }
   .inp:focus { border-color: var(--sepia); }
+  /* Native <select> options inherit OS defaults (white bg) → light text became
+     unreadable. Force the brand palette on the dropdown list. */
+  select.inp { appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23c4956c' stroke-width='1.6'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 15px center; padding-right: 40px; cursor: pointer; }
+  select.inp option { background: var(--ink-graphite); color: var(--paper); }
 
   .btn { width: 100%; border: none; border-radius: var(--r-pill); padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; transition: background var(--dur-quick), opacity var(--dur-quick); }
   .btn-primary { background: var(--safelight); color: var(--paper); margin-top: 6px; }
@@ -78,8 +84,10 @@
   .card-sub { font-size: 13px; line-height: 1.6; color: var(--paper-70); margin-bottom: 14px; }
   .linkbox { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
   .linkbox .url { flex: 1; min-width: 200px; background: var(--ink-darkroom); border: 1px solid var(--paper-15); border-radius: var(--r-2); padding: 11px 13px; font-family: var(--font-mono); font-size: 12px; color: var(--paper-70); word-break: break-all; }
-  .btn-sm { border: none; border-radius: var(--r-pill); padding: 10px 18px; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
-  .btn-copy { background: var(--paper); color: var(--ink-graphite); }
+  .btn-sm { border: none; border-radius: var(--r-pill); padding: 10px 18px; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; text-align: center; box-sizing: border-box; }
+  /* Fixed min-width so the label swap «Копіювати» → «Скопійовано ✓» doesn't
+     resize the button and jolt the layout. */
+  .btn-copy { background: var(--paper); color: var(--ink-graphite); min-width: 132px; }
   .btn-copy:hover { background: var(--silver-500); }
   .btn-wa { background: #25d366; color: #fff; }
   .btn-trial { background: var(--sepia); color: var(--ink-graphite); display: inline-block; text-decoration: none; padding: 13px 22px; border-radius: var(--r-pill); font-weight: 500; font-size: 14px; }
@@ -207,7 +215,7 @@
           <div class="linkbox">
             <div class="url" id="c-url"></div>
             <button class="btn-sm btn-copy" onclick="copyText(lastLink, this)">Копіювати</button>
-            <button class="btn-sm btn-wa" onclick="sendToWa()">Viber / WA</button>
+            <button class="btn-sm btn-wa" onclick="shareLink()">Поділитися</button>
           </div>
         </div>
       </div>
@@ -367,9 +375,20 @@ async function createOrder(){
   finally{ btn.disabled=false; }
 }
 
-function sendToWa(){
-  const text=encodeURIComponent(`Вітаю! Ось персональне посилання для замовлення фото-набору Прояв:\n${lastLink}\n\nЗавантажте кадри — решту зробимо ми 🤍`);
-  window.open(`https://wa.me/?text=${text}`,'_blank');
+// Поділитися посиланням через нативний шер (мобілка: Viber / WhatsApp / Telegram
+// / будь-що). На десктопі без Web Share API — копіюємо в буфер. Жодних сторонніх API.
+async function shareLink(){
+  if(!lastLink) return;
+  const text=`Вітаю! Ось персональне посилання для замовлення фото-набору Прояв:\n${lastLink}\n\nЗавантажте кадри — решту зробимо ми 🤍`;
+  if(navigator.share){
+    try{ await navigator.share({ title:'Прояв', text }); }
+    catch(e){ /* користувач скасував — нічого не робимо */ }
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Скопійовано — вставте у Viber, WhatsApp чи Telegram');
+  }catch(e){ toast('Не вдалося скопіювати'); }
 }
 
 // ── Utils ──

@@ -574,9 +574,14 @@
 .photo-size-badge{position:absolute;bottom:8px;left:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;background:rgba(26,24,23,.7);color:var(--paper-70);padding:3px 7px;border-radius:2px;pointer-events:none}
 .photo-warn-badge{position:absolute;top:8px;left:42px;background:var(--sepia);color:var(--ink-graphite);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:10px;pointer-events:none;box-shadow:0 0 0 2px rgba(26,24,23,.6);z-index:3}
 .photo-warn-badge span{display:none}  /* icon-only chip; full text lives in the gear sheet */
+.photo-warn-badge.error{background:var(--safelight)}  /* blocking/corrupt file → red, not sepia */
 .photo-status-bar{display:flex;flex-direction:column;gap:4px;padding:0 0 8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
 .status-badge{font-size:11px;font-family:var(--font-mono);letter-spacing:.1em}
 .status-badge.ok{color:#5ccb8f}.status-badge.err{color:var(--safelight)}.status-badge.warn{color:var(--sepia)}
+/* Real, obviously-tappable delete button (was a bare text span — unclear on mobile) */
+.delete-photo-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:6px;padding:11px 14px;background:rgba(178,58,44,.12);border:1px solid var(--safelight);border-radius:999px;color:var(--safelight);font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s}
+.delete-photo-btn:hover{background:rgba(178,58,44,.22)}
+.delete-photo-btn:active{transform:scale(.98)}
 .photo-seg-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50);display:block;margin-bottom:6px}
 .qty-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50)}
 .qty-row{display:flex;align-items:center;justify-content:space-between}
@@ -587,6 +592,7 @@
 .qty-value,.qty-val{font-family:var(--font-display);font-size:18px;color:var(--paper);min-width:20px;text-align:center}
 .grid-settings-btn{position:absolute;top:8px;left:8px;width:28px;height:28px;border-radius:50%;background:rgba(26,24,23,.7);border:1px solid var(--paper-15);color:var(--paper-70);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
 .grid-settings-btn:hover,.grid-settings-btn.has-warn{color:var(--sepia);border-color:var(--sepia)}
+.grid-settings-btn.has-error{color:var(--safelight);border-color:var(--safelight)}
 .grid-settings-badge{position:absolute;bottom:8px;right:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;background:rgba(26,24,23,.75);color:var(--paper-70);padding:3px 6px;border-radius:2px;pointer-events:none;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .apply-card-btn{display:flex;align-items:center;gap:8px;width:100%;padding:10px 0;background:none;border:none;border-top:1px solid var(--paper-08);color:var(--paper-50);cursor:pointer;text-align:left;font-family:var(--font-body);font-size:12px;transition:color .15s}
 .apply-card-btn:hover{color:var(--sepia)}
@@ -2042,6 +2048,24 @@ function buildPhotoCard(ph) {
 }
 
 /* ── Render validation results into the status bar ── */
+/* Sync grid badge + gear-button state from a validation result.
+   Blocking (corrupt/too-small) → red badge + red gear. Warnings → sepia. */
+function applyValidationVisuals(ph, result) {
+  const wb = document.getElementById('warn-badge-' + ph.id);
+  const hasBlocking = !result.ok || (result.blocking && result.blocking.length > 0);
+  const hasWarn     = result.warnings && result.warnings.length > 0;
+  if (ph._gearBtn) ph._gearBtn.classList.remove('has-warn', 'has-error');
+  if (hasBlocking) {
+    if (ph._gearBtn) ph._gearBtn.classList.add('has-error');
+    if (wb) { wb.classList.add('error'); wb.style.display = ''; }
+  } else if (hasWarn) {
+    if (ph._gearBtn) ph._gearBtn.classList.add('has-warn');
+    if (wb) { wb.classList.remove('error'); wb.style.display = ''; }
+  } else {
+    if (wb) { wb.classList.remove('error'); wb.style.display = 'none'; }
+  }
+}
+
 function renderValidation(ph, result) {
   const preview = document.querySelector(`[data-photo-id="${ph.id}"] .photo-preview`);
   const bar     = document.getElementById(`status-${ph.id}`);
@@ -2059,7 +2083,8 @@ function renderValidation(ph, result) {
     bar.innerHTML = result.blocking.map(msg =>
       `<span class="status-badge err">${ICON_ERR}<span>${msg}</span></span>`
     ).join('');
-    bar.innerHTML += `<span class="status-badge err" style="cursor:pointer;justify-content:center" onclick="removePhoto(${ph.id})">Видалити це фото</span>`;
+    const ICON_TRASH = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    bar.innerHTML += `<button type="button" class="delete-photo-btn" onclick="removePhoto(${ph.id})">${ICON_TRASH}Видалити це фото</button>`;
     return;
   }
 
@@ -2154,12 +2179,7 @@ async function addPhotos(files) {
       ph._warnings = result.warnings || [];
       ph._blocking = result.blocking || [];
       if (!result.ok) ph.hasError = true;
-      // Update gear dot + warning badge if warnings exist
-      if (result.warnings && result.warnings.length > 0) {
-        if (ph._gearBtn) ph._gearBtn.classList.add('has-warn');
-        const wb = document.getElementById('warn-badge-' + ph.id);
-        if (wb) wb.style.display = '';
-      }
+      applyValidationVisuals(ph, result);
       renderValidation(ph, result);
       saveDraft();
     });
@@ -2205,11 +2225,7 @@ async function restorePhotos(photosMeta) {
       ph._warnings = result.warnings || [];
       ph._blocking = result.blocking || [];
       if (!result.ok) ph.hasError = true;
-      if (result.warnings && result.warnings.length > 0) {
-        if (ph._gearBtn) ph._gearBtn.classList.add('has-warn');
-        const wb = document.getElementById('warn-badge-' + ph.id);
-        if (wb) wb.style.display = '';
-      }
+      applyValidationVisuals(ph, result);
       renderValidation(ph, result);
     });
   }
@@ -2550,14 +2566,17 @@ function openPhotoSheet(ph) {
     '<div class="photo-sheet-body">' +
       // Show warnings inside sheet if any
       (ph._warnings && ph._warnings.length > 0 ?
-        '<div style="background:rgba(230,126,34,.09);border:1px solid rgba(230,126,34,.28);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#924400;line-height:1.6">' +
+        '<div style="background:rgba(196,149,108,.1);border:1px solid rgba(196,149,108,.35);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--sepia);line-height:1.6">' +
         '<strong style="display:block;margin-bottom:4px">⚠ Увага по якості фото:</strong>' +
         ph._warnings.map(function(w){ return '• ' + w; }).join('<br>') +
         '</div>' : '') +
       (ph._blocking && ph._blocking.length > 0 ?
-        '<div style="background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#922;line-height:1.6">' +
+        '<div style="background:rgba(178,58,44,.12);border:1px solid rgba(178,58,44,.5);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#e8918a;line-height:1.6">' +
         '<strong style="display:block;margin-bottom:4px">✕ Проблема з файлом:</strong>' +
         ph._blocking.map(function(w){ return '• ' + w; }).join('<br>') +
+        '<button type="button" class="delete-photo-btn" onclick="closePhotoSheet();removePhoto(' + ph.id + ')" style="margin-top:10px">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+        'Видалити це фото</button>' +
         '</div>' : '') +
       '<span class="photo-sheet-label">Колір</span>' +
       '<div class="photo-sheet-seg" id="ps-color">' +
@@ -3035,6 +3054,11 @@ const PRODUCT_DISPLAY = {
   baby:   'Спогади малюка',
 };
 
+function dismissSplash(delay = 400) {
+  const s = document.getElementById('splash');
+  if (s) { s.classList.add('done'); setTimeout(() => s.remove(), delay); }
+}
+
 async function validateMagicToken() {
   try {
     const res = await fetchWithTimeout(TOKEN_API + '?t=' + MAGIC_TOKEN, {});
@@ -3046,9 +3070,6 @@ async function validateMagicToken() {
       const errEl = document.getElementById('token-error');
       errEl.classList.add('show');
       document.getElementById('token-error-text').textContent = d.error || 'Посилання недійсне.';
-      // Dismiss splash immediately
-      const s = document.getElementById('splash');
-      if (s) { s.classList.add('done'); setTimeout(() => s.remove(), 400); }
       return;
     }
 
@@ -3109,6 +3130,11 @@ async function validateMagicToken() {
   } catch (err) {
     console.error('[magic] token validation failed:', err.message);
     // Non-fatal: let user proceed normally without token
+  } finally {
+    // Always lift the splash — otherwise a valid (or failed) magic link hangs
+    // forever on the intro animation, because the init flow skips splash
+    // dismissal whenever IS_MAGIC is true.
+    dismissSplash();
   }
 }
 
