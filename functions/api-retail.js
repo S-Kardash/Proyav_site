@@ -10,7 +10,7 @@ export async function onRequest(context) {
 
   const {
     name, phone, product_type, message, source,
-    client_instagram, photographer_id, free,
+    client_instagram, photographer_id, free, card_signature,
     order_ref, photo_count, qty_total,
   } = body;
 
@@ -40,6 +40,10 @@ export async function onRequest(context) {
   // Free trial print (self-serve onboarding) — owner fulfils, zero charge.
   if (free) finalTotal = 0;
 
+  // Optional card signature ("Кадр: …") the owner prints on the physical card.
+  const signature = card_signature?.trim() || null;
+  const signatureNote = signature ? `✍️ Підпис на картці: Кадр — ${signature}` : '';
+
   let order = null;
   let dbError = null;
   try {
@@ -55,7 +59,7 @@ export async function onRequest(context) {
         source:           finalSource,
         photographer_id:  photographerId,
         status:           hasPhotos ? 'uploaded' : 'new',
-        notes:            free ? ('🎁 Безкоштовний пробний відбиток. ' + (message?.trim() || '')).trim() : (message?.trim() || null),
+        notes:            [free ? '🎁 Безкоштовний пробний відбиток.' : '', signatureNote, message?.trim() || ''].filter(Boolean).join(' ').trim() || null,
         photo_count:      photo_count || null,
         qty_total:        qty_total   || null,
         total_amount:     finalTotal,
@@ -81,6 +85,7 @@ export async function onRequest(context) {
       client_instagram ? `📸 @${client_instagram.replace('@','')}` : null,
       `📦 ${productLabel} · ${finalSource === 'photographer' ? 'фотограф' : finalSource === 'package' ? 'пакет' : 'роздріб'}`,
       photo_count ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
+      signature ? `✍️ Кадр: ${signature}` : null,
       free ? `🎁 Безкоштовний пробний відбиток` : `💰 Сума: ${finalTotal} грн`,
       order_ref ? `🆔 Ref: ${order_ref}` : null,
       message   ? `💬 ${message.trim()}` : null,

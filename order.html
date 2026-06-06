@@ -270,6 +270,32 @@
     text-transform: uppercase; color: var(--paper-50);
     pointer-events: none;
   }
+  .privacy-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 12px; padding: 0 2px;
+    font-family: var(--font-body); font-size: 12px; line-height: 1.5;
+    color: var(--paper-50);
+  }
+  .privacy-note svg { color: var(--sepia); flex-shrink: 0; margin-top: 2px; }
+  .direct-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: -4px 0 22px; padding: 11px 13px;
+    background: rgba(243, 238, 230, 0.03);
+    border: 1px solid var(--paper-15); border-radius: 12px;
+    font-family: var(--font-body); font-size: 12.5px; line-height: 1.5;
+    color: var(--paper-70);
+  }
+  .direct-note svg { color: var(--sepia); flex-shrink: 0; margin-top: 2px; }
+  .direct-note.hidden { display: none; }
+  .signature-note {
+    font-family: var(--font-body); font-size: 12.5px; line-height: 1.5;
+    color: var(--paper-50); margin: 0 0 12px;
+  }
+  .signature-prefix {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sepia);
+  }
+  #inp-signature.has-prefix { padding-left: 62px; }
 
   /* ──────── PHOTO LIST ──────── */
   .photos-list { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
@@ -546,7 +572,8 @@
 .photo-validating::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(243,238,230,.06) 50%,transparent);animation:shimmer 1.4s ease-in-out infinite}
 @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 .photo-size-badge{position:absolute;bottom:8px;left:8px;font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;background:rgba(26,24,23,.7);color:var(--paper-70);padding:3px 7px;border-radius:2px;pointer-events:none}
-.photo-warn-badge{position:absolute;top:8px;right:8px;background:var(--sepia);color:var(--paper);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;pointer-events:none}
+.photo-warn-badge{position:absolute;top:8px;left:42px;background:var(--sepia);color:var(--ink-graphite);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:10px;pointer-events:none;box-shadow:0 0 0 2px rgba(26,24,23,.6);z-index:3}
+.photo-warn-badge span{display:none}  /* icon-only chip; full text lives in the gear sheet */
 .photo-status-bar{display:flex;flex-direction:column;gap:4px;padding:0 0 8px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em}
 .status-badge{font-size:11px;font-family:var(--font-mono);letter-spacing:.1em}
 .status-badge.ok{color:#5ccb8f}.status-badge.err{color:var(--safelight)}.status-badge.warn{color:var(--sepia)}
@@ -738,6 +765,11 @@
       <h1 class="h-screen">З'єднайте кадри <em>з автором</em>.</h1>
       <p class="h-sub">Введіть нікнейм Instagram або номер замовлення — щоб ваші кадри потрапили в правильне місце архіву.</p>
 
+      <div class="direct-note" id="direct-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
+        <span>Замовляєте напряму, без фотографа? Усе правильно — це поле лише щоб знайти ваше замовлення.</span>
+      </div>
+
       <div class="seg" id="ident-seg">
         <button class="seg-btn active" data-type="instagram" onclick="setIdentType('instagram')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
@@ -864,6 +896,11 @@
         <div class="upload-hint">JPG / PNG / HEIC · ДО 25 МБ</div>
       </div>
 
+      <div class="privacy-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Ваші кадри лишаються вашими. Не передаємо третім і видаляємо файли після того, як набір готовий.</span>
+      </div>
+
       <div class="photos-list" id="photos-list" style="margin-top:16px"></div>
 
       <div id="photos-bottom" style="display:none">
@@ -903,6 +940,16 @@
       <div class="review-card">
         <div class="review-section-title" id="rv-photos-title">КАДРИ · 0</div>
         <div class="review-photos" id="rv-photos-grid"></div>
+      </div>
+
+      <div class="review-card" id="rv-signature-card" style="display:none">
+        <div class="review-section-title">ПІДПИС НА КАРТЦІ</div>
+        <p class="signature-note">Кожен набір несе ім'я автора. За бажанням підпишемо картку — «Кадр: …».</p>
+        <div class="field-row signature-row">
+          <span class="input-prefix signature-prefix">Кадр:</span>
+          <input class="input-field has-prefix" id="inp-signature" type="text" placeholder="ім'я фотографа"
+            maxlength="60" autocomplete="off" oninput="onSignatureInput()">
+        </div>
       </div>
 
       <div class="total-card">
@@ -1068,7 +1115,7 @@ function hideUndoToast() {
 const S = { step:1, identType:'instagram', ident:'', name:'', phone:'', email:'', delivery:'nova', city:'', cityRef:'', cityName:'', warehouse:'', photos:[],
   // Напрямок замовлення: 'retail' (à la carte, 15₴/відбиток) | 'package' (фікс-ціна набору)
   mode:'retail', productType:null, source:'retail',
-  photographerId:null, isTrial:false };
+  photographerId:null, photographerName:'', cardSignature:'', isTrial:false };
 
 /* Центральний підрахунок — єдина точка істини для ціни в усіх місцях UI/повідомлень. */
 function orderTotals() {
@@ -1232,6 +1279,7 @@ function showPackageBanner(pkgKey) {
   document.getElementById('magic-greeting').textContent = 'Набір: ' + pkg.name;
   document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
   banner.classList.add('show');
+  document.getElementById('direct-note')?.classList.add('hidden');
 }
 
 // Безкоштовний пробний відбиток (фотограф тестує якість руками)
@@ -1241,6 +1289,7 @@ function showTrialBanner() {
   document.getElementById('magic-greeting').textContent = 'Безкоштовний пробний відбиток';
   document.getElementById('magic-product').textContent  = 'Надішліть один свій кадр — надрукуємо й відправимо вам безкоштовно';
   banner.classList.add('show');
+  document.getElementById('direct-note')?.classList.add('hidden');
 }
 
 // Клієнт прийшов за багаторазовим посиланням фотографа
@@ -1250,6 +1299,7 @@ function showRefBanner() {
   document.getElementById('magic-greeting').textContent = 'Друк через вашого фотографа';
   document.getElementById('magic-product').textContent  = 'Ваш кадр проявимо в оксамиті — задум збережено';
   banner.classList.add('show');
+  document.getElementById('direct-note')?.classList.add('hidden');
 }
 
 function dismissPhotoBanner() {
@@ -2648,6 +2698,27 @@ function renderReview() {
   // У режимі пакета показуємо назву набору в заголовку секції фото
   const photosTitle = document.getElementById('rv-photos-title');
   if (photosTitle && S.mode === 'package') photosTitle.textContent = `${t.name.toUpperCase()} · ${t.qty}/${t.photos} ФОТО`;
+
+  // ── Опційний підпис на картці — лише коли в замовленні є фотограф ──
+  const sigCard = document.getElementById('rv-signature-card');
+  if (sigCard) {
+    if (S.source === 'photographer') {
+      sigCard.style.display = '';
+      const inp = document.getElementById('inp-signature');
+      // Префіл відомим ім'ям фотографа (magic-link); реферал ?ph= — порожньо, клієнт впише.
+      if (inp && !inp.value && (S.cardSignature || S.photographerName)) {
+        inp.value = S.cardSignature || S.photographerName;
+        S.cardSignature = inp.value;
+      }
+    } else {
+      sigCard.style.display = 'none';
+    }
+  }
+}
+
+function onSignatureInput() {
+  const inp = document.getElementById('inp-signature');
+  S.cardSignature = inp ? inp.value.trim() : '';
 }
 
 /* ══ SUBMIT ══ */
@@ -2764,6 +2835,8 @@ function buildOrderMessage(orderId, tq) {
   }).join('\n');
   const errorNote = S.photos.some(function(p) { return p.hasError; })
     ? '\n⚠ Деякі фото мають питання якості' : '';
+  const signatureLine = S.cardSignature
+    ? '✍️ Підпис на картці: Кадр — ' + S.cardSignature + '\n' : '';
 
   return (
     '📷 <b>[ПРОЯВ] Замовлення ' + orderId + '</b>' + errorNote + '\n' +
@@ -2772,6 +2845,7 @@ function buildOrderMessage(orderId, tq) {
     "Ім'я: " + S.name + '\n' +
     'Телефон: ' + S.phone + '\n' +
     (S.email ? 'Email: ' + S.email + '\n' : '') +
+    signatureLine +
     '📦 Доставка: ' + cityLine + '\n' +
     '\n🖼 <b>Фото: ' + S.photos.length + ' шт / ' + tq + ' відбитків</b>\n' +
     photoLines + '\n' +
@@ -2795,6 +2869,7 @@ async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
     product_type: S.mode === 'package' ? S.productType : null,
     source:       S.source || (S.mode === 'package' ? 'package' : 'retail'),
     photographer_id: S.photographerId || null,
+    card_signature: S.cardSignature || null,
     free:         S.isTrial || undefined,
     order_ref:    orderId,
     photo_count:  photoCount,
@@ -2927,7 +3002,7 @@ function celebrate() {
 /* ─ Reset ─ */
 function resetApp() {
   S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
-  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[],mode:'retail',productType:null,source:'retail',photographerId:null,isTrial:false});
+  Object.assign(S,{step:1,identType:'instagram',ident:'',name:'',phone:'',email:'',delivery:'nova',city:'',cityRef:'',cityName:'',warehouse:'',photos:[],mode:'retail',productType:null,source:'retail',photographerId:null,photographerName:'',cardSignature:'',isTrial:false});
   ['ident-input','inp-name','inp-phone','inp-email','inp-city','inp-warehouse'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('error','valid','shake');}});
   const whReset=document.getElementById('inp-warehouse'); if(whReset){whReset.disabled=true;whReset.placeholder='Спершу оберіть місто';}
   document.getElementById('city-picked')?.classList.remove('show');
@@ -2983,6 +3058,7 @@ async function validateMagicToken() {
     S.mode        = 'package';
     S.productType = d.product_type || 'small';
     S.source      = 'photographer';
+    S.photographerName = d.photographer || '';
 
     // Pre-fill state with client data from token
     S.name  = d.client_name  || '';
@@ -3006,6 +3082,7 @@ async function validateMagicToken() {
     document.getElementById('magic-product').textContent =
       'Продукт: ' + product + (d.photographer ? '  ·  Фотограф: ' + d.photographer : '');
     banner.classList.add('show');
+    document.getElementById('direct-note')?.classList.add('hidden');
 
     // Magic link = identity is already known. Hide the step-1 identification entirely:
     //  · remove the step-2 "Назад" button (there is no step 1 to go back to)
