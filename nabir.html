@@ -66,7 +66,7 @@
 
     <p class="section-label">Окремі фото</p>
     <div class="cards">
-      <a class="card accent" href="/order">
+      <a class="card accent" id="retail-card" href="/order">
         <div class="card-body">
           <div class="card-name">Роздрібний друк</div>
           <div class="card-desc" id="retail-desc">Будь-яка кількість · плата за кожен відбиток</div>
@@ -82,11 +82,15 @@
 <script>
 (function () {
   if (!window.PROYAV) return;
+  // Pass the photographer attribution (?ph=) through every link so a client who
+  // arrived via a reusable photographer link stays attributed after picking a format.
+  const phRef = new URLSearchParams(location.search).get('ph');
+  const phSuffix = phRef ? '&ph=' + encodeURIComponent(phRef) : '';
   // Render package cards from the single source of truth (config.js)
   const order = PROYAV.order.filter(k => k); // small, medium, large, baby
   const html = order.map(key => {
     const p = PROYAV.packages[key];
-    return `<a class="card" href="/order?pkg=${encodeURIComponent(key)}">
+    return `<a class="card" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}">
       <div class="card-body">
         <div class="card-name">${p.name}</div>
         <div class="card-desc">${p.desc}</div>
@@ -97,6 +101,8 @@
   }).join('');
   document.getElementById('package-cards').innerHTML = html;
   document.getElementById('retail-price').innerHTML = PROYAV.printPrice + '₴<span class="per">за відбиток</span>';
+  // Retail card carries ph too (just no pkg → à la carte).
+  document.getElementById('retail-card').href = phRef ? '/order?ph=' + encodeURIComponent(phRef) : '/order';
 })();
 </script>
 </body>
