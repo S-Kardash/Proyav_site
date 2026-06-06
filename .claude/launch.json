@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "proyav",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "wrangler", "pages", "dev", ".", "--port", "8788", "--compatibility-date=2024-05-01"],
+      "port": 8788
+    },
+    {
       "name": "static",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8123"],
