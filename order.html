@@ -516,10 +516,12 @@
 @keyframes undoCountdown{from{width:100%}to{width:0}}
 #undo-toast{background:var(--ink-graphite);color:var(--paper);border-radius:999px}
 .undo-btn{background:rgba(243,238,230,.14);color:var(--paper);font-family:var(--font-body)}
-.magic-banner{background:linear-gradient(135deg,var(--ink-graphite),#3d3530);color:var(--paper);font-family:var(--font-body);border-bottom:1px solid var(--paper-15);padding:12px 20px;text-align:center;font-size:14px;display:none;width:100%;box-sizing:border-box;flex-shrink:0}
-.magic-banner.show{display:block}
-.magic-banner strong{display:block;font-size:15px;margin-bottom:2px}
-.magic-banner .mb-sub{opacity:.8;font-size:13px}
+.magic-banner{display:none;align-items:center;gap:13px;width:min(440px,calc(100% - 32px));margin:14px auto 0;padding:13px 15px;box-sizing:border-box;background:linear-gradient(135deg,rgba(196,149,108,.11),rgba(196,149,108,.025));border:1px solid rgba(196,149,108,.3);border-radius:14px;flex-shrink:0}
+.magic-banner.show{display:flex}
+.magic-banner-ic{width:36px;height:36px;border-radius:50%;background:var(--sepia);color:var(--ink-darkroom);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.magic-banner-txt{text-align:left;min-width:0;flex:1}
+.magic-banner strong{display:block;font-family:var(--font-display);font-weight:500;font-size:17px;line-height:1.15;color:var(--paper)}
+.magic-banner .mb-sub{display:block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;color:var(--sepia);margin-top:4px;line-height:1.4}
 .magic-locked{background:rgba(243,238,230,.05);border:1px solid var(--paper-15);border-radius:4px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
 .magic-locked-ic{width:32px;height:32px;border-radius:50%;background:var(--safelight);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .magic-locked-txt b{font-size:14px;color:var(--paper);display:block}
@@ -750,10 +752,15 @@
 <canvas class="dots-canvas" id="dotsCanvas" style="display:none"></canvas>
 
 <div class="app">
-  <!-- MAGIC LINK BANNER -->
+  <!-- MAGIC LINK / CONTEXT BANNER -->
   <div class="magic-banner" id="magic-banner">
-    <strong id="magic-greeting"></strong>
-    <span class="mb-sub" id="magic-product"></span>
+    <div class="magic-banner-ic">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg>
+    </div>
+    <div class="magic-banner-txt">
+      <strong id="magic-greeting"></strong>
+      <span class="mb-sub" id="magic-product"></span>
+    </div>
   </div>
   <header class="header">
     <div class="header-logo">
@@ -1135,6 +1142,31 @@ function orderTotals() {
   return { qty, mode:'retail', productType:null, price: qty * PRICE, name:'Роздрібний друк', cap:Infinity, upgradedFrom:null };
 }
 let pid = 0;
+// Який контекст-банер зараз активний: 'package' | 'magic' | 'ref' | 'trial' | null.
+// Потрібно, щоб синхронізувати банер з авто-апгрейдом набору (10→20→50).
+let bannerKind = null;
+
+/* Тримає верхній контекст-банер у синхроні з авто-апгрейдженим набором.
+   Інакше низ показує «Великий», а банер досі «Малий». */
+function refreshContextBanner() {
+  if (!window.PROYAV) return;
+  const banner = document.getElementById('magic-banner');
+  if (!banner || !banner.classList.contains('show')) return;
+  const t = orderTotals();
+  if (t.mode !== 'package' || !t.productType) return;
+  const pkg = PROYAV.packages[t.productType];
+  if (!pkg) return;
+  if (bannerKind === 'package') {
+    document.getElementById('magic-greeting').textContent = 'Набір: ' + pkg.name;
+    document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
+  } else if (bannerKind === 'magic') {
+    // Магік-лінк: персональне привітання лишаємо, оновлюємо лише рядок продукту.
+    const product = (typeof PRODUCT_DISPLAY !== 'undefined' && PRODUCT_DISPLAY[t.productType]) || pkg.name;
+    const photog  = MAGIC_ORDER && MAGIC_ORDER.photographer;
+    document.getElementById('magic-product').textContent =
+      'Продукт: ' + product + (photog ? '  ·  Фотограф: ' + photog : '');
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    PERSISTENCE — localStorage draft system
@@ -1285,6 +1317,7 @@ function showPackageBanner(pkgKey) {
   document.getElementById('magic-greeting').textContent = 'Набір: ' + pkg.name;
   document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
   banner.classList.add('show');
+  bannerKind = 'package';
   document.getElementById('direct-note')?.classList.add('hidden');
 }
 
@@ -1295,6 +1328,7 @@ function showTrialBanner() {
   document.getElementById('magic-greeting').textContent = 'Безкоштовний пробний відбиток';
   document.getElementById('magic-product').textContent  = 'Надішліть один свій кадр — надрукуємо й відправимо вам безкоштовно';
   banner.classList.add('show');
+  bannerKind = 'trial';
   document.getElementById('direct-note')?.classList.add('hidden');
 }
 
@@ -1305,6 +1339,7 @@ function showRefBanner() {
   document.getElementById('magic-greeting').textContent = 'Друк через вашого фотографа';
   document.getElementById('magic-product').textContent  = 'Ваш кадр проявимо в оксамиті — задум збережено';
   banner.classList.add('show');
+  bannerKind = 'ref';
   document.getElementById('direct-note')?.classList.add('hidden');
 }
 
@@ -2304,6 +2339,8 @@ function updateSummary() {
   const errCount = S.photos.filter(p => p.hasError).length;
   // У режимі пакета фіксуємо S.productType на авто-апгрейдженому наборі (10→20→50).
   if (S.mode === 'package' && t.productType) S.productType = t.productType;
+  // Тримаємо верхній контекст-банер у синхроні з авто-апгрейдом.
+  refreshContextBanner();
 
   const countEl = document.getElementById('photos-count');
   const printsEl = document.getElementById('photos-prints');
@@ -3103,6 +3140,7 @@ async function validateMagicToken() {
     document.getElementById('magic-product').textContent =
       'Продукт: ' + product + (d.photographer ? '  ·  Фотограф: ' + d.photographer : '');
     banner.classList.add('show');
+    bannerKind = 'magic';
     document.getElementById('direct-note')?.classList.add('hidden');
 
     // Magic link = identity is already known. Hide the step-1 identification entirely:

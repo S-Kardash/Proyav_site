@@ -292,7 +292,9 @@ function initApp(){
   document.getElementById('app').classList.remove('hide');
   document.getElementById('ph-name').textContent = PH_DATA?.name || '';
   // reusable link + asset + trial
-  const ref = `${SITE}/order?ph=${PH_DATA.id}`;
+  // Багаторазове посилання веде на екран вибору (набір або поштучно), проносячи
+  // атрибуцію фотографа. Пробний відбиток — прямо в /order (1 кадр, вибір зайвий).
+  const ref = `${SITE}/nabir?ph=${PH_DATA.id}`;
   document.getElementById('ref-url').textContent = ref;
   document.getElementById('asset-line').textContent = `Надрукувати ці кадри в оксамиті — ${ref}`;
   document.getElementById('trial-link').href = `/order?ph=${PH_DATA.id}&trial=1`;
