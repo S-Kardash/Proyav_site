@@ -72,6 +72,14 @@
   .act-time { font-size: 11px; color: var(--paper-50); margin-top: 2px; font-family: var(--font-mono); letter-spacing: .05em; }
   .act-amount { font-family: var(--font-display); font-size: 17px; color: var(--sepia); white-space: nowrap; }
 
+  /* Telegram connect card */
+  .btn-tg { display: inline-flex; align-items: center; gap: 9px; background: #229ED9; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: var(--r-pill); font-family: var(--font-body); font-weight: 500; font-size: 14px; transition: background var(--dur-quick); }
+  .btn-tg:hover { background: #1b87ba; }
+  .tg-recheck { display: block; margin-top: 12px; background: none; border: none; color: var(--paper-50); font-family: var(--font-body); font-size: 13px; cursor: pointer; padding: 0; text-decoration: underline; }
+  .tg-recheck:hover { color: var(--paper); }
+  .tg-connected { display: flex; align-items: center; gap: 13px; }
+  .tg-connected-ic { width: 38px; height: 38px; border-radius: 50%; background: rgba(92,203,143,.16); color: #5ccb8f; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
   section.block { padding: 26px 0; border-bottom: 1px solid var(--paper-08); }
   .block-h { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
   .block-h em { font-style: italic; color: var(--sepia); }
@@ -199,6 +207,11 @@
     <section class="block" id="activity-block" style="display:none">
       <h2 class="block-h">Активність</h2>
       <div id="activity-feed" style="margin-top:14px"></div>
+    </section>
+
+    <!-- Telegram notifications -->
+    <section class="block" id="telegram-block" style="display:none">
+      <div class="card" id="telegram-card"></div>
     </section>
 
     <!-- Free trial -->
@@ -341,8 +354,35 @@ async function loadOrders(){
     allOrders=r.orders||[];
     renderStats(r.stats||{});   // sets curPct (used by activity commission)
     renderActivity(allOrders);
+    renderTelegram(r.telegram);
     renderOrders();
   }catch(e){ toast('Помилка: '+e.message); }
+}
+
+// ── Telegram connect (8.4 part 2) ──
+function renderTelegram(t){
+  const block=document.getElementById('telegram-block');
+  const card=document.getElementById('telegram-card');
+  if(!t || !t.bot_username || !t.link_token){ block.style.display='none'; return; }
+  block.style.display='';
+  if(t.connected){
+    card.innerHTML =
+      `<div class="tg-connected">
+        <div class="tg-connected-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div><div class="card-title" style="margin:0">Telegram підключено</div>
+        <div class="card-sub" style="margin:4px 0 0">Пінг про кожну оплату приходитиме вам у Telegram.</div></div>
+      </div>`;
+  } else {
+    const link=`https://t.me/${esc(t.bot_username)}?start=${encodeURIComponent(t.link_token)}`;
+    card.innerHTML =
+      `<div class="card-title">Сповіщення в Telegram</div>
+       <div class="card-sub">Підключіть бот — і отримуйте миттєвий пінг «ваш клієнт оплатив — +комісія» прямо в Telegram.</div>
+       <a class="btn-tg" href="${link}" target="_blank" rel="noopener">
+         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.6l-3.32 15.66c-.25 1.1-.9 1.37-1.83.86l-5.05-3.72-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14L18.36 6.1c.4-.36-.09-.56-.62-.2L5.4 13.78l-5.07-1.59c-1.1-.34-1.12-1.1.23-1.63L20.5 3.05c.92-.34 1.72.22 1.44 1.55z"/></svg>
+         Підключити Telegram
+       </a>
+       <button class="tg-recheck" onclick="loadOrders()">Уже підключив — оновити</button>`;
+  }
 }
 
 // ── Activity feed (in-cabinet notifications) ──────────────────────────────
