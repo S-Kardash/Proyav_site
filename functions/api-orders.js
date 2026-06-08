@@ -1,4 +1,32 @@
-import { ok, fail, preflight, authRequest, db, randomToken } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, randomToken, commissionFor } from './_utils.js';
+
+// Пінг фотографу в Telegram при оплаті його замовлення (8.4).
+// Комісія — за тим самим тарифом, що й у кабінеті (commissionFor за к-стю замовлень).
+async function notifyPhotographerPaid(env, client, order) {
+  try {
+    const ph = order.photographers;
+    const chatId = ph && ph.tg_chat_id;
+    if (!chatId) return; // фотограф не підключив Telegram — тихо пропускаємо
+    const phId = order.photographer_id;
+    let pct = 12;
+    if (phId) {
+      const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${phId}` } }).catch(() => []);
+      pct = commissionFor((cnt || []).length).pct;
+    }
+    const amount = order.total_amount ? Math.round(order.total_amount * pct / 100) : 0;
+    const who = order.client_name || 'Ваш клієнт';
+    const text =
+      `💰 <b>Оплата!</b>\n\n` +
+      `${who} оплатив набір${order.total_amount ? ` на ${order.total_amount}₴` : ''}.\n` +
+      (amount ? `Ваша комісія: <b>+${amount}₴</b> (${pct}%).\n` : '') +
+      `\nДякуємо, що рекомендуєте Прояв 🤍`;
+    await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    });
+  } catch (e) { console.error('[api-orders] notifyPhotographerPaid:', e.message); }
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -98,10 +126,15 @@ export async function onRequest(context) {
     const data = await client.query('orders', {
       method:  'PATCH',
       filters: { id: `eq.${id}` },
-      select:  '*,photographers(name,city)',
+      select:  '*,photographers(name,city,tg_chat_id)',
       single:  true,
       body:    updates,
     });
+
+    // Newly marked paid → ping the photographer (non-blocking, non-fatal).
+    if (updates.status === 'paid' && env.TG_TOKEN) {
+      await notifyPhotographerPaid(env, client, data);
+    }
 
     return ok({ order: data });
   }

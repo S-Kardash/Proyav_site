@@ -66,6 +66,15 @@ alter table orders add column if not exists cost      numeric default 0;
 alter table orders add column if not exists paid_at   timestamptz;
 alter table orders add column if not exists shipped_at timestamptz;
 
+-- ── 6. Telegram-сповіщення фотографу (MARKETING_CONTEXT 8.4) ────────
+-- tg_chat_id    — куди слати пінг «вашого клієнта оплачено» (set через webhook).
+-- tg_link_token — стабільний токен у deep-link t.me/<bot>?start=<token>, за яким
+--                 webhook знаходить фотографа й прив'язує його chat_id.
+alter table photographers add column if not exists tg_chat_id    text;
+alter table photographers add column if not exists tg_link_token text;
+create unique index if not exists idx_photographers_tg_link_token
+  on photographers(tg_link_token) where tg_link_token is not null;
+
 -- ── 5. Стартові позиції складу під Прояв ────────────────────────────
 insert into inventory (name, unit, qty, min_qty, note) values
   ('Оксамитові конверти latte',            'шт',    0, 5,  'Малий/середній набір'),

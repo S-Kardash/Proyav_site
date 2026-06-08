@@ -33,8 +33,26 @@ export async function onRequest(context) {
     const monthRevenue   = thisMonth.reduce((s, o) => s + (o.total_amount || 0), 0);
     const allTimeRevenue = (orders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
 
+    // ── Telegram link state (8.4): lazily mint a stable link token so the
+    // cabinet can build t.me/<bot>?start=<token>; report connected status. ──
+    let telegram = { connected: false, link_token: null, bot_username: env.TG_BOT_USERNAME || null };
+    try {
+      const me = await client.query('photographers', {
+        select: 'id,tg_chat_id,tg_link_token', filters: { id: `eq.${phId}` }, single: true,
+      });
+      let linkToken = me && me.tg_link_token;
+      if (!linkToken) {
+        linkToken = randomToken(16);
+        await client.query('photographers', {
+          method: 'PATCH', filters: { id: `eq.${phId}` }, body: { tg_link_token: linkToken },
+        });
+      }
+      telegram = { connected: !!(me && me.tg_chat_id), link_token: linkToken, bot_username: env.TG_BOT_USERNAME || null };
+    } catch (e) { console.error('[partner-orders] telegram state:', e.message); }
+
     return ok({
       orders: orders || [],
+      telegram,
       stats: {
         total:              totalOrders,
         this_month:         thisMonth.length,
