@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПРОЯВ — Статус замовлення</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { background: var(--ink-darkroom); color: var(--paper); min-height: 100vh; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 40px 24px 64px; }
+
+  .head-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo); font-size: 20px; text-align: center; color: var(--paper); }
+  .head-rule { width: 40px; height: 1px; background: var(--paper-30); margin: 14px auto 34px; }
+
+  .h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 7vw, 38px); line-height: 1.08; margin-bottom: 8px; }
+  .h1 em { font-style: italic; color: var(--sepia); }
+  .sub { font-size: 14px; line-height: 1.6; color: var(--paper-70); margin-bottom: 30px; }
+
+  .meta-card { display: flex; justify-content: space-between; gap: 14px; align-items: center; background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: var(--r-3); padding: 16px 18px; margin-bottom: 28px; }
+  .meta-product { font-family: var(--font-display); font-size: 18px; }
+  .meta-sub { font-size: 11px; font-family: var(--font-mono); letter-spacing: .08em; color: var(--paper-50); text-transform: uppercase; margin-top: 3px; }
+  .meta-amount { font-family: var(--font-display); font-size: 22px; color: var(--sepia); white-space: nowrap; }
+
+  /* Timeline */
+  .timeline { position: relative; margin: 0 0 28px; padding: 0; list-style: none; }
+  .tl-step { position: relative; display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding-bottom: 26px; }
+  .tl-step:last-child { padding-bottom: 0; }
+  /* connector line */
+  .tl-step:not(:last-child)::before { content: ''; position: absolute; left: 16px; top: 30px; bottom: 0; width: 2px; background: var(--paper-15); }
+  .tl-step.done:not(:last-child)::before { background: var(--sepia); }
+  .tl-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--ink-graphite); border: 2px solid var(--paper-15); color: var(--paper-30); z-index: 1; flex-shrink: 0; transition: .3s; }
+  .tl-step.done .tl-dot { background: var(--sepia); border-color: var(--sepia); color: var(--ink-darkroom); }
+  .tl-step.current .tl-dot { background: var(--ink-graphite); border-color: var(--sepia); color: var(--sepia); box-shadow: 0 0 0 4px rgba(196,149,108,.14); }
+  .tl-body { padding-top: 5px; }
+  .tl-title { font-family: var(--font-display); font-size: 18px; color: var(--paper-30); transition: color .3s; }
+  .tl-step.done .tl-title, .tl-step.current .tl-title { color: var(--paper); }
+  .tl-step.current .tl-title { color: var(--sepia); }
+  .tl-desc { font-size: 13px; line-height: 1.55; color: var(--paper-50); margin-top: 4px; }
+  .tl-step.current .tl-desc { color: var(--paper-70); }
+  .tl-time { font-size: 10px; font-family: var(--font-mono); letter-spacing: .08em; color: var(--paper-30); margin-top: 6px; text-transform: uppercase; }
+
+  /* TTN */
+  .ttn-card { background: rgba(196,149,108,.08); border: 1px solid rgba(196,149,108,.3); border-radius: var(--r-3); padding: 16px 18px; margin: 4px 0 28px; }
+  .ttn-lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--sepia); margin-bottom: 6px; }
+  .ttn-num { font-family: var(--font-mono); font-size: 18px; color: var(--paper); letter-spacing: .04em; }
+  .ttn-track { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; background: var(--sepia); color: var(--ink-darkroom); text-decoration: none; padding: 10px 18px; border-radius: var(--r-pill); font-family: var(--font-body); font-weight: 500; font-size: 13px; }
+  .ttn-track:hover { background: #d4a87c; }
+
+  .footer-note { font-size: 12px; color: var(--paper-50); line-height: 1.6; text-align: center; margin-top: 8px; }
+  .footer-note a { color: var(--paper-70); }
+
+  .state { text-align: center; padding: 40px 0; }
+  .state-sp { width: 26px; height: 26px; border: 2px solid var(--paper-15); border-top-color: var(--sepia); border-radius: 50%; margin: 0 auto 14px; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hide { display: none !important; }
+</style>
+</head>
+<body class="theme-dark">
+  <div class="wrap">
+    <div class="head-logo">ПРОЯВ</div>
+    <div class="head-rule"></div>
+
+    <!-- Loading -->
+    <div class="state" id="loading">
+      <div class="state-sp"></div>
+      <div class="sub" style="margin:0">Шукаємо ваше замовлення…</div>
+    </div>
+
+    <!-- Error -->
+    <div class="state hide" id="error">
+      <h1 class="h1">Не знайшли <em>замовлення</em>.</h1>
+      <p class="sub">Посилання неповне або застаріле. Перевірте, що відкрили його повністю.</p>
+      <p class="footer-note"><a href="/order">Зробити нове замовлення →</a></p>
+    </div>
+
+    <!-- Content -->
+    <div id="content" class="hide">
+      <h1 class="h1" id="greeting">Ваше <em>проявлення</em>.</h1>
+      <p class="sub" id="lead">Стежте за тим, як ваші кадри стають об'єктом, який можна тримати в руках.</p>
+
+      <div class="meta-card">
+        <div>
+          <div class="meta-product" id="m-product">—</div>
+          <div class="meta-sub" id="m-date">—</div>
+        </div>
+        <div class="meta-amount hide" id="m-amount"></div>
+      </div>
+
+      <ol class="timeline" id="timeline"></ol>
+
+      <div class="ttn-card hide" id="ttn-card">
+        <div class="ttn-lbl">Номер накладної · Нова Пошта</div>
+        <div class="ttn-num" id="ttn-num">—</div>
+        <a class="ttn-track" id="ttn-track" href="#" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Відстежити на Новій Пошті
+        </a>
+      </div>
+
+      <p class="footer-note">Питання щодо замовлення? <a href="/">Напишіть нам</a> — підкажемо.</p>
+    </div>
+  </div>
+
+<script>
+const STEPS = [
+  { key:'accepted', title:'Прийнято',    desc:'Ми отримали ваше замовлення й передали його в роботу.' },
+  { key:'develop',  title:'Проявляємо',  desc:'Відкриваємо кожен кадр, контролюємо друк на Epson SureLab і пакуємо в оксамит. Готово за 48 годин.' },
+  { key:'sent',     title:'Відправлено', desc:'Ваш набір у дорозі Новою Поштою.' },
+  { key:'done',     title:'Завершено',   desc:'Сподіваємось, набір вас потішив. Будемо раді бачити його у вас удома 🤍' },
+];
+// order.status → index of the reached step
+const STATUS_STEP = { new:0, uploaded:1, in_progress:1, sent:2, paid:3 };
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtDate(iso){
+  if(!iso) return '';
+  try { return new Date(iso).toLocaleDateString('uk-UA',{day:'2-digit',month:'long'}); } catch(e){ return ''; }
+}
+
+function show(id){ document.getElementById(id).classList.remove('hide'); }
+function hide(id){ document.getElementById(id).classList.add('hide'); }
+
+function render(d){
+  hide('loading');
+  hide('error');
+  show('content');
+
+  document.getElementById('greeting').innerHTML = d.first_name
+    ? `${esc(d.first_name)}, ваше <em>проявлення</em>.`
+    : `Ваше <em>проявлення</em>.`;
+
+  document.getElementById('m-product').textContent = d.product || 'Друк';
+  document.getElementById('m-date').textContent = d.created_at ? ('Замовлено ' + fmtDate(d.created_at)) : '';
+  const a = document.getElementById('m-amount');
+  if (d.total_amount) { a.textContent = d.total_amount + '₴'; a.classList.remove('hide'); }
+  else a.classList.add('hide');
+
+  const reached = STATUS_STEP[d.status] ?? 0;
+
+  // Timestamps per step (best-effort)
+  const stamp = [
+    d.created_at,
+    d.uploaded_at,
+    d.shipped_at,
+    d.paid_at,
+  ];
+
+  document.getElementById('timeline').innerHTML = STEPS.map((s, i) => {
+    const cls = i < reached ? 'done' : (i === reached ? 'current' : '');
+    const doneMark = i < reached || (i === reached && reached === STEPS.length - 1);
+    const icon = doneMark
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : `<span style="font-family:var(--font-display);font-style:italic;font-size:15px">${i+1}</span>`;
+    const time = (i <= reached && stamp[i]) ? `<div class="tl-time">${fmtDate(stamp[i])}</div>` : '';
+    return `<li class="tl-step ${cls}">
+      <div class="tl-dot">${icon}</div>
+      <div class="tl-body">
+        <div class="tl-title">${s.title}</div>
+        <div class="tl-desc">${s.desc}</div>
+        ${time}
+      </div>
+    </li>`;
+  }).join('');
+
+  // TTN
+  if (d.ttn && reached >= 2) {
+    document.getElementById('ttn-num').textContent = d.ttn;
+    document.getElementById('ttn-track').href = 'https://novaposhta.ua/tracking/?cargo_number=' + encodeURIComponent(d.ttn);
+    show('ttn-card');
+  } else {
+    hide('ttn-card');
+  }
+}
+
+(async function(){
+  const token = (new URLSearchParams(location.search).get('t') || '').trim();
+  if (!token) { hide('loading'); show('error'); return; }
+  try {
+    const r = await fetch('/api-order-status?t=' + encodeURIComponent(token));
+    if (!r.ok) throw new Error('not found');
+    const d = await r.json();
+    render(d);
+  } catch (e) {
+    hide('loading'); show('error');
+  }
+})();
+</script>
+</body>
+</html>

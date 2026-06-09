@@ -483,6 +483,15 @@
   }
   .success-order-id .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
   .success-order-id strong { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); letter-spacing: 0.15em; }
+  .track-order-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    margin: -10px 0 28px; padding: 12px 22px;
+    background: var(--sepia); color: var(--ink-darkroom);
+    border-radius: var(--r-pill, 999px); text-decoration: none;
+    font-family: var(--font-body); font-weight: 500; font-size: 14px;
+    transition: background 0.2s;
+  }
+  .track-order-btn:hover { background: #d4a87c; }
 
   /* ──────── FOOTER ──────── */
   .footer {
@@ -988,6 +997,11 @@
           <span class="lbl">НОМЕР ЗАМОВЛЕННЯ</span>
           <strong id="success-order-num">ПРЯ-000000</strong>
         </div>
+
+        <a class="track-order-btn" id="track-order-btn" href="#" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Відстежити замовлення
+        </a>
 
         <p style="font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--paper-50);margin-bottom:8px">ЩО ВІДБУВАЄТЬСЯ ДАЛІ</p>
         <ol style="list-style:none;padding:0;display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
@@ -2963,11 +2977,15 @@ async function submitOrder(e) {
   // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
   finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
 
-  // Save retail order to Supabase (non-blocking, non-fatal)
+  // Save retail order to Supabase (non-blocking, non-fatal).
+  // Capture the order token → surface a client status link on the success screen.
   if (!MAGIC_TOKEN) {
-    saveRetailOrderToSupabase(orderId, tq, totalAmt).catch(e =>
-      console.warn('[submit] retail Supabase save failed:', e.message)
-    );
+    saveRetailOrderToSupabase(orderId, tq, totalAmt)
+      .then(res => { if (res && res.token) setStatusLink(res.token); })
+      .catch(e => console.warn('[submit] retail Supabase save failed:', e.message));
+  } else {
+    // Magic-link order: the token is already in the URL.
+    setStatusLink(MAGIC_TOKEN);
   }
 
   let tgOk = false;
@@ -3055,6 +3073,15 @@ function celebrate() {
   })();
 }
 
+/* ─ Client status link on the success screen ─ */
+function setStatusLink(token) {
+  if (!token) return;
+  const btn = document.getElementById('track-order-btn');
+  if (!btn) return;
+  btn.href = '/status?t=' + encodeURIComponent(token);
+  btn.style.display = '';
+}
+
 /* ─ Reset ─ */
 function resetApp() {
   S.photos.forEach(p=>URL.revokeObjectURL(p.previewUrl));
@@ -3066,6 +3093,7 @@ function resetApp() {
   document.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
   document.getElementById('photos-list').innerHTML = '';   // clear photo cards DOM
   clearDraft();
+  const trackBtn = document.getElementById('track-order-btn'); if(trackBtn){ trackBtn.style.display='none'; trackBtn.href='#'; }
   const b = document.getElementById('photo-recovery-banner'); if(b) b.remove();
   setDelivery('nova'); setIdentType('instagram');
   updateUploadVisibility(); updateSummary();
