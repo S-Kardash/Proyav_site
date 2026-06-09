@@ -19,6 +19,10 @@ Proyav_site.zip
 _reference/
 _research_text.txt
 
+# Design source & raw product media (heavy; optimized assets go in /assets instead)
+Дизайн_кабінет/
+товар_фото/
+
 # OS / editor
 .DS_Store
 Thumbs.db

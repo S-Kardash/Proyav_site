@@ -3,147 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ПРОЯВ — Кабінет фотографа</title>
+<title>ПРОЯВ — Кабінет автора</title>
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="cabinet.css">
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  body { background: var(--ink-darkroom); color: var(--paper); min-height: 100vh; }
-  .mono { font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 0 20px; }
-
-  /* ── Auth ── */
+  /* ── Auth (not in cabinet.css) ── */
   #auth { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-  .auth-card { width: 100%; max-width: 420px; }
-  .auth-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo); font-size: 22px; text-align: center; }
+  .auth-card { width: 100%; max-width: 410px; }
+  .auth-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo, .3em); font-size: 22px; text-align: center; color: var(--paper); }
   .auth-rule { width: 36px; height: 1px; background: var(--paper-30); margin: 12px auto 26px; }
-  .auth-h { font-family: var(--font-display); font-size: 30px; line-height: 1.1; margin-bottom: 8px; }
+  .auth-h { font-family: var(--font-display); font-size: 30px; line-height: 1.1; margin-bottom: 8px; color: var(--paper); }
   .auth-h em { font-style: italic; color: var(--sepia); }
   .auth-sub { font-size: 13.5px; line-height: 1.6; color: var(--paper-70); margin-bottom: 24px; }
-
   .field { margin-bottom: 12px; }
-  .field label { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--paper-50); margin-bottom: 6px; }
-  .inp { width: 100%; background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: var(--r-2); padding: 13px 15px; font-family: var(--font-body); font-size: 15px; color: var(--paper); outline: none; transition: border-color var(--dur-quick); }
+  .field label { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 6px; }
+  .inp { width: 100%; box-sizing: border-box; background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: 4px; padding: 13px 15px; font-family: var(--font-body); font-size: 15px; color: var(--paper); outline: none; transition: border-color .2s; }
   .inp::placeholder { color: var(--paper-30); }
   .inp:focus { border-color: var(--sepia); }
-  /* Native <select> options inherit OS defaults (white bg) → light text became
-     unreadable. Force the brand palette on the dropdown list. */
-  select.inp { appearance: none; -webkit-appearance: none; -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23c4956c' stroke-width='1.6'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 15px center; padding-right: 40px; cursor: pointer; }
-  select.inp option { background: var(--ink-graphite); color: var(--paper); }
-
-  .btn { width: 100%; border: none; border-radius: var(--r-pill); padding: 14px; font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; transition: background var(--dur-quick), opacity var(--dur-quick); }
-  .btn-primary { background: var(--safelight); color: var(--paper); margin-top: 6px; }
-  .btn-primary:hover { background: #c8463a; }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-ghost { background: transparent; color: var(--paper-70); border: 1px solid var(--paper-15); }
-  .btn-ghost:hover { border-color: var(--paper-50); color: var(--paper); }
-
+  select.inp { appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer; padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23c4956c' stroke-width='1.6'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; }
+  select.inp option { background: var(--ink-graphite, #2c2a28); color: var(--paper); }
   .auth-toggle { text-align: center; font-size: 13px; color: var(--paper-50); margin-top: 18px; }
   .auth-toggle a { color: var(--sepia); cursor: pointer; text-decoration: none; }
   .err { color: var(--safelight); font-size: 13px; margin-top: 10px; min-height: 18px; text-align: center; }
   .hide { display: none !important; }
 
-  /* ── App ── */
-  .topbar { display: flex; align-items: center; gap: 12px; height: 60px; border-bottom: 1px solid var(--paper-15); position: sticky; top: 0; background: var(--ink-darkroom); z-index: 50; }
-  .topbar-logo { font-family: var(--font-display); font-weight: 500; letter-spacing: var(--ls-logo); font-size: 17px; }
-  .topbar-name { color: var(--paper-50); font-size: 13px; }
-  .topbar-logout { background: none; border: 1px solid var(--paper-15); color: var(--paper-50); padding: 7px 14px; border-radius: var(--r-pill); cursor: pointer; font-size: 12px; }
-  .topbar-logout:hover { border-color: var(--paper-50); color: var(--paper); }
-  .topbar-bell { position: relative; margin-left: auto; background: none; border: 1px solid var(--paper-15); color: var(--paper-50); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color var(--dur-quick), color var(--dur-quick); }
-  .topbar-bell:hover { border-color: var(--paper-50); color: var(--paper); }
-  .bell-badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--safelight); color: #fff; font-size: 11px; font-weight: 600; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--ink-darkroom); }
-
-  /* Activity feed */
-  .act-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--paper-08); }
-  .act-item:last-child { border-bottom: none; }
-  .act-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sepia); flex-shrink: 0; visibility: hidden; }
-  .act-item.unread .act-dot { visibility: visible; }
-  .act-ic { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--paper-08); color: var(--paper-50); }
-  .act-ic.act-paid { background: rgba(92,203,143,.15); color: #5ccb8f; }
-  .act-ic.act-sent { background: rgba(92,203,143,.12); color: #5ccb8f; }
-  .act-ic.act-uploaded { background: rgba(196,149,108,.16); color: var(--sepia); }
-  .act-ic.act-new { background: rgba(138,133,128,.18); color: var(--silver-400); }
-  .act-body { flex: 1; min-width: 0; }
-  .act-text { font-size: 14px; color: var(--paper); line-height: 1.4; }
-  .act-text strong { font-weight: 600; }
-  .act-time { font-size: 11px; color: var(--paper-50); margin-top: 2px; font-family: var(--font-mono); letter-spacing: .05em; }
-  .act-amount { font-family: var(--font-display); font-size: 17px; color: var(--sepia); white-space: nowrap; }
-
-  /* Telegram connect card */
-  .btn-tg { display: inline-flex; align-items: center; gap: 9px; background: #229ED9; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: var(--r-pill); font-family: var(--font-body); font-weight: 500; font-size: 14px; transition: background var(--dur-quick); }
-  .btn-tg:hover { background: #1b87ba; }
-  .tg-recheck { display: block; margin-top: 12px; background: none; border: none; color: var(--paper-50); font-family: var(--font-body); font-size: 13px; cursor: pointer; padding: 0; text-decoration: underline; }
-  .tg-recheck:hover { color: var(--paper); }
-  .tg-connected { display: flex; align-items: center; gap: 13px; }
-  .tg-connected-ic { width: 38px; height: 38px; border-radius: 50%; background: rgba(92,203,143,.16); color: #5ccb8f; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-  section.block { padding: 26px 0; border-bottom: 1px solid var(--paper-08); }
-  .block-h { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
-  .block-h em { font-style: italic; color: var(--sepia); }
-
-  /* Intent / premium framing */
-  .intent { padding: 22px 20px; background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: var(--r-3); margin: 22px 0; }
-  .intent p { font-size: 14px; line-height: 1.65; color: var(--paper-90); }
-  .intent .pledge { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; font-family: var(--font-mono); font-size: 10px; letter-spacing: var(--ls-mono); text-transform: uppercase; color: var(--sepia); }
-
-  /* Level */
-  .level-card { background: linear-gradient(135deg, var(--ink-graphite), #3a2f28); border: 1px solid var(--paper-15); border-radius: var(--r-3); padding: 20px; margin-bottom: 16px; }
-  .level-top { display: flex; justify-content: space-between; align-items: baseline; }
-  .level-name { font-family: var(--font-display); font-size: 24px; }
-  .level-name em { color: var(--sepia); font-style: italic; }
-  .level-pct { font-family: var(--font-display); font-size: 28px; color: var(--paper); }
-  .level-bar { height: 4px; background: var(--paper-15); border-radius: 999px; margin: 14px 0 8px; overflow: hidden; }
-  .level-bar i { display: block; height: 100%; background: var(--sepia); border-radius: 999px; transition: width .6s var(--ease-emerge); }
-  .level-next { font-size: 12px; color: var(--paper-50); }
-
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .stat { background: var(--paper-08); border: 1px solid var(--paper-08); border-radius: var(--r-2); padding: 14px; text-align: center; }
-  .stat-val { font-family: var(--font-display); font-size: 22px; }
-  .stat-val.accent { color: var(--sepia); }
-  .stat-lbl { font-size: 11px; color: var(--paper-50); margin-top: 2px; line-height: 1.3; }
-
-  /* Trial / link / asset cards */
-  .card { background: var(--paper-08); border: 1px solid var(--paper-15); border-radius: var(--r-3); padding: 20px; margin-bottom: 14px; }
-  .card-title { font-family: var(--font-display); font-size: 18px; margin-bottom: 6px; }
-  .card-sub { font-size: 13px; line-height: 1.6; color: var(--paper-70); margin-bottom: 14px; }
-  .linkbox { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
-  .linkbox .url { flex: 1; min-width: 200px; background: var(--ink-darkroom); border: 1px solid var(--paper-15); border-radius: var(--r-2); padding: 11px 13px; font-family: var(--font-mono); font-size: 12px; color: var(--paper-70); word-break: break-all; }
-  .btn-sm { border: none; border-radius: var(--r-pill); padding: 10px 18px; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; text-align: center; box-sizing: border-box; }
-  /* Fixed min-width so the label swap «Копіювати» → «Скопійовано ✓» doesn't
-     resize the button and jolt the layout. */
-  .btn-copy { background: var(--paper); color: var(--ink-graphite); min-width: 132px; }
-  .btn-copy:hover { background: var(--silver-500); }
-  .btn-wa { background: #25d366; color: #fff; }
-  .btn-trial { background: var(--sepia); color: var(--ink-graphite); display: inline-block; text-decoration: none; padding: 13px 22px; border-radius: var(--r-pill); font-weight: 500; font-size: 14px; }
-  .btn-trial:hover { background: #d4a87c; }
-  .copy-ok { color: #5ccb8f; font-size: 12px; align-self: center; }
-
-  /* Orders */
-  .order { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--paper-08); }
-  .order:last-child { border-bottom: none; }
-  .order-info { flex: 1; min-width: 0; }
-  .order-name { font-size: 14px; font-weight: 500; }
-  .order-meta { font-size: 12px; color: var(--paper-50); margin-top: 2px; }
-  .order-comm { text-align: right; }
-  .order-comm-val { font-family: var(--font-display); font-size: 17px; color: var(--sepia); }
-  .order-comm-lbl { font-size: 10px; color: var(--paper-50); }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: var(--r-pill); font-size: 11px; font-family: var(--font-mono); letter-spacing: .08em; }
-  .b-new { background: rgba(138,133,128,.2); color: var(--silver-400); }
-  .b-uploaded { background: rgba(196,149,108,.18); color: var(--sepia); }
-  .b-in_progress { background: rgba(196,149,108,.18); color: var(--sepia); }
-  .b-sent { background: rgba(92,203,143,.15); color: #5ccb8f; }
-  .b-paid { background: rgba(92,203,143,.2); color: #5ccb8f; }
-  .empty { text-align: center; padding: 30px 20px; color: var(--paper-50); font-size: 14px; line-height: 1.6; }
-
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 100px); background: var(--ink-graphite); color: var(--paper); border: 1px solid var(--paper-15); padding: 12px 22px; border-radius: var(--r-pill); font-size: 14px; z-index: 999; transition: transform .3s var(--ease-emerge); pointer-events: none; }
-  .toast.show { transform: translate(-50%, 0); }
-  .footer { text-align: center; padding: 28px 0 40px; }
+  /* ── Cabinet extras (not in cabinet.css) ── */
+  .pv-level { background: linear-gradient(135deg, var(--pv-surf2), rgba(196,149,108,.06)); border: 1px solid var(--pv-line); padding: 20px; }
+  .pv-level-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .pv-level-name { font-family: var(--font-display); font-size: 22px; color: var(--paper); }
+  .pv-level-name em { font-style: italic; color: var(--acc); }
+  .pv-level-pct { font-family: var(--font-display); font-size: 26px; color: var(--paper); }
+  .pv-level-bar { height: 4px; background: var(--paper-15); border-radius: 999px; margin: 14px 0 8px; overflow: hidden; }
+  .pv-level-bar i { display: block; height: 100%; background: var(--acc); border-radius: 999px; transition: width .6s var(--ease-emerge); }
+  .pv-level-next { font-size: 12px; color: var(--paper-50); }
+  .pv-badge.paid { background: rgba(92,203,143,.16); color: #5ccb8f; }
+  .pv-badge.paid::before { background: #5ccb8f; }
+  .pv-comm { font-family: var(--font-display); font-style: italic; font-size: 17px; color: var(--acc); }
+  .pv-linkbox { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+  .pv-url { flex: 1; min-width: 180px; background: var(--ink-darkroom); border: 1px solid var(--pv-line); padding: 11px 13px; font-family: var(--font-mono); font-size: 12px; color: var(--paper-70); word-break: break-all; }
+  .pv-empty { text-align: center; padding: 34px 20px; color: var(--paper-50); font-size: 14px; line-height: 1.6; border: 1px dashed var(--pv-line); }
+  .pv-btn--tg { background: #229ED9; color: #fff; border-radius: 999px; }
+  .pv-btn--tg:hover { filter: brightness(1.08); }
+  .pv-tg-ok { display: flex; align-items: center; gap: 12px; }
+  .pv-tg-ok-ic { width: 38px; height: 38px; border-radius: 50%; background: rgba(92,203,143,.16); color: #5ccb8f; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pv-toast { position: fixed; bottom: 92px; left: 50%; transform: translate(-50%, 120px); background: var(--ink-graphite, #2c2a28); color: var(--paper); border: 1px solid var(--pv-line); padding: 12px 22px; border-radius: 999px; font-size: 14px; z-index: 999; transition: transform .3s var(--ease-emerge); pointer-events: none; }
+  .pv-toast.show { transform: translate(-50%, 0); }
+  @media (min-width: 980px) { .pv-toast { bottom: 24px; } }
+  .pv-form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 460px; }
 </style>
 </head>
-<body class="theme-dark">
+<body class="pv pv-scan theme-dark" data-theme="dark">
 
 <!-- ════════ AUTH ════════ -->
 <div id="auth">
@@ -151,7 +64,6 @@
     <div class="auth-logo">ПРОЯВ</div>
     <div class="auth-rule"></div>
 
-    <!-- Register (default) -->
     <div id="register-view">
       <h1 class="auth-h">Ваша робота<br>не повинна <em>в'янути</em>.</h1>
       <p class="auth-sub">Ви рекомендуєте — ми проявляємо ваш кадр в оксамиті так, щоб він зберіг задум. Ваш колір недоторканний. Почніть із безкоштовного пробного відбитка.</p>
@@ -160,18 +72,17 @@
       <div class="field"><label>Пароль</label><input class="inp" id="r-pass" type="password" placeholder="мінімум 6 символів" autocomplete="new-password"></div>
       <div class="field"><label>Місто</label><input class="inp" id="r-city" placeholder="Ваше місто"></div>
       <div class="field"><label>Телефон <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="r-phone" type="tel" placeholder="+380"></div>
-      <button class="btn btn-primary" id="r-btn" onclick="register()">Спробувати безкоштовно →</button>
+      <button class="pv-btn pv-btn--primary pv-btn--full" id="r-btn" onclick="register()" style="margin-top:6px">Спробувати безкоштовно →</button>
       <div class="err" id="r-err"></div>
       <div class="auth-toggle">Уже маєте акаунт? <a onclick="showLogin()">Увійти</a></div>
     </div>
 
-    <!-- Login -->
     <div id="login-view" class="hide">
       <h1 class="auth-h">З поверненням,<br><em>авторе</em>.</h1>
-      <p class="auth-sub">Увійдіть, щоб створити посилання клієнту й бачити комісію.</p>
+      <p class="auth-sub">Увійдіть, щоб бачити замовлення, комісію і створювати посилання клієнтам.</p>
       <div class="field"><label>Email</label><input class="inp" id="l-email" type="email" placeholder="you@email.com" autocomplete="username"></div>
       <div class="field"><label>Пароль</label><input class="inp" id="l-pass" type="password" placeholder="Пароль" autocomplete="current-password"></div>
-      <button class="btn btn-primary" id="l-btn" onclick="login()">Увійти</button>
+      <button class="pv-btn pv-btn--primary pv-btn--full" id="l-btn" onclick="login()" style="margin-top:6px">Увійти</button>
       <div class="err" id="l-err"></div>
       <div class="auth-toggle">Ще не з нами? <a onclick="showRegister()">Спробувати безкоштовно</a></div>
     </div>
@@ -179,120 +90,73 @@
 </div>
 
 <!-- ════════ APP ════════ -->
-<div id="app" class="hide">
-  <div class="wrap">
-    <div class="topbar">
-      <span class="topbar-logo">ПРОЯВ</span>
-      <span class="topbar-name" id="ph-name"></span>
-      <button class="topbar-bell" id="bell-btn" onclick="openActivity()" aria-label="Сповіщення" title="Сповіщення">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="bell-badge hide" id="bell-badge">0</span>
-      </button>
-      <button class="topbar-logout" onclick="logout()">Вийти</button>
+<div id="app" class="pv-shell hide">
+  <aside class="pv-side">
+    <a class="pv-brand" href="#" data-go="home" style="text-decoration:none">
+      <span class="pv-mark" aria-hidden="true"></span>
+      <span class="pv-brand-text">
+        <span class="pv-brand-name">ПРОЯВ</span>
+        <span class="pv-brand-meta">Кабінет автора</span>
+      </span>
+    </a>
+    <nav class="pv-nav" aria-label="Розділи кабінету">
+      <button class="pv-nav-btn" data-page="home"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>Кадри<span class="pv-nav-count" id="nav-active">0</span></button>
+      <button class="pv-nav-btn" data-page="archive"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/></svg></span>Архів<span class="pv-nav-count" id="nav-done">0</span></button>
+      <button class="pv-nav-btn" data-page="order"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></span>Проявити</button>
+      <button class="pv-nav-btn" data-page="profile"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6.5" r="2.8"/><path d="M3.5 15c0-2.8 2.5-4.3 5.5-4.3s5.5 1.5 5.5 4.3"/></svg></span>Профіль</button>
+    </nav>
+    <div class="pv-author">
+      <span class="pv-avatar" id="pv-avatar">—</span>
+      <span class="pv-author-text">
+        <span class="pv-author-name" id="pv-author-name">—</span>
+        <span class="pv-author-meta">майстерня · online</span>
+      </span>
+      <span class="pv-dot" title="online"></span>
     </div>
+  </aside>
 
-    <!-- Premium intent -->
-    <div class="intent">
-      <p>Ви не продаєте — ви <strong>завершуєте досвід</strong>. Клієнт отримує об'єкт, гідний вашої зйомки; ваше ім'я живе на картці кожного набору. Ми друкуємо ваш файл точно як ви віддали.</p>
-      <span class="pledge">● ВАШ КОЛІР НЕДОТОРКАННИЙ — ЛИШЕ КОНТРОЛЬ ДРУКУ</span>
-    </div>
-
-    <!-- Level + stats -->
-    <section class="block" style="border-bottom:none; padding-bottom:8px">
-      <div class="level-card" id="level-card"></div>
-      <div class="stats" id="stats"></div>
-    </section>
-
-    <!-- Activity feed -->
-    <section class="block" id="activity-block" style="display:none">
-      <h2 class="block-h">Активність</h2>
-      <div id="activity-feed" style="margin-top:14px"></div>
-    </section>
-
-    <!-- Telegram notifications -->
-    <section class="block" id="telegram-block" style="display:none">
-      <div class="card" id="telegram-card"></div>
-    </section>
-
-    <!-- Free trial -->
-    <section class="block">
-      <div class="card" style="border-color:rgba(196,149,108,.4)">
-        <div class="card-title">Безкоштовний пробний відбиток</div>
-        <div class="card-sub">Надішліть один свій кадр — ми надрукуємо на Epson SureLab, запакуємо в оксамит і відправимо вам. Відчуйте якість руками й покажіть зразок клієнтам.</div>
-        <a class="btn-trial" id="trial-link" href="#">Надіслати свій кадр →</a>
-      </div>
-    </section>
-
-    <!-- Reusable link + asset -->
-    <section class="block">
-      <h2 class="block-h">Ваше <em>посилання</em></h2>
-      <p class="card-sub" style="margin:6px 0 16px">Додайте його у футер галереї або сторіс — клієнт відкриє, завантажить кадри, а замовлення зарахується вам. Працює багаторазово.</p>
-      <div class="card">
-        <div class="linkbox" style="margin-bottom:16px">
-          <div class="url" id="ref-url">—</div>
-          <button class="btn-sm btn-copy" onclick="copyText(document.getElementById('ref-url').textContent, this)">Копіювати</button>
-        </div>
-        <div class="mono" style="margin-bottom:8px">Готовий рядок для галереї</div>
-        <div class="linkbox">
-          <div class="url" id="asset-line">—</div>
-          <button class="btn-sm btn-copy" onclick="copyText(document.getElementById('asset-line').textContent, this)">Копіювати</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Create order for a specific client -->
-    <section class="block">
-      <h2 class="block-h">Замовлення <em>для клієнта</em></h2>
-      <p class="card-sub" style="margin:6px 0 16px">Створіть персональне посилання — клієнт лише завантажить фото, решту зробимо ми.</p>
-      <div class="card">
-        <div class="field"><label>Ім'я клієнта</label><input class="inp" id="c-name" placeholder="Оксана"></div>
-        <div class="field"><label>Телефон</label><input class="inp" id="c-phone" type="tel" placeholder="+380"></div>
-        <div class="field"><label>Instagram <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-instagram" placeholder="@username"></div>
-        <div class="field"><label>Набір</label>
-          <select class="inp" id="c-product"></select>
-        </div>
-        <div class="field"><label>Нотатка для Прояву <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-notes" placeholder="весілля 15 травня…"></div>
-        <button class="btn btn-primary" id="c-btn" onclick="createOrder()" style="border-radius:var(--r-pill)">Створити посилання</button>
-        <div id="c-result" class="hide" style="margin-top:14px">
-          <div class="linkbox">
-            <div class="url" id="c-url"></div>
-            <button class="btn-sm btn-copy" onclick="copyText(lastLink, this)">Копіювати</button>
-            <button class="btn-sm btn-wa" onclick="shareLink()">Поділитися</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Orders -->
-    <section class="block" style="border-bottom:none">
-      <h2 class="block-h">Мої <em>замовлення</em></h2>
-      <div id="orders" style="margin-top:12px"></div>
-    </section>
-
-    <div class="footer mono">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ</div>
-  </div>
+  <main class="pv-main">
+    <div class="pv-wrap" id="pv-main"></div>
+  </main>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="pv-toast" id="toast"></div>
 
 <script>
 const API  = '';
 const SITE = location.origin;
 let TOKEN   = localStorage.getItem('partner_token');
 let PH_DATA = JSON.parse(localStorage.getItem('partner_data') || 'null');
-let allOrders = [];
+
+let DATA = { orders: [], stats: {}, telegram: null };
 let curPct = 12;
-let lastLink = '';
+let curPage = 'home';
 
-const STATUS = { new:['Нове','b-new'], uploaded:['Фото є','b-uploaded'], in_progress:['В роботі','b-in_progress'], sent:['Відправлено','b-sent'], paid:['Оплачено','b-paid'] };
+// ── Status model (matches admin / orders table) ──
+const FLOW = ['new', 'uploaded', 'in_progress', 'sent', 'paid'];
+const STATUS = {
+  new:         { label: 'Нове',          short: 'Нове' },
+  uploaded:    { label: 'Фото отримано', short: 'Фото' },
+  in_progress: { label: 'В роботі',      short: 'Друк' },
+  sent:        { label: 'Відправлено',   short: 'Дорога' },
+  paid:        { label: 'Оплачено',      short: 'Оплач.' },
+};
+const BADGE = { new: 'received', uploaded: 'received', in_progress: 'developing', sent: 'sent', paid: 'paid' };
+const ACTIVE_STATUSES = ['new', 'uploaded', 'in_progress'];
 
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function val(id){ return document.getElementById(id).value.trim(); }
+function pkgShort(pt){ return (window.PROYAV && PROYAV.packages[pt] && PROYAV.packages[pt].short) || (pt ? pt : 'Роздрібний друк'); }
+function orderComm(o){ return o.total_amount ? Math.round(o.total_amount * curPct / 100) : 0; }
+function orderRef(o){ return o.token ? 'ПРЯ-' + String(o.token).slice(0,6).toUpperCase() : '№' + o.id; }
+function reachedIdx(status){ const i = FLOW.indexOf(status); return i < 0 ? 0 : i; }
+function fmtDate(iso){ if(!iso) return ''; try { return new Date(iso).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'}); } catch(e){ return ''; } }
+function fmtDateLong(iso){ if(!iso) return ''; try { return new Date(iso).toLocaleDateString('uk-UA',{day:'2-digit',month:'long'}); } catch(e){ return ''; } }
 
-// ── Auth view toggle ──
+/* ════════ AUTH ════════ */
 function showLogin(){ document.getElementById('register-view').classList.add('hide'); document.getElementById('login-view').classList.remove('hide'); }
 function showRegister(){ document.getElementById('login-view').classList.add('hide'); document.getElementById('register-view').classList.remove('hide'); }
 
-// ── Register ──
 async function register(){
   const name=val('r-name'), email=val('r-email'), password=document.getElementById('r-pass').value, city=val('r-city'), phone=val('r-phone');
   const err=document.getElementById('r-err'); err.textContent='';
@@ -309,7 +173,6 @@ async function register(){
   }catch(e){ err.textContent=e.message; btn.disabled=false; btn.textContent='Спробувати безкоштовно →'; }
 }
 
-// ── Login ──
 async function login(){
   const email=val('l-email'), password=document.getElementById('l-pass').value;
   const err=document.getElementById('l-err'); err.textContent='';
@@ -325,89 +188,69 @@ async function login(){
 }
 
 function logout(){ localStorage.removeItem('partner_token'); localStorage.removeItem('partner_data'); location.reload(); }
-
 ['l-email','l-pass'].forEach(id=>{const el=document.getElementById(id); if(el) el.addEventListener('keydown',e=>{if(e.key==='Enter')login();});});
 
-// ── Init ──
+async function apiFetch(url,opts={}){
+  const r=await fetch(url,{...opts,headers:{'Content-Type':'application/json',Authorization:`Bearer ${TOKEN}`,...(opts.headers||{})}});
+  if(r.status===401){ logout(); throw new Error('Сесія закінчилась'); }
+  const d=await r.json(); if(!r.ok) throw new Error(d.error||'Помилка сервера'); return d;
+}
+
+/* ════════ INIT + DATA ════════ */
 function initApp(){
   document.getElementById('auth').classList.add('hide');
   document.getElementById('app').classList.remove('hide');
-  document.getElementById('ph-name').textContent = PH_DATA?.name || '';
-  // reusable link + asset + trial
-  // Багаторазове посилання веде на екран вибору (набір або поштучно), проносячи
-  // атрибуцію фотографа. Пробний відбиток — прямо в /order (1 кадр, вибір зайвий).
-  const ref = `${SITE}/nabir?ph=${PH_DATA.id}`;
-  document.getElementById('ref-url').textContent = ref;
-  document.getElementById('asset-line').textContent = `Надрукувати ці кадри в оксамиті — ${ref}`;
-  document.getElementById('trial-link').href = `/order?ph=${PH_DATA.id}&trial=1`;
-  // product select from config
-  const sel=document.getElementById('c-product');
-  if(window.PROYAV){ sel.innerHTML = PROYAV.order.map(k=>{const p=PROYAV.packages[k];return `<option value="${k}">${esc(p.short)} — ${p.photos} фото (${p.price}₴)</option>`;}).join(''); }
-  loadOrders();
+  const nm = PH_DATA?.name || 'Автор';
+  document.getElementById('pv-author-name').textContent = nm;
+  document.getElementById('pv-avatar').textContent = (nm.trim()[0] || 'А').toUpperCase();
+  let start='home'; try{ const s=localStorage.getItem('pv-page'); if(s&&PAGES[s]) start=s; }catch(e){}
+  go(start);
+  loadData();
 }
 if (TOKEN && PH_DATA) initApp();
 
-// ── Orders + stats ──
-async function loadOrders(){
+async function loadData(){
   try{
     const r=await apiFetch(`${API}/api-partner-orders`);
-    allOrders=r.orders||[];
-    renderStats(r.stats||{});   // sets curPct (used by activity commission)
-    renderActivity(allOrders);
-    renderTelegram(r.telegram);
-    renderOrders();
+    DATA.orders = r.orders || [];
+    DATA.stats  = r.stats || {};
+    DATA.telegram = r.telegram || null;
+    curPct = (DATA.stats.tier && DATA.stats.tier.pct) || DATA.stats.commission_pct || 12;
+    document.getElementById('nav-active').textContent = DATA.orders.filter(o=>ACTIVE_STATUSES.includes(o.status)).length;
+    document.getElementById('nav-done').textContent   = DATA.orders.filter(o=>!ACTIVE_STATUSES.includes(o.status)).length;
+    go(curPage); // re-render current page with fresh data
   }catch(e){ toast('Помилка: '+e.message); }
 }
 
-// ── Telegram connect (8.4 part 2) ──
-function renderTelegram(t){
-  const block=document.getElementById('telegram-block');
-  const card=document.getElementById('telegram-card');
-  if(!t || !t.bot_username || !t.link_token){ block.style.display='none'; return; }
-  block.style.display='';
-  if(t.connected){
-    card.innerHTML =
-      `<div class="tg-connected">
-        <div class="tg-connected-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <div><div class="card-title" style="margin:0">Telegram підключено</div>
-        <div class="card-sub" style="margin:4px 0 0">Пінг про кожну оплату приходитиме вам у Telegram.</div></div>
-      </div>`;
-  } else {
-    const link=`https://t.me/${esc(t.bot_username)}?start=${encodeURIComponent(t.link_token)}`;
-    card.innerHTML =
-      `<div class="card-title">Сповіщення в Telegram</div>
-       <div class="card-sub">Підключіть бот — і отримуйте миттєвий пінг «ваш клієнт оплатив — +комісія» прямо в Telegram.</div>
-       <a class="btn-tg" href="${link}" target="_blank" rel="noopener">
-         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.6l-3.32 15.66c-.25 1.1-.9 1.37-1.83.86l-5.05-3.72-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14L18.36 6.1c.4-.36-.09-.56-.62-.2L5.4 13.78l-5.07-1.59c-1.1-.34-1.12-1.1.23-1.63L20.5 3.05c.92-.34 1.72.22 1.44 1.55z"/></svg>
-         Підключити Telegram
-       </a>
-       <button class="tg-recheck" onclick="loadOrders()">Уже підключив — оновити</button>`;
-  }
+/* ════════ STEPPER ════════ */
+function stepperHTML(status){
+  const r = reachedIdx(status);
+  let html='';
+  FLOW.forEach((k,i)=>{
+    const cls = i<r ? 'done' : (i===r ? 'active' : '');
+    html += `<div class="pv-step ${cls}"><span class="pv-step-dot"></span><span class="pv-step-lbl">${STATUS[k].short}</span></div>`;
+    if(i<FLOW.length-1) html += `<span class="pv-step-line ${i<r?'done':''}"></span>`;
+  });
+  return `<div class="pv-stepper">${html}</div>`;
 }
 
-// ── Activity feed (in-cabinet notifications) ──────────────────────────────
-// Кабінет-перший двигун повторних рекомендацій: фотограф бачить «живі» події
-// (особливо оплати + комісію). Telegram-пуш — окремий шар (порція 2).
-const SEEN_KEY = 'partner_last_seen';
+/* ════════ ACTIVITY (feed) ════════ */
 const ACT_META = {
   paid:     { cls:'act-paid',     svg:'<path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' },
   sent:     { cls:'act-sent',     svg:'<path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
   uploaded: { cls:'act-uploaded', svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>' },
   new:      { cls:'act-new',      svg:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>' },
 };
-
-// Найновіша віха кожного замовлення → один елемент стрічки.
 function buildActivity(orders){
   return (orders||[]).map(o=>{
     let type, ts;
-    if (o.paid_at)          { type='paid';     ts=o.paid_at; }
-    else if (o.shipped_at)  { type='sent';     ts=o.shipped_at; }
-    else if (o.uploaded_at) { type='uploaded'; ts=o.uploaded_at; }
-    else                    { type='new';      ts=o.created_at; }
-    return { type, ts:new Date(ts).getTime(), o };
+    if(o.paid_at){type='paid';ts=o.paid_at;}
+    else if(o.shipped_at){type='sent';ts=o.shipped_at;}
+    else if(o.uploaded_at){type='uploaded';ts=o.uploaded_at;}
+    else{type='new';ts=o.created_at;}
+    return {type, ts:new Date(ts).getTime(), o};
   }).filter(a=>a.ts).sort((a,b)=>b.ts-a.ts);
 }
-
 function relTime(ms){
   const s=Math.floor((Date.now()-ms)/1000);
   if(s<60) return 'щойно';
@@ -416,99 +259,154 @@ function relTime(ms){
   const d=Math.floor(h/24); if(d<7) return d===1?'учора':d+' дн тому';
   return new Date(ms).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'});
 }
-
-function renderActivity(orders){
-  const block=document.getElementById('activity-block');
-  const feed=document.getElementById('activity-feed');
-  const acts=buildActivity(orders);
-  if(!acts.length){ block.style.display='none'; document.getElementById('bell-badge').classList.add('hide'); return; }
-  block.style.display='';
-
-  // Перший візит → беремо «зараз» за базу, щоб не залити лічильник усім підряд.
-  const stored=localStorage.getItem(SEEN_KEY);
-  const lastSeen = stored===null ? Date.now() : Number(stored);
-  if(stored===null) localStorage.setItem(SEEN_KEY, String(lastSeen));
-
-  let unread=0;
-  feed.innerHTML = acts.slice(0,8).map(a=>{
-    const isNew = a.ts > lastSeen;
-    if(isNew) unread++;
-    const meta = ACT_META[a.type];
-    const name = esc(a.o.client_name||'Клієнт');
-    let text, amount='';
-    if(a.type==='paid'){
-      const comm = a.o.total_amount ? Math.round(a.o.total_amount*curPct/100) : 0;
-      text = `<strong>${name}</strong> — оплачено`;
-      if(comm) amount = `<div class="act-amount">+${comm}₴</div>`;
-    } else if(a.type==='sent'){
-      text = `Замовлення <strong>${name}</strong> відправлено`;
-    } else if(a.type==='uploaded'){
-      text = `<strong>${name}</strong> завантажив кадри`;
-    } else {
-      text = `Нове замовлення — <strong>${name}</strong>`;
-    }
-    return `<div class="act-item ${isNew?'unread':''}">
-      <span class="act-dot"></span>
-      <div class="act-ic ${meta.cls}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg></div>
-      <div class="act-body"><div class="act-text">${text}</div><div class="act-time">${relTime(a.ts)}</div></div>
-      ${amount}
+function feedHTML(){
+  const acts = buildActivity(DATA.orders).slice(0,7);
+  if(!acts.length) return `<div class="pv-empty">Тут з'являться події по ваших замовленнях.</div>`;
+  return `<div class="pv-feed">` + acts.map(a=>{
+    const m=ACT_META[a.type]; const name=esc(a.o.client_name||'Клієнт');
+    let txt, extra='';
+    if(a.type==='paid'){ const c=orderComm(a.o); txt=`<strong>${name}</strong> — оплачено`; if(c) extra=` · +${c}₴`; }
+    else if(a.type==='sent') txt=`Замовлення <strong>${name}</strong> відправлено`;
+    else if(a.type==='uploaded') txt=`<strong>${name}</strong> завантажив кадри`;
+    else txt=`Нове замовлення — <strong>${name}</strong>`;
+    return `<div class="pv-feed-row">
+      <div class="pv-feed-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${m.svg}</svg></div>
+      <div style="flex:1"><div class="pv-feed-txt">${txt}${extra}</div><span class="pv-feed-at">${relTime(a.ts)}</span></div>
     </div>`;
-  }).join('');
-
-  const badge=document.getElementById('bell-badge');
-  if(unread>0){ badge.textContent=unread>9?'9+':unread; badge.classList.remove('hide'); }
-  else badge.classList.add('hide');
+  }).join('') + `</div>`;
 }
 
-// Клік по дзвіночку → прокрутка до стрічки + позначити прочитаним.
-function openActivity(){
-  const block=document.getElementById('activity-block');
-  if(block && block.style.display!=='none') block.scrollIntoView({behavior:'smooth',block:'start'});
-  localStorage.setItem(SEEN_KEY, String(Date.now()));
-  document.getElementById('bell-badge').classList.add('hide');
-  document.querySelectorAll('.act-item.unread').forEach(el=>el.classList.remove('unread'));
+/* ════════ HOME ════════ */
+function orderCardHTML(o){
+  const bc = BADGE[o.status] || 'received';
+  const comm = orderComm(o);
+  return `<div class="pv-order ${o.status}" data-order="${o.id}" tabindex="0" role="button">
+    <div class="pv-order-top"><span class="pv-badge ${bc}">${STATUS[o.status]?.label||o.status}</span><span class="pv-cap">${orderRef(o)}</span></div>
+    <div class="pv-order-title">${esc(o.client_name||'Клієнт')}</div>
+    ${stepperHTML(o.status)}
+    <div class="pv-order-foot">
+      <div><span class="pv-cap" style="display:block;margin-bottom:3px">${esc(pkgShort(o.product_type))}</span><span class="pv-order-eta">${o.total_amount?o.total_amount+' ₴':'—'}</span></div>
+      <span class="pv-link">${comm?'+'+comm+'₴ · ':''}Деталі →</span>
+    </div>
+  </div>`;
 }
-
-function renderStats(s){
-  const tier = s.tier || { name:'Партнер', pct: s.commission_pct||12, next:null };
-  curPct = tier.pct;
-  const total = s.total||0;
-  // level card
-  let bar = 100, nextTxt = 'Максимальний рівень — дякуємо, що з нами';
-  if(tier.next){
-    const span = (total + tier.next.ordersLeft) || 1;
-    bar = Math.min(100, Math.round(total / span * 100));
-    nextTxt = `Ще ${tier.next.ordersLeft} замовлень до рівня «${tier.next.name}» — ${tier.next.pct}% комісії`;
-  }
-  document.getElementById('level-card').innerHTML =
-    `<div class="level-top"><span class="level-name">Рівень <em>${esc(tier.name)}</em></span><span class="level-pct">${tier.pct}%</span></div>
-     <div class="level-bar"><i style="width:${bar}%"></i></div>
-     <div class="level-next">${esc(nextTxt)}</div>`;
-  // stats
-  document.getElementById('stats').innerHTML =
-    `<div class="stat"><div class="stat-val">${s.this_month||0}</div><div class="stat-lbl">Цього місяця</div></div>
-     <div class="stat"><div class="stat-val accent">${s.month_commission||0}₴</div><div class="stat-lbl">Комісія / місяць</div></div>
-     <div class="stat"><div class="stat-val">${s.alltime_commission||0}₴</div><div class="stat-lbl">Усього комісії</div></div>`;
-}
-
-function renderOrders(){
-  const el=document.getElementById('orders');
-  if(!allOrders.length){ el.innerHTML='<div class="empty">Замовлень ще немає.<br>Створіть перше посилання для клієнта ↑</div>'; return; }
-  el.innerHTML = allOrders.map(o=>{
-    const st = STATUS[o.status] || [o.status,'b-new'];
-    const date = new Date(o.created_at).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'});
-    const comm = o.total_amount ? Math.round(o.total_amount*curPct/100) : 0;
-    return `<div class="order">
-      <div class="order-info">
-        <div class="order-name">${esc(o.client_name)}</div>
-        <div class="order-meta"><span class="badge ${st[1]}">${esc(st[0])}</span> · ${date}${o.total_amount?` · ${o.total_amount}₴`:''}</div>
+function renderHome(){
+  const active = DATA.orders.filter(o=>ACTIVE_STATUSES.includes(o.status));
+  const s = DATA.stats;
+  const hour = new Date().getHours();
+  const greet = hour<12?'Доброго ранку':hour<18?'Доброго дня':'Доброго вечора';
+  const ordersHTML = active.length
+    ? `<div class="pv-active-grid">${active.map(orderCardHTML).join('')}</div>`
+    : `<div class="pv-empty">Немає замовлень у роботі.<br>Створіть посилання для клієнта — і воно з'явиться тут.</div>`;
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>${greet}, ${esc((PH_DATA?.name||'авторе').split(' ')[0])}</div>
+        <h1 class="pv-ptitle">Кадри <em>в роботі</em></h1></div>
+      <div class="pv-pmeta"><span><span class="pv-dot" style="display:inline-block;vertical-align:middle"></span> <strong>${active.length}</strong> активні</span></div>
+    </div>
+    <div class="pv-home-cols">
+      <div>
+        ${ordersHTML}
+        <div style="margin-top:24px"><button class="pv-btn pv-btn--primary pv-btn--full" data-go="order">Створити замовлення клієнту</button></div>
       </div>
-      <div class="order-comm"><div class="order-comm-val">${comm?'+'+comm+'₴':'—'}</div><div class="order-comm-lbl">ваша комісія</div></div>
+      <div>
+        <div class="pv-shead"><h2>Рівень <span class="mono">комісія</span></h2></div>
+        ${levelCardHTML()}
+        <div class="pv-shead"><h2>Стрічка <span class="mono">майстерня</span></h2></div>
+        ${feedHTML()}
+      </div>
     </div>`;
-  }).join('');
 }
 
-// ── Create client order ──
+function levelCardHTML(){
+  const s = DATA.stats;
+  const tier = s.tier || { name:'Партнер', pct: curPct, next:null };
+  let bar=100, nextTxt='Максимальний рівень — дякуємо, що з нами';
+  if(tier.next){
+    const span=((s.total||0)+tier.next.ordersLeft)||1;
+    bar=Math.min(100,Math.round((s.total||0)/span*100));
+    nextTxt=`Ще ${tier.next.ordersLeft} замовлень до «${tier.next.name}» — ${tier.next.pct}% комісії`;
+  }
+  return `<div class="pv-level">
+    <div class="pv-level-top"><span class="pv-level-name">Рівень <em>${esc(tier.name)}</em></span><span class="pv-level-pct">${tier.pct}%</span></div>
+    <div class="pv-level-bar"><i style="width:${bar}%"></i></div>
+    <div class="pv-level-next">${esc(nextTxt)}</div>
+    <div class="pv-stats" style="margin-top:16px;border:none">
+      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Цього місяця</div><div class="pv-stat-val" style="font-size:24px">${s.this_month||0}</div></div>
+      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Комісія / міс</div><div class="pv-stat-val" style="font-size:24px;color:var(--acc)">${s.month_commission||0}<span class="u">₴</span></div></div>
+    </div>
+  </div>`;
+}
+
+/* ════════ ARCHIVE ════════ */
+function renderArchive(){
+  const done = DATA.orders.filter(o=>!ACTIVE_STATUSES.includes(o.status));
+  const s = DATA.stats;
+  const list = done.length
+    ? `<div class="pv-active-grid">${done.map(orderCardHTML).join('')}</div>`
+    : `<div class="pv-empty">Архів поки порожній — завершені замовлення з'являться тут.</div>`;
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Завершені проявлення</div>
+        <h1 class="pv-ptitle">Ваш <em>архів</em></h1></div>
+      <div class="pv-pmeta"><span><strong>${done.length}</strong> завершено</span></div>
+    </div>
+    <div class="pv-stats" style="margin-bottom:28px">
+      <div class="pv-stat"><div class="pv-stat-key">Усього замовлень</div><div class="pv-stat-val">${s.total||0}</div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Цього місяця</div><div class="pv-stat-val">${s.this_month||0}</div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Комісія / міс</div><div class="pv-stat-val">${s.month_commission||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Комісія всього</div><div class="pv-stat-val" style="color:var(--acc)">${s.alltime_commission||0}<span class="u">₴</span></div></div>
+    </div>
+    ${list}`;
+}
+
+/* ════════ ORDER (Проявити) ════════ */
+function renderOrder(){
+  const ref = `${SITE}/nabir?ph=${PH_DATA.id}`;
+  const asset = `Надрукувати ці кадри в оксамиті — ${ref}`;
+  const trial = `/order?ph=${PH_DATA.id}&trial=1`;
+  const sets = (window.PROYAV ? PROYAV.order : []).map(k=>{
+    const p=PROYAV.packages[k];
+    return `<option value="${k}">${esc(p.short)} — ${p.photos} фото (${p.price}₴)</option>`;
+  }).join('');
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Нове проявлення</div>
+        <h1 class="pv-ptitle">Проявити <em>ще</em></h1></div>
+    </div>
+
+    <div class="pv-shead"><h2>Ваше посилання <span class="mono">багаторазове</span></h2></div>
+    <div class="pv-card">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:14px">Додайте у футер галереї або сторіс — клієнт обере набір, завантажить кадри, а замовлення зарахується вам. Ваш колір недоторканний.</div>
+      <div class="pv-linkbox"><div class="pv-url" id="ref-url">${esc(ref)}</div><button class="pv-btn pv-btn--mono" onclick="copyText(document.getElementById('ref-url').textContent,this)">Копіювати</button></div>
+      <div class="pv-cap" style="margin:16px 0 6px">Готовий рядок для галереї</div>
+      <div class="pv-linkbox"><div class="pv-url" id="asset-line">${esc(asset)}</div><button class="pv-btn pv-btn--mono" onclick="copyText(document.getElementById('asset-line').textContent,this)">Копіювати</button></div>
+    </div>
+
+    <div class="pv-shead"><h2>Безкоштовний пробний відбиток</h2></div>
+    <div class="pv-card" style="border-color:rgba(196,149,108,.4)">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:14px">Надішліть один свій кадр — надрукуємо на Epson SureLab, запакуємо в оксамит і відправимо вам. Відчуйте якість руками й покажіть зразок клієнтам.</div>
+      <a class="pv-btn pv-btn--primary" href="${trial}">Надіслати свій кадр →</a>
+    </div>
+
+    <div class="pv-shead"><h2>Замовлення для клієнта</h2></div>
+    <div class="pv-card">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:16px">Створіть персональне посилання — клієнт лише завантажить фото, решту зробимо ми.</div>
+      <div class="pv-form-grid">
+        <div class="field"><label>Ім'я клієнта</label><input class="inp" id="c-name" placeholder="Оксана"></div>
+        <div class="field"><label>Телефон</label><input class="inp" id="c-phone" type="tel" placeholder="+380"></div>
+        <div class="field"><label>Instagram <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-instagram" placeholder="@username"></div>
+        <div class="field"><label>Набір</label><select class="inp" id="c-product">${sets}</select></div>
+        <div class="field"><label>Нотатка для Прояву <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-notes" placeholder="весілля 15 травня…"></div>
+        <button class="pv-btn pv-btn--primary pv-btn--full" id="c-btn" onclick="createOrder()">Створити посилання</button>
+        <div id="c-result" class="hide">
+          <div class="pv-linkbox"><div class="pv-url" id="c-url"></div><button class="pv-btn pv-btn--mono" onclick="copyText(lastLink,this)">Копіювати</button><button class="pv-btn pv-btn--primary" style="height:40px" onclick="shareLink()">Поділитися</button></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+let lastLink='';
 async function createOrder(){
   const name=val('c-name'), phone=val('c-phone');
   if(!name) return toast('Введіть ім\'я клієнта');
@@ -524,37 +422,164 @@ async function createOrder(){
     lastLink=r.link;
     document.getElementById('c-url').textContent=r.link;
     document.getElementById('c-result').classList.remove('hide');
-    allOrders.unshift(r.order); renderOrders();
+    DATA.orders.unshift(r.order);
     ['c-name','c-phone','c-instagram','c-notes'].forEach(id=>document.getElementById(id).value='');
     btn.textContent='Створити ще';
+    toast('Посилання створено');
   }catch(e){ toast(e.message); btn.textContent='Створити посилання'; }
   finally{ btn.disabled=false; }
 }
 
-// Поділитися посиланням через нативний шер (мобілка: Viber / WhatsApp / Telegram
-// / будь-що). На десктопі без Web Share API — копіюємо в буфер. Жодних сторонніх API.
 async function shareLink(){
   if(!lastLink) return;
   const text=`Вітаю! Ось персональне посилання для замовлення фото-набору Прояв:\n${lastLink}\n\nЗавантажте кадри — решту зробимо ми 🤍`;
-  if(navigator.share){
-    try{ await navigator.share({ title:'Прояв', text }); }
-    catch(e){ /* користувач скасував — нічого не робимо */ }
-    return;
-  }
-  try{
-    await navigator.clipboard.writeText(text);
-    toast('Скопійовано — вставте у Viber, WhatsApp чи Telegram');
-  }catch(e){ toast('Не вдалося скопіювати'); }
+  if(navigator.share){ try{ await navigator.share({title:'Прояв',text}); }catch(e){} return; }
+  try{ await navigator.clipboard.writeText(text); toast('Скопійовано — вставте у Viber, WhatsApp чи Telegram'); }catch(e){ toast('Не вдалося скопіювати'); }
 }
 
-// ── Utils ──
-function val(id){ return document.getElementById(id).value.trim(); }
-function copyText(text,btn){ navigator.clipboard.writeText(text).then(()=>{ const o=btn.textContent; btn.textContent='Скопійовано ✓'; setTimeout(()=>btn.textContent=o,1800); }); }
-async function apiFetch(url,opts={}){
-  const r=await fetch(url,{...opts,headers:{'Content-Type':'application/json',Authorization:`Bearer ${TOKEN}`,...(opts.headers||{})}});
-  if(r.status===401){ logout(); throw new Error('Сесія закінчилась'); }
-  const d=await r.json(); if(!r.ok) throw new Error(d.error||'Помилка сервера'); return d;
+/* ════════ PROFILE ════════ */
+function renderProfile(){
+  const nm = PH_DATA?.name || 'Автор';
+  const city = PH_DATA?.city || '—';
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Автор</div>
+        <h1 class="pv-ptitle">Профіль</h1></div>
+    </div>
+    <div class="pv-profile-head">
+      <div class="pv-avatar">${(nm.trim()[0]||'А').toUpperCase()}</div>
+      <div><div style="font-family:var(--font-display);font-size:26px;color:var(--paper)">${esc(nm)}</div><div class="pv-cap" style="color:var(--acc);margin-top:4px">${esc(city)}</div></div>
+    </div>
+    <div class="pv-home-cols" style="margin-top:30px">
+      <div>
+        <div class="pv-shead"><h2>Рівень <span class="mono">комісія</span></h2></div>
+        ${levelCardHTML()}
+        <div class="pv-shead"><h2>Контакти</h2></div>
+        <div class="pv-card pv-kv">
+          <div class="pv-kv-row"><span class="k">Ім'я</span><span class="v">${esc(nm)}</span></div>
+          <div class="pv-kv-row"><span class="k">Місто</span><span class="v">${esc(city)}</span></div>
+        </div>
+        <div style="margin-top:20px"><button class="pv-btn pv-btn--ghost pv-btn--full" onclick="logout()">Вийти з кабінету</button></div>
+      </div>
+      <div>
+        <div class="pv-shead"><h2>Сповіщення <span class="mono">Telegram</span></h2></div>
+        <div id="tg-card"></div>
+      </div>
+    </div>`;
 }
+
+function renderTelegramCard(){
+  const t=DATA.telegram; const el=document.getElementById('tg-card');
+  if(!el) return;
+  if(!t || !t.bot_username || !t.link_token){ el.innerHTML = `<div class="pv-card"><div class="pv-cap">Сповіщення тимчасово недоступні.</div></div>`; return; }
+  if(t.connected){
+    el.innerHTML = `<div class="pv-card"><div class="pv-tg-ok">
+      <div class="pv-tg-ok-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div style="font-family:var(--font-display);font-size:18px;color:var(--paper)">Telegram підключено</div>
+      <div style="font-size:13px;color:var(--paper-50);margin-top:3px">Пінг про кожну оплату й нове замовлення приходитиме вам.</div></div>
+    </div></div>`;
+  } else {
+    const link=`https://t.me/${esc(t.bot_username)}?start=${encodeURIComponent(t.link_token)}`;
+    el.innerHTML = `<div class="pv-card">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:16px">Підключіть бот — і отримуйте миттєвий пінг «ваш клієнт замовив / оплатив — +комісія» прямо в Telegram.</div>
+      <a class="pv-btn pv-btn--tg" href="${link}" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.6l-3.32 15.66c-.25 1.1-.9 1.37-1.83.86l-5.05-3.72-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14L18.36 6.1c.4-.36-.09-.56-.62-.2L5.4 13.78l-5.07-1.59c-1.1-.34-1.12-1.1.23-1.63L20.5 3.05c.92-.34 1.72.22 1.44 1.55z"/></svg>
+        Підключити Telegram</a>
+      <button class="pv-link" style="display:block;margin-top:14px" onclick="loadData()">Уже підключив — оновити</button>
+    </div>`;
+  }
+}
+
+/* ════════ DETAIL ════════ */
+function renderDetail(id){
+  const o = DATA.orders.find(x=>String(x.id)===String(id));
+  if(!o) return `<button class="pv-back" data-back>← Назад</button><div class="pv-empty">Замовлення не знайдено.</div>`;
+  const bc = BADGE[o.status]||'received';
+  const comm = orderComm(o);
+  // route from status timestamps
+  const route = [
+    { name:'Замовлення прийнято',   at:fmtDateLong(o.created_at),  done:true },
+    { name:'Кадри в роботі',        at:o.uploaded_at?fmtDateLong(o.uploaded_at):'очікується', done:!!o.uploaded_at || reachedIdx(o.status)>=2, active:o.status==='uploaded'||o.status==='in_progress' },
+    { name:'Відправлено Новою Поштою', at:o.shipped_at?fmtDateLong(o.shipped_at):'очікується', done:!!o.shipped_at, active:o.status==='sent' },
+    { name:'Оплачено',              at:o.paid_at?fmtDateLong(o.paid_at):'очікується', done:!!o.paid_at, active:o.status==='paid' },
+  ];
+  const routeHTML = route.map((r,i)=>{
+    const last=i===route.length-1;
+    const cls=r.active?'active':(r.done?'done':'');
+    return `<div class="pv-route-step ${cls}"><div class="pv-route-rail"><span class="pv-route-node"></span>${last?'':`<span class="pv-route-conn ${r.done?'done':''}"></span>`}</div><div class="pv-route-body"><div class="pv-route-name">${r.name}</div><div class="pv-route-at">${r.at}</div></div></div>`;
+  }).join('');
+  const ttnBlock = o.ttn
+    ? `<div class="pv-kv-row"><span class="k">ТТН</span><span class="v mono">${esc(o.ttn)}</span></div>`
+    : '';
+  const trackBtn = o.ttn
+    ? `<a class="pv-btn pv-btn--mono pv-btn--full" style="margin-top:16px" href="https://novaposhta.ua/tracking/?cargo_number=${encodeURIComponent(o.ttn)}" target="_blank" rel="noopener">Відстежити на Новій Пошті ↗</a>`
+    : '';
+  return `
+    <button class="pv-back" data-back>← Назад до кадрів</button>
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>${orderRef(o)} · ${esc(pkgShort(o.product_type))}</div>
+        <h1 class="pv-ptitle">${esc(o.client_name||'Клієнт')}</h1></div>
+      <div class="pv-pmeta"><span class="pv-badge ${bc}">${STATUS[o.status]?.label||o.status}</span></div>
+    </div>
+    <div class="pv-detail-grid">
+      <div>
+        <div class="pv-card" style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="pv-cap">Стадія</span><span style="font-family:var(--font-display);font-style:italic;font-size:24px;color:var(--paper)">${o.total_amount?o.total_amount+' ₴':'—'}</span></div>
+          ${stepperHTML(o.status)}
+          ${comm?`<div class="pv-note">Ваша комісія з цього замовлення: +${comm}₴ (${curPct}%)${o.paid_at?'':' — після оплати'}.</div>`:''}
+          ${o.notes?`<div class="pv-cap" style="line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px">${esc(o.notes)}</div>`:''}
+        </div>
+      </div>
+      <div>
+        <div class="pv-shead" style="margin-top:0"><h2>Шлях замовлення</h2></div>
+        <div class="pv-card">
+          <div class="pv-route">${routeHTML}</div>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--pv-line)" class="pv-kv">
+            <div class="pv-kv-row"><span class="k">Клієнт</span><span class="v">${esc(o.client_name||'—')}</span></div>
+            ${o.client_phone?`<div class="pv-kv-row"><span class="k">Телефон</span><span class="v mono">${esc(o.client_phone)}</span></div>`:''}
+            ${ttnBlock}
+          </div>
+          ${trackBtn}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ════════ ROUTER ════════ */
+const PAGES = { home: renderHome, archive: renderArchive, order: renderOrder, profile: renderProfile };
+function mount(html){
+  const main=document.getElementById('pv-main');
+  main.innerHTML = `<div class="pv-page is-active is-entering">${html}</div>`;
+  const pg=main.firstElementChild;
+  pg.addEventListener('animationend',()=>pg.classList.remove('is-entering'),{once:true});
+}
+function go(page, detailId){
+  if(page==='detail'){
+    mount(renderDetail(detailId));
+    document.querySelectorAll('.pv-nav-btn').forEach(b=>b.classList.remove('is-active'));
+  } else {
+    curPage = PAGES[page] ? page : 'home';
+    mount(PAGES[curPage]());
+    document.querySelectorAll('.pv-nav-btn').forEach(b=>b.classList.toggle('is-active', b.dataset.page===curPage));
+    try{ localStorage.setItem('pv-page',curPage); }catch(e){}
+    if(curPage==='profile') renderTelegramCard();
+  }
+  window.scrollTo({top:0});
+}
+
+/* ════════ EVENTS ════════ */
+document.addEventListener('click',(e)=>{
+  const nav=e.target.closest('.pv-nav-btn'); if(nav){ go(nav.dataset.page); return; }
+  const goBtn=e.target.closest('[data-go]'); if(goBtn){ go(goBtn.dataset.go); return; }
+  const back=e.target.closest('[data-back]'); if(back){ go('home'); return; }
+  const order=e.target.closest('[data-order]'); if(order){ go('detail', order.dataset.order); return; }
+});
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'||e.key===' '){ const t=e.target; if(t.classList?.contains('pv-order')){ e.preventDefault(); t.click(); } }
+});
+
+/* ════════ UTILS ════════ */
+function copyText(text,btn){ navigator.clipboard.writeText(text).then(()=>{ const o=btn.textContent; btn.textContent='Скопійовано ✓'; setTimeout(()=>btn.textContent=o,1600); }); }
 let toastTimer;
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),3000); }
 </script>
