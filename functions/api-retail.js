@@ -44,31 +44,65 @@ export async function onRequest(context) {
   const signature = card_signature?.trim() || null;
   const signatureNote = signature ? `✍️ Підпис на картці: Кадр — ${signature}` : '';
 
+  const baseNotes = [free ? '🎁 Безкоштовний пробний відбиток.' : '', signatureNote, message?.trim() || '']
+    .filter(Boolean).join(' ').trim();
+
+  const insertBody = {
+    token,
+    client_name:      name.trim(),
+    client_phone:     phone.replace(/\D/g, ''),
+    client_instagram: client_instagram?.trim().replace('@', '') || null,
+    product_type:     finalType,
+    source:           finalSource,
+    status:           hasPhotos ? 'uploaded' : 'new',
+    notes:            baseNotes || null,
+    photo_count:      photo_count || null,
+    qty_total:        qty_total   || null,
+    total_amount:     finalTotal,
+    uploaded_at:      hasPhotos ? new Date().toISOString() : null,
+  };
+
+  // ── Attribute the photographer only if the ?ph= value resolves to a real
+  // photographer. A stale/invalid id from the URL must NEVER block the order
+  // from saving (this was losing photographer orders entirely). ──
+  if (photographerId) {
+    const found = await client.query('photographers', {
+      select: 'id', filters: { id: `eq.${photographerId}` }, limit: 1,
+    }).catch(() => null);
+    if (found && found.length) {
+      insertBody.photographer_id = photographerId;
+    } else {
+      // Don't lose the attribution — keep finalSource='photographer' but stash the
+      // raw ref in notes so the owner can link it manually in /admin.
+      insertBody.notes = [insertBody.notes, `⚠ ref фотографа не знайдено: ${photographerId}`].filter(Boolean).join(' · ');
+      console.warn('[retail] unknown photographer ref:', photographerId);
+    }
+  }
+
   let order = null;
   let dbError = null;
   try {
-    order = await client.query('orders', {
-      method: 'POST',
-      single: true,
-      body: {
-        token,
-        client_name:      name.trim(),
-        client_phone:     phone.replace(/\D/g, ''),
-        client_instagram: client_instagram?.trim().replace('@', '') || null,
-        product_type:     finalType,
-        source:           finalSource,
-        photographer_id:  photographerId,
-        status:           hasPhotos ? 'uploaded' : 'new',
-        notes:            [free ? '🎁 Безкоштовний пробний відбиток.' : '', signatureNote, message?.trim() || ''].filter(Boolean).join(' ').trim() || null,
-        photo_count:      photo_count || null,
-        qty_total:        qty_total   || null,
-        total_amount:     finalTotal,
-        uploaded_at:      hasPhotos ? new Date().toISOString() : null,
-      },
-    });
+    order = await client.query('orders', { method: 'POST', single: true, body: insertBody });
   } catch (e) {
     dbError = e.message || String(e);
     console.error('[retail] Supabase INSERT failed:', dbError);
+    // Last-resort recovery: if the photographer link is what broke the insert,
+    // retry without it so the order is never lost. Note the reason for the owner.
+    if (insertBody.photographer_id) {
+      try {
+        const retryBody = {
+          ...insertBody,
+          photographer_id: null,
+          notes: [insertBody.notes, `⚠ збережено без прив'язки до фотографа (${insertBody.photographer_id}); причина: ${dbError}`].filter(Boolean).join(' · '),
+        };
+        order = await client.query('orders', { method: 'POST', single: true, body: retryBody });
+        dbError = null; // recovered — order saved
+        console.warn('[retail] recovered insert without photographer_id');
+      } catch (e2) {
+        dbError = e2.message || String(e2);
+        console.error('[retail] retry INSERT also failed:', dbError);
+      }
+    }
   }
 
   const productLabel = finalType ? (PRODUCT_NAMES[finalType] || finalType) : 'Роздрібний друк';
@@ -104,13 +138,14 @@ export async function onRequest(context) {
   // ── Telegram push to the photographer: a client ordered via their reusable
   // link (8.4). Skip the free trial (that's the photographer printing their own
   // sample, not a client order). Only fires if they connected Telegram. ──
-  if (photographerId && !free && env.TG_TOKEN) {
+  const attributedPhId = order && order.photographer_id;
+  if (attributedPhId && !free && env.TG_TOKEN) {
     try {
       const ph = await client.query('photographers', {
-        select: 'name,tg_chat_id', filters: { id: `eq.${photographerId}` }, single: true,
+        select: 'name,tg_chat_id', filters: { id: `eq.${attributedPhId}` }, single: true,
       }).catch(() => null);
       if (ph && ph.tg_chat_id) {
-        const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${photographerId}` } }).catch(() => []);
+        const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${attributedPhId}` } }).catch(() => []);
         const pct  = commissionFor((cnt || []).length).pct;
         const comm = finalTotal ? Math.round(finalTotal * pct / 100) : 0;
         const text =
