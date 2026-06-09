@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -99,6 +99,32 @@ export async function onRequest(context) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ chat_id: env.TG_CHAT_ID, text, parse_mode: 'HTML' }),
     }).catch(e => console.error('[retail] TG:', e.message));
+  }
+
+  // ── Telegram push to the photographer: a client ordered via their reusable
+  // link (8.4). Skip the free trial (that's the photographer printing their own
+  // sample, not a client order). Only fires if they connected Telegram. ──
+  if (photographerId && !free && env.TG_TOKEN) {
+    try {
+      const ph = await client.query('photographers', {
+        select: 'name,tg_chat_id', filters: { id: `eq.${photographerId}` }, single: true,
+      }).catch(() => null);
+      if (ph && ph.tg_chat_id) {
+        const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${photographerId}` } }).catch(() => []);
+        const pct  = commissionFor((cnt || []).length).pct;
+        const comm = finalTotal ? Math.round(finalTotal * pct / 100) : 0;
+        const text =
+          `🆕 <b>Замовлення через ваше посилання!</b>\n\n` +
+          `${name.trim()} замовив ${productLabel}${finalTotal ? ` на ${finalTotal}₴` : ''}.\n` +
+          (comm ? `Очікувана комісія: <b>+${comm}₴</b> після оплати.\n` : '') +
+          `\nМи беремо друк і доставку на себе — ви просто завершуєте досвід 🤍`;
+        await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ chat_id: ph.tg_chat_id, text, parse_mode: 'HTML' }),
+        });
+      }
+    } catch (e) { console.error('[retail] photographer notify:', e.message); }
   }
 
   // ── Google Sheets sync (non-fatal) ───────────────────────────────────
