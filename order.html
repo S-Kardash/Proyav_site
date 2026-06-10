@@ -535,6 +535,13 @@
 .magic-locked-ic{width:32px;height:32px;border-radius:50%;background:var(--safelight);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .magic-locked-txt b{font-size:14px;color:var(--paper);display:block}
 .magic-locked-txt span{font-size:12px;color:var(--paper-50);font-family:var(--font-mono);letter-spacing:.15em;text-transform:uppercase}
+/* register nudge on success screen */
+.register-nudge{background:rgba(196,149,108,.06);border:1px solid rgba(196,149,108,.25);padding:18px 20px;margin-top:20px;margin-bottom:4px}
+.register-nudge-head{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:17px;color:var(--paper);margin-bottom:6px}
+.register-nudge-sub{font-size:13px;color:var(--paper-70);line-height:1.55;margin-bottom:14px}
+.register-nudge-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.register-nudge-row .input-field{flex:1;min-width:140px;margin:0}
+.register-nudge #rn-submit{margin-top:8px;height:46px;padding:0 20px}
 .post-email{background:rgba(243,238,230,.04);border:1px solid var(--paper-15);border-radius:4px;padding:18px;margin-top:24px}
 .post-email-title{font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--paper);margin-bottom:4px}
 .post-email-sub{font-size:13px;color:var(--paper-70);line-height:1.55;margin-bottom:14px}
@@ -1003,6 +1010,30 @@
           Відстежити замовлення
         </a>
 
+        <!-- Пропозиція реєстрації в кабінеті (показується якщо ще не авторизовано) -->
+        <div class="register-nudge" id="register-nudge" style="display:none">
+          <div class="register-nudge-head">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6.5" r="2.8"/><path d="M3.5 15c0-2.8 2.5-4.3 5.5-4.3s5.5 1.5 5.5 4.3"/></svg>
+            <span>Збережіть замовлення в кабінеті</span>
+          </div>
+          <p class="register-nudge-sub">Відстежуйте статус, дивіться кадри після виконання, замовляйте повторно — один пароль для всіх замовлень.</p>
+          <div id="register-nudge-form">
+            <div class="register-nudge-row">
+              <input class="input-field" id="rn-name" type="text" placeholder="Ваше ім'я" autocomplete="name">
+              <input class="input-field" id="rn-phone" type="tel" placeholder="+380..." autocomplete="tel">
+            </div>
+            <div class="register-nudge-row">
+              <input class="input-field" id="rn-password" type="password" placeholder="Придумайте пароль (мін. 6 символів)" autocomplete="new-password">
+            </div>
+            <div class="field-error" id="rn-err"></div>
+            <button class="btn-primary" id="rn-submit" onclick="submitRegisterNudge()">Зберегти в кабінеті →</button>
+          </div>
+          <div id="register-nudge-done" style="display:none">
+            <span style="color:var(--paper-70);font-size:13px">Акаунт створено. </span>
+            <a id="register-nudge-link" href="/account" style="font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sepia)">Відкрити кабінет →</a>
+          </div>
+        </div>
+
         <p style="font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--paper-50);margin-bottom:8px">ЩО ВІДБУВАЄТЬСЯ ДАЛІ</p>
         <ol style="list-style:none;padding:0;display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
           <li style="display:grid;grid-template-columns:28px 1fr;gap:12px"><span style="font-family:var(--font-display);font-style:italic;font-size:22px;color:var(--sepia);line-height:1">i.</span><span style="font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--paper-70)"><strong style="color:var(--paper);font-weight:500">До 4 годин</strong> — ми перевіряємо ваші кадри і пишемо в Telegram, якщо є питання.</span></li>
@@ -1043,6 +1074,9 @@ const FINAL_API  = '/api-finalize';
 const MAGIC_TOKEN = new URLSearchParams(location.search).get('t') || null;
 let   MAGIC_ORDER = null; // filled after token validation
 const IS_MAGIC    = !!MAGIC_TOKEN;
+// DB-токен поточного замовлення: супроводжує кожен кадр на сервер,
+// щоб той архівував фото в R2 під правильним замовленням (кабінет клієнта).
+let CURRENT_ORDER_TOKEN = MAGIC_TOKEN || null;
 
 /* ═══════════════════════════════════════════════════════
    INDEXEDDB — persistent photo blob storage
@@ -2864,8 +2898,10 @@ async function tgSendText(text) {
   return apiPost({ type: 'text', text });
 }
 
-async function tgSendPhotoSecure(file, caption) {
-  /* Compress → base64 → send through serverless function */
+async function tgSendPhotoSecure(file, caption, ph) {
+  /* Compress → base64 → send through serverless function.
+     order_token + налаштування кадру дозволяють серверу заархівувати фото
+     в R2 під цим замовленням (durability для кабінету клієнта). */
   const compressed = await compressImage(file);
   if (!compressed) throw new Error('Compression failed');
   const base64 = await blobToBase64(compressed);
@@ -2875,6 +2911,10 @@ async function tgSendPhotoSecure(file, caption) {
     mimeType: 'image/jpeg',
     filename: file.name.replace(/\.[^.]+$/, '.jpg'),
     caption,
+    order_token: CURRENT_ORDER_TOKEN || undefined,
+    color: ph ? ph.color : undefined,
+    paper: ph ? ph.paper : undefined,
+    qty:   ph ? ph.qty   : undefined,
   });
 }
 
@@ -2977,12 +3017,16 @@ async function submitOrder(e) {
   // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
   finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
 
-  // Save retail order to Supabase (non-blocking, non-fatal).
-  // Capture the order token → surface a client status link on the success screen.
+  // Save retail order to Supabase FIRST and await it: its token links every
+  // archived photo to the order (R2) and feeds the client status link.
+  // Non-fatal: if the save fails, photos still go to Telegram as before.
   if (!MAGIC_TOKEN) {
-    saveRetailOrderToSupabase(orderId, tq, totalAmt)
-      .then(res => { if (res && res.token) setStatusLink(res.token); })
-      .catch(e => console.warn('[submit] retail Supabase save failed:', e.message));
+    try {
+      const res = await saveRetailOrderToSupabase(orderId, tq, totalAmt);
+      if (res && res.token) { CURRENT_ORDER_TOKEN = res.token; setStatusLink(res.token); }
+    } catch (e) {
+      console.warn('[submit] retail Supabase save failed:', e.message);
+    }
   } else {
     // Magic-link order: the token is already in the URL.
     setStatusLink(MAGIC_TOKEN);
@@ -3005,7 +3049,7 @@ async function submitOrder(e) {
       const pct = Math.round(((i + 1) / S.photos.length) * 100);
       btn.innerHTML = '<div class="btn-spinner"></div> Фото ' + (i + 1) + '/' + S.photos.length + ' (' + pct + '%)...';
       try {
-        await tgSendPhotoSecure(ph.file, buildPhotoCaption(ph, i + 1, orderId));
+        await tgSendPhotoSecure(ph.file, buildPhotoCaption(ph, i + 1, orderId), ph);
       } catch (err) {
         console.warn('[submit] photo', i + 1, 'failed:', err.message);
         /* continue — don't abort all photos if one fails */
@@ -3077,9 +3121,50 @@ function celebrate() {
 function setStatusLink(token) {
   if (!token) return;
   const btn = document.getElementById('track-order-btn');
-  if (!btn) return;
-  btn.href = '/status?t=' + encodeURIComponent(token);
-  btn.style.display = '';
+  if (btn) { btn.href = '/status?t=' + encodeURIComponent(token); btn.style.display = ''; }
+  showRegisterNudge(token);
+}
+
+/* ─ Registration nudge (shows if not already logged in) ─ */
+let _nudgeToken = null;
+function showRegisterNudge(orderToken) {
+  try { if (localStorage.getItem('pv_client_token')) return; } catch {}
+  _nudgeToken = orderToken;
+  const nudge = document.getElementById('register-nudge');
+  if (!nudge) return;
+  // Pre-fill name + phone from current order state
+  const nameEl  = document.getElementById('rn-name');
+  const phoneEl = document.getElementById('rn-phone');
+  if (nameEl  && S.name)  nameEl.value  = S.name;
+  if (phoneEl && S.phone) phoneEl.value = S.phone;
+  nudge.style.display = '';
+}
+async function submitRegisterNudge() {
+  const name     = (document.getElementById('rn-name').value  || '').trim();
+  const phone    = (document.getElementById('rn-phone').value || '').trim();
+  const password = document.getElementById('rn-password').value;
+  const errEl    = document.getElementById('rn-err');
+  const btn      = document.getElementById('rn-submit');
+  errEl.textContent = ''; errEl.classList.remove('show');
+  if (!name)           { errEl.textContent = "Введіть ім'я";          errEl.classList.add('show'); return; }
+  if (!phone)          { errEl.textContent = 'Введіть телефон';       errEl.classList.add('show'); return; }
+  if (password.length < 6) { errEl.textContent = 'Пароль — мінімум 6 символів'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res  = await fetch('/api-client-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'register', name, phone, password, order_token: _nudgeToken }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Помилка реєстрації'; errEl.classList.add('show'); return; }
+    try { localStorage.setItem('pv_client_token', data.token); } catch {}
+    document.getElementById('register-nudge-form').style.display = 'none';
+    const done = document.getElementById('register-nudge-done');
+    const link = document.getElementById('register-nudge-link');
+    if (link) link.href = '/account?t=' + encodeURIComponent(_nudgeToken || '');
+    if (done) done.style.display = '';
+  } catch { errEl.textContent = 'Мережева помилка. Спробуйте ще.'; errEl.classList.add('show'); }
+  finally { btn.disabled = false; btn.textContent = 'Зберегти в кабінеті →'; }
 }
 
 /* ─ Reset ─ */
