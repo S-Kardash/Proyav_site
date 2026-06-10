@@ -54,6 +54,10 @@
   .pv-toast.show { transform: translate(-50%, 0); }
   @media (min-width: 980px) { .pv-toast { bottom: 24px; } }
   .pv-form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 460px; }
+  /* Довгі моноширинні значення (ТТН, телефони) не повинні ламати ширину екрана */
+  .pv-kv-row .v.mono, .pv-url { overflow-wrap: anywhere; word-break: break-all; }
+  .pv-wrap { min-width: 0; }
+  body.pv { overflow-x: clip; }
 </style>
 </head>
 <body class="pv pv-scan theme-dark" data-theme="dark">
@@ -152,6 +156,8 @@ function orderRef(o){ return o.token ? 'ПРЯ-' + String(o.token).slice(0,6).to
 function reachedIdx(status){ const i = FLOW.indexOf(status); return i < 0 ? 0 : i; }
 function fmtDate(iso){ if(!iso) return ''; try { return new Date(iso).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'}); } catch(e){ return ''; } }
 function fmtDateLong(iso){ if(!iso) return ''; try { return new Date(iso).toLocaleDateString('uk-UA',{day:'2-digit',month:'long'}); } catch(e){ return ''; } }
+// Українська множина: plural(1,'замовлення','замовлення','замовлень') → 'замовлення'
+function plural(n, one, few, many){ const m10=n%10, m100=n%100; if(m10===1&&m100!==11) return one; if(m10>=2&&m10<=4&&(m100<10||m100>=20)) return few; return many; }
 
 /* ════════ AUTH ════════ */
 function showLogin(){ document.getElementById('register-view').classList.add('hide'); document.getElementById('login-view').classList.remove('hide'); }
@@ -324,13 +330,13 @@ function levelCardHTML(){
   if(tier.next){
     const span=((s.total||0)+tier.next.ordersLeft)||1;
     bar=Math.min(100,Math.round((s.total||0)/span*100));
-    nextTxt=`Ще ${tier.next.ordersLeft} замовлень до «${tier.next.name}» — ${tier.next.pct}% комісії`;
+    nextTxt=`Ще ${tier.next.ordersLeft} ${plural(tier.next.ordersLeft,'замовлення','замовлення','замовлень')} до «${tier.next.name}» — ${tier.next.pct}% комісії`;
   }
   return `<div class="pv-level">
     <div class="pv-level-top"><span class="pv-level-name">Рівень <em>${esc(tier.name)}</em></span><span class="pv-level-pct">${tier.pct}%</span></div>
     <div class="pv-level-bar"><i style="width:${bar}%"></i></div>
     <div class="pv-level-next">${esc(nextTxt)}</div>
-    <div class="pv-stats" style="margin-top:16px;border:none">
+    <div class="pv-stats" style="margin-top:16px;border:none;grid-template-columns:repeat(2,1fr)">
       <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Цього місяця</div><div class="pv-stat-val" style="font-size:24px">${s.this_month||0}</div></div>
       <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Комісія / міс</div><div class="pv-stat-val" style="font-size:24px;color:var(--acc)">${s.month_commission||0}<span class="u">₴</span></div></div>
     </div>
@@ -522,11 +528,12 @@ function renderDetail(id){
     </div>
     <div class="pv-detail-grid">
       <div>
+        <div class="pv-shead" style="margin-top:0"><h2>Стадія <span class="mono">проявлення</span></h2></div>
         <div class="pv-card" style="display:flex;flex-direction:column;gap:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center"><span class="pv-cap">Стадія</span><span style="font-family:var(--font-display);font-style:italic;font-size:24px;color:var(--paper)">${o.total_amount?o.total_amount+' ₴':'—'}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="pv-cap">Сума</span><span style="font-family:var(--font-display);font-style:italic;font-size:24px;color:var(--paper)">${o.total_amount?o.total_amount+' ₴':'—'}</span></div>
           ${stepperHTML(o.status)}
           ${comm?`<div class="pv-note">Ваша комісія з цього замовлення: +${comm}₴ (${curPct}%)${o.paid_at?'':' — після оплати'}.</div>`:''}
-          ${o.notes?`<div class="pv-cap" style="line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px">${esc(o.notes)}</div>`:''}
+          ${o.notes?`<div><span class="pv-cap" style="display:block;margin-bottom:5px">Нотатка</span><div style="font-size:13px;line-height:1.6;color:var(--paper-70)">${esc(o.notes)}</div></div>`:''}
         </div>
       </div>
       <div>
