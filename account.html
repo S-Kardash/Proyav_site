@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ПРОЯВ · Мої замовлення</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="cabinet.css">
+<style>
+/* ── Auth gate ── */
+.pv-auth-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--ink-darkroom);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.pv-auth-box {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+.pv-auth-brand {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 4px;
+}
+.pv-auth-brand .pv-mark { width: 38px; height: 38px; }
+.pv-auth-brand .pv-brand-name { font-size: 20px; }
+.pv-auth-brand .pv-brand-meta { display: block; }
+.pv-auth-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--paper-15);
+}
+.pv-auth-tab {
+  flex: 1; padding: 12px; background: none; border: none;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--paper-50); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .18s, border-color .18s;
+}
+.pv-auth-tab:hover { color: var(--paper); }
+.pv-auth-tab.is-active { color: var(--acc); border-bottom-color: var(--acc); }
+.pv-auth-field { display: flex; flex-direction: column; gap: 7px; }
+.pv-auth-field label {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--paper-50);
+}
+.pv-auth-input {
+  height: 48px; padding: 0 16px;
+  background: rgba(243,238,230,0.04); border: 1px solid var(--paper-15);
+  color: var(--paper); font-family: var(--font-body); font-size: 15px;
+  transition: border-color .18s; outline: none; width: 100%; box-sizing: border-box;
+}
+.pv-auth-input:focus { border-color: var(--acc); }
+.pv-auth-input::placeholder { color: var(--paper-30); }
+.pv-auth-err {
+  font-size: 12px; color: var(--safelight); min-height: 18px;
+  font-family: var(--font-body);
+}
+.pv-auth-skip {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--paper-30); text-decoration: none; text-align: center;
+  transition: color .18s;
+}
+.pv-auth-skip:hover { color: var(--paper-50); }
+/* loading overlay for auth */
+.pv-auth-loading {
+  display: none; align-items: center; justify-content: center;
+  position: absolute; inset: 0; background: rgba(20,18,17,.7);
+  z-index: 110;
+}
+.pv-auth-loading.is-visible { display: flex; }
+.pv-spinner {
+  width: 28px; height: 28px; border: 2px solid var(--paper-15);
+  border-top-color: var(--acc); border-radius: 50%;
+  animation: pvSpin .7s linear infinite;
+}
+@keyframes pvSpin { to { transform: rotate(360deg); } }
+
+/* ── full-page loading state ── */
+.pv-init-loader {
+  position: fixed; inset: 0; background: var(--ink-darkroom);
+  display: flex; align-items: center; justify-content: center; z-index: 90;
+  transition: opacity .3s;
+}
+.pv-init-loader.is-gone { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body class="pv pv-scan">
+
+<!-- Full-page loader (while checking auth) -->
+<div id="pv-loader" class="pv-init-loader">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:18px">
+    <span class="pv-mark" style="width:42px;height:42px"></span>
+    <div class="pv-spinner"></div>
+  </div>
+</div>
+
+<!-- AUTH GATE -->
+<div id="pv-auth" class="pv-auth-overlay" style="display:none">
+  <div class="pv-auth-box">
+    <div class="pv-auth-brand">
+      <span class="pv-mark"></span>
+      <span class="pv-brand-text">
+        <span class="pv-brand-name">ПРОЯВ</span>
+        <span class="pv-brand-meta">Кабінет клієнта</span>
+      </span>
+    </div>
+
+    <div class="pv-auth-tabs">
+      <button class="pv-auth-tab is-active" data-tab="login">Увійти</button>
+      <button class="pv-auth-tab" data-tab="register">Реєстрація</button>
+    </div>
+
+    <div id="pv-login-form">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="pv-auth-field">
+          <label>Телефон</label>
+          <input class="pv-auth-input" id="login-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel">
+        </div>
+        <div class="pv-auth-field">
+          <label>Пароль</label>
+          <input class="pv-auth-input" id="login-password" type="password" placeholder="••••••" autocomplete="current-password">
+        </div>
+        <div id="login-err" class="pv-auth-err"></div>
+        <button class="pv-btn pv-btn--primary pv-btn--full" id="login-btn">Увійти</button>
+      </div>
+    </div>
+
+    <div id="pv-register-form" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="pv-auth-field">
+          <label>Ваше ім'я</label>
+          <input class="pv-auth-input" id="reg-name" type="text" placeholder="Оксана Коваль" autocomplete="name">
+        </div>
+        <div class="pv-auth-field">
+          <label>Телефон</label>
+          <input class="pv-auth-input" id="reg-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel">
+        </div>
+        <div class="pv-auth-field">
+          <label>Пароль</label>
+          <input class="pv-auth-input" id="reg-password" type="password" placeholder="Мінімум 6 символів" autocomplete="new-password">
+        </div>
+        <div id="reg-err" class="pv-auth-err"></div>
+        <button class="pv-btn pv-btn--primary pv-btn--full" id="reg-btn">Зареєструватись</button>
+      </div>
+    </div>
+
+    <a href="/nabir" class="pv-auth-skip">Замовити без акаунта →</a>
+  </div>
+</div>
+
+<!-- CABINET SPA -->
+<div class="pv-shell" id="pv-app" style="display:none">
+  <aside class="pv-side">
+    <a class="pv-brand" href="#" data-go="home" style="text-decoration:none">
+      <span class="pv-mark" aria-hidden="true"></span>
+      <span class="pv-brand-text">
+        <span class="pv-brand-name">ПРОЯВ</span>
+        <span class="pv-brand-meta">Мої замовлення</span>
+      </span>
+    </a>
+
+    <nav class="pv-nav" aria-label="Розділи кабінету">
+      <button class="pv-nav-btn" data-page="home">
+        <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>
+        Замовлення
+        <span class="pv-nav-count" id="nav-count-home"></span>
+      </button>
+      <button class="pv-nav-btn" data-page="history">
+        <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/></svg></span>
+        Архів
+        <span class="pv-nav-count" id="nav-count-history"></span>
+      </button>
+      <button class="pv-nav-btn" data-page="order">
+        <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></span>
+        Проявити
+      </button>
+      <button class="pv-nav-btn" data-page="profile">
+        <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6.5" r="2.8"/><path d="M3.5 15c0-2.8 2.5-4.3 5.5-4.3s5.5 1.5 5.5 4.3"/></svg></span>
+        Профіль
+      </button>
+    </nav>
+
+    <div class="pv-author">
+      <span class="pv-avatar" id="user-avatar">—</span>
+      <span class="pv-author-text">
+        <span class="pv-author-name" id="user-name">—</span>
+        <span class="pv-author-meta" id="user-meta">кабінет</span>
+      </span>
+      <span class="pv-dot" title="online"></span>
+    </div>
+  </aside>
+
+  <main class="pv-main">
+    <div class="pv-wrap" id="pv-main"></div>
+  </main>
+</div>
+
+<script>
+'use strict';
+// ─── Constants ───────────────────────────────────────────────────────────────
+const TOKEN_KEY = 'pv_client_token';
+/* Статуси БД (new/uploaded/in_progress/sent/paid — накладний платіж, тому
+   «оплачено» = «отримано») → стадії кабінету. */
+const DB_TO_CAB = { new:'received', uploaded:'developing', in_progress:'packed', sent:'sent', paid:'closed', done:'closed' };
+const FLOW = ['received','developing','packed','sent','closed'];
+const STATUS = {
+  received:   { label:'Отримано',    short:'Отрим.',  verb:'Кадри прийнято в роботу' },
+  developing: { label:'У прояві',    short:'Прояв',   verb:'Проявляємо ваші кадри' },
+  packed:     { label:'Запаковано',  short:'Пак.',    verb:'Запаковано в оксамит' },
+  sent:       { label:'У дорозі',    short:'Дорога',  verb:'Передано Новій Пошті' },
+  closed:     { label:'Прибуло',     short:'Прибуло', verb:'Кадри у вас' },
+};
+const isDone = o => o.status === 'paid' || o.status === 'done';
+/* Дзеркало PACKAGES із config.js / _utils.js — ціни не рахуємо, лише показуємо. */
+const SETS = [
+  { id:'small',  name:'Малий набір',    frames:'10 фото · 10×15',  price: 400 },
+  { id:'medium', name:'Середній набір', frames:'20 фото · 10×15',  price: 600 },
+  { id:'large',  name:'Великий набір',  frames:'50 фото · 10×15',  price: 900 },
+  { id:'baby',   name:'Спогади малюка', frames:'10 фото · оксамит', price: 450 },
+];
+const PKG_NAMES = { small:'Малий набір', medium:'Середній набір', large:'Великий набір', baby:'Спогади малюка' };
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let TOKEN = null;
+let CLIENT = null;
+let ORDERS = [];
+let selSet = 'medium';
+
+const params = new URLSearchParams(location.search);
+const PRE_PHONE = params.get('phone') || '';
+const PRE_TOKEN = params.get('t') || '';
+const PRE_ACTION = params.get('action') || '';
+
+// ─── Token helpers ────────────────────────────────────────────────────────────
+function getToken()  { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
+function saveToken(t){ try { localStorage.setItem(TOKEN_KEY, t); } catch {} }
+function clearToken(){ try { localStorage.removeItem(TOKEN_KEY); } catch {} }
+function decodeJWT(t){
+  try { return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+  catch { return null; }
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+async function initApp() {
+  TOKEN = getToken();
+  const loader = document.getElementById('pv-loader');
+  if (!TOKEN) { loader.classList.add('is-gone'); showAuthGate(); return; }
+  const claims = decodeJWT(TOKEN);
+  if (!claims || claims.exp < Date.now() / 1000) { clearToken(); loader.classList.add('is-gone'); showAuthGate(); return; }
+  await loadOrders(loader);
+}
+
+async function loadOrders(loader) {
+  try {
+    const res = await fetch('/api-client-orders', {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    if (!res.ok) throw new Error('unauthorized');
+    const data = await res.json();
+    CLIENT = data.client;
+    ORDERS = data.orders || [];
+  } catch {
+    clearToken();
+    if (loader) loader.classList.add('is-gone');
+    showAuthGate();
+    return;
+  }
+  if (loader) loader.classList.add('is-gone');
+  showDashboard();
+}
+
+function showAuthGate() {
+  document.getElementById('pv-auth').style.display = 'flex';
+  document.getElementById('pv-app').style.display  = 'none';
+  if (PRE_PHONE) document.getElementById('reg-phone').value = PRE_PHONE;
+  if (PRE_ACTION === 'register' || PRE_TOKEN) switchTab('register');
+}
+
+function showDashboard() {
+  document.getElementById('pv-auth').style.display = 'none';
+  document.getElementById('pv-app').style.display  = '';
+
+  const initials = (CLIENT.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name').textContent   = CLIENT.name || '';
+  document.getElementById('user-meta').textContent   = CLIENT.instagram ? `@${CLIENT.instagram}` : 'клієнт';
+
+  const active = ORDERS.filter(o => !isDone(o)).length;
+  const done   = ORDERS.filter(isDone).length;
+  const cntHome = document.getElementById('nav-count-home');
+  const cntHist = document.getElementById('nav-count-history');
+  if (cntHome) cntHome.textContent = active || '';
+  if (cntHist) cntHist.textContent = done   || '';
+
+  go(params.get('p') || 'home');
+}
+
+// ─── Router ──────────────────────────────────────────────────────────────────
+function mount(html) {
+  const main = document.getElementById('pv-main');
+  main.innerHTML = `<div class="pv-page is-active is-entering">${html}</div>`;
+  main.firstElementChild.addEventListener('animationend', function () {
+    this.classList.remove('is-entering');
+  }, { once: true });
+  main.scrollTop = 0;
+  window.scrollTo({ top: 0 });
+}
+
+function go(page, detailToken) {
+  if (page === 'detail') {
+    mount(renderDetail(detailToken));
+    document.querySelectorAll('.pv-nav-btn').forEach(b => b.classList.remove('is-active'));
+    loadDetailPhotos(detailToken);
+  } else {
+    const fn = PAGES[page];
+    mount(fn ? fn() : renderHome());
+    document.querySelectorAll('.pv-nav-btn').forEach(b => b.classList.toggle('is-active', b.dataset.page === page));
+    if (page === 'order') requestAnimationFrame(bindSets);
+  }
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+
+function orderId(o) {
+  return 'ПРЯ-' + String(o.id || '000000').replace(/\D/g,'').padStart(6,'0').slice(-6);
+}
+
+function setTitle(o) {
+  if (o.product_type) return esc(PKG_NAMES[o.product_type] || o.product_type);
+  if (o.qty_total)    return `${o.qty_total} кадрів · роздріб`;
+  return 'Замовлення';
+}
+
+function buildSteps(dbStatus) {
+  const cabStatus = DB_TO_CAB[dbStatus] || 'received';
+  const ai = FLOW.indexOf(cabStatus);
+  return FLOW.map((k, i) => ({ key: k, done: i < ai, active: i === ai }));
+}
+
+function stepperHTML(dbStatus) {
+  const steps = buildSteps(dbStatus);
+  return '<div class="pv-stepper">' + steps.map((st, i) => {
+    const cls = st.active ? 'active' : (st.done ? 'done' : '');
+    const line = i < steps.length - 1
+      ? `<span class="pv-step-line${steps[i+1].done||steps[i+1].active?' done':''}"></span>`
+      : '';
+    return `<div class="pv-step ${cls}"><span class="pv-step-dot"></span><span class="pv-step-lbl">${STATUS[st.key].short}</span></div>${line}`;
+  }).join('') + '</div>';
+}
+
+function badgeHTML(dbStatus) {
+  const s = DB_TO_CAB[dbStatus] || 'received';
+  return `<span class="pv-badge ${s}">${STATUS[s].label}</span>`;
+}
+
+// ─── PAGE: home ──────────────────────────────────────────────────────────────
+function renderHome() {
+  const active = ORDERS.filter(o => !isDone(o));
+  const firstName = esc((CLIENT.name || '').split(' ')[0]);
+
+  if (!active.length) {
+    return `
+      <div class="pv-phead">
+        <div><div class="pv-eyebrow"><span class="ln"></span>Кабінет</div>
+          <h1 class="pv-ptitle">Активних <em>замовлень немає</em></h1></div>
+      </div>
+      <p style="font-family:var(--font-display);font-style:italic;font-size:clamp(18px,2.4vw,22px);color:var(--paper-70);line-height:1.5;max-width:540px;margin-bottom:28px">
+        Коли ви оформите замовлення — воно з'явиться тут. Ви зможете стежити за кожним кроком, від проявлення до вашої поштової скриньки.</p>
+      <button class="pv-btn pv-btn--primary" data-page="order">Проявити перші кадри →</button>`;
+  }
+
+  const cards = active.map(o => `
+    <div class="pv-order ${DB_TO_CAB[o.status]||'received'}" data-detail="${esc(o.token)}" tabindex="0" role="button">
+      <div class="pv-order-top">
+        ${badgeHTML(o.status)}
+        <span class="pv-cap">${orderId(o)}</span>
+      </div>
+      <div class="pv-order-title">${setTitle(o)}</div>
+      ${stepperHTML(o.status)}
+      <div class="pv-order-foot">
+        <div>
+          <span class="pv-cap" style="display:block;margin-bottom:3px">${o.status==='sent'?'Очікується':'Оформлено'}</span>
+          <span class="pv-order-eta">${fmtDate(o.shipped_at||o.paid_at||o.created_at)}</span>
+        </div>
+        <span class="pv-link">Деталі →</span>
+      </div>
+    </div>`).join('');
+
+  const recentDone = ORDERS.filter(isDone).slice(0, 2);
+  const doneCards = recentDone.length ? `
+    <div class="pv-shead"><h2>Нещодавно завершено</h2><button class="pv-link" data-page="history">Увесь архів →</button></div>
+    ${recentDone.map(o => `
+      <div class="pv-order closed" data-detail="${esc(o.token)}" tabindex="0" role="button" style="margin-bottom:12px">
+        <div class="pv-order-top">${badgeHTML(o.status)}<span class="pv-cap">${orderId(o)}</span></div>
+        <div class="pv-order-title">${setTitle(o)}</div>
+        <div class="pv-order-foot">
+          <span class="pv-cap">${fmtDate(o.shipped_at||o.created_at)}</span>
+          <span class="pv-link">Деталі →</span>
+        </div>
+      </div>`).join('')}` : '';
+
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Доброго дня, ${firstName}</div>
+        <h1 class="pv-ptitle">Кадри <em>в роботі</em></h1></div>
+      <div class="pv-pmeta">
+        <span><strong>${active.length}</strong> ${active.length === 1 ? 'активне' : 'активних'}</span>
+      </div>
+    </div>
+    <div class="pv-active-grid">${cards}</div>
+    ${doneCards}`;
+}
+
+// ─── PAGE: history ───────────────────────────────────────────────────────────
+function renderHistory() {
+  const done  = ORDERS.filter(isDone);
+  const total = ORDERS.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const frames= ORDERS.reduce((s, o) => s + (o.qty_total    || 0), 0);
+
+  const statsBlock = `
+    <div class="pv-stats" style="margin-bottom:28px">
+      <div class="pv-stat"><div class="pv-stat-key">Замовлень</div><div class="pv-stat-val">${ORDERS.length}</div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Кадрів</div><div class="pv-stat-val">${frames || '—'}</div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Сума</div>
+        <div class="pv-stat-val" style="font-size:clamp(22px,3vw,28px)">${total}<span class="u"> ₴</span></div></div>
+      <div class="pv-stat"><div class="pv-stat-key">З нами з</div>
+        <div class="pv-stat-val" style="font-size:18px;font-family:var(--font-mono);letter-spacing:.06em;font-style:normal">${fmtDate(CLIENT.created_at).slice(3)}</div></div>
+    </div>`;
+
+  const rolls = done.length ? done.map(o => `
+    <div class="pv-roll">
+      <div class="pv-roll-head">
+        <div>
+          <div class="pv-roll-id">${orderId(o)} · ${o.product_type ? 'Набір' : 'Роздріб'}</div>
+          <div class="pv-roll-title">${setTitle(o)}</div>
+        </div>
+        <div class="pv-roll-meta">
+          ${o.qty_total ? `<span>${o.qty_total} кадрів</span>` : ''}
+          <span>${fmtDate(o.shipped_at||o.created_at)}</span>
+          <button class="pv-btn pv-btn--mono" data-detail="${esc(o.token)}" style="margin-top:4px">Деталі →</button>
+        </div>
+      </div>
+    </div>`).join('')
+    : `<p style="color:var(--paper-50);font-size:14px;font-family:var(--font-body)">Завершених замовлень поки немає.</p>`;
+
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Особистий архів</div>
+        <h1 class="pv-ptitle">Архів <em>кадрів</em></h1></div>
+      <div class="pv-pmeta"><span><strong>${done.length}</strong> завершених</span></div>
+    </div>
+    ${statsBlock}
+    <div class="pv-rolls">${rolls}</div>`;
+}
+
+// ─── PAGE: order ─────────────────────────────────────────────────────────────
+function renderOrder() {
+  const last = ORDERS.find(o => o.product_type);
+  const sets = SETS.map(s => `
+    <div class="pv-set ${s.id===selSet?'is-sel':''}" data-set="${s.id}">
+      <div class="pv-set-radio"><span></span></div>
+      <div class="pv-set-body">
+        <div class="pv-set-name">${s.name}</div>
+        <div class="pv-set-frames">${s.frames}</div>
+      </div>
+      <div class="pv-set-price">${s.price} ₴</div>
+    </div>`).join('');
+
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Нове проявлення</div>
+        <h1 class="pv-ptitle">Проявити <em>кадри</em></h1></div>
+    </div>
+    <p style="font-family:var(--font-display);font-style:italic;font-size:clamp(18px,2.4vw,22px);color:var(--paper-70);line-height:1.5;max-width:540px;margin-bottom:30px">
+      Оберіть набір — і надішліть кадри, що варто пам'ятати.</p>
+    ${last ? `
+    <div class="pv-shead"><h2>Повторити останнє</h2></div>
+    <div class="pv-repeat" style="margin-bottom:28px">
+      <div class="thumb"></div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-family:var(--font-display);font-style:italic;font-size:18px;color:var(--paper)">${esc(PKG_NAMES[last.product_type] || last.product_type)}</div>
+        <div class="pv-set-frames">${last.qty_total||0} кадрів · ${fmtDate(last.created_at)}</div>
+      </div>
+      <a href="/order?pkg=${encodeURIComponent(last.product_type)}" class="pv-btn pv-btn--primary" style="height:42px;text-decoration:none">Повторити →</a>
+    </div>` : ''}
+    <div class="pv-shead"><h2>Набори</h2></div>
+    <div class="pv-sets" id="pv-sets">${sets}</div>
+    <div style="margin-top:18px;max-width:420px;display:flex;flex-direction:column;gap:10px">
+      <a id="order-link" href="/order?pkg=${selSet}" class="pv-btn pv-btn--primary pv-btn--full" style="text-decoration:none">
+        Перейти до завантаження кадрів →
+      </a>
+      <a href="/order" class="pv-btn pv-btn--mono pv-btn--full" style="text-decoration:none">Або поштучно · 15 ₴ за відбиток</a>
+    </div>`;
+}
+
+function bindSets() {
+  document.querySelectorAll('.pv-set').forEach(s => s.addEventListener('click', () => {
+    selSet = s.dataset.set;
+    document.querySelectorAll('.pv-set').forEach(x => x.classList.toggle('is-sel', x === s));
+    const link = document.getElementById('order-link');
+    if (link) link.href = `/order?pkg=${selSet}`;
+  }));
+}
+
+// ─── PAGE: profile ───────────────────────────────────────────────────────────
+function renderProfile() {
+  const initials = (CLIENT.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const totalAmt = ORDERS.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const totalFrm = ORDERS.reduce((s, o) => s + (o.qty_total    || 0), 0);
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Ваш акаунт</div>
+        <h1 class="pv-ptitle">Профіль</h1></div>
+    </div>
+    <div class="pv-profile-head">
+      <div class="pv-avatar" style="width:64px;height:64px;font-size:26px">${initials}</div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:26px;color:var(--paper)">${esc(CLIENT.name)}</div>
+        ${CLIENT.instagram ? `<div class="pv-cap" style="color:var(--acc);margin-top:4px">@${esc(CLIENT.instagram)}</div>` : ''}
+      </div>
+    </div>
+    <div class="pv-home-cols" style="margin-top:30px">
+      <div>
+        <div class="pv-shead"><h2>Контакти</h2></div>
+        <div class="pv-card pv-kv">
+          <div class="pv-kv-row"><span class="k">Телефон</span><span class="v">${esc(CLIENT.phone)}</span></div>
+          ${CLIENT.instagram ? `<div class="pv-kv-row"><span class="k">Instagram</span><span class="v">@${esc(CLIENT.instagram)}</span></div>` : ''}
+          ${CLIENT.email ? `<div class="pv-kv-row"><span class="k">Email</span><span class="v">${esc(CLIENT.email)}</span></div>` : ''}
+        </div>
+        <div class="pv-shead"><h2>Конфіденційність</h2></div>
+        <div class="pv-note">Ваші кадри зберігаються в захищеному сховищі — щоб нічого не загубилось і ви могли замовити повторно. Не передаємо їх третім особам. Захочете видалити — напишіть нам, зробимо одразу.</div>
+      </div>
+      <div>
+        <div class="pv-shead"><h2>Статистика</h2></div>
+        <div class="pv-card pv-kv">
+          <div class="pv-kv-row"><span class="k">Замовлень</span><span class="v">${ORDERS.length}</span></div>
+          <div class="pv-kv-row"><span class="k">Кадрів</span><span class="v">${totalFrm}</span></div>
+          <div class="pv-kv-row"><span class="k">Загалом</span><span class="v">${totalAmt} ₴</span></div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="pv-btn pv-btn--ghost pv-btn--full" id="logout-btn">Вийти з кабінету</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── PAGE: detail ────────────────────────────────────────────────────────────
+function renderDetail(token) {
+  const o = ORDERS.find(x => x.token === token);
+  if (!o) return `<button class="pv-back" data-back>← Назад</button>
+    <p style="color:var(--paper-50);font-family:var(--font-body)">Замовлення не знайдено.</p>`;
+
+  const cabStatus = DB_TO_CAB[o.status] || 'received';
+  const ai = FLOW.indexOf(cabStatus);
+  const steps = FLOW.map((k, i) => ({
+    key: k,
+    done: i < ai,
+    active: i === ai,
+    at: i===0 ? fmtDate(o.created_at)
+      : i===1 && o.uploaded_at ? fmtDate(o.uploaded_at)
+      : i===3 && o.shipped_at  ? fmtDate(o.shipped_at)
+      : i===4 && o.paid_at     ? fmtDate(o.paid_at)
+      : null,
+  }));
+
+  const vtimeline = steps.map((st, i) => {
+    const last = i === steps.length - 1;
+    const dotSize = st.active ? 13 : 9;
+    const dotBg   = st.active ? 'var(--acc)' : (st.done ? 'var(--paper)' : 'transparent');
+    const dotBord = st.done || st.active ? 'none' : '1px solid var(--paper-30)';
+    const dotGlow = st.active ? '0 0 0 4px rgba(196,149,108,0.18)' : 'none';
+    const dotAnim = st.active ? 'pvPulse 1.8s ease-in-out infinite' : 'none';
+    const textColor= st.done || st.active ? 'var(--paper)' : 'var(--paper-30)';
+    const subColor = st.active ? 'var(--paper-70)' : 'var(--paper-50)';
+    return `
+      <div style="display:grid;grid-template-columns:22px 1fr;gap:14px;padding-bottom:${last?0:18}px">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="width:${dotSize}px;height:${dotSize}px;border-radius:50%;margin-top:4px;flex-shrink:0;
+            background:${dotBg};border:${dotBord};box-shadow:${dotGlow};animation:${dotAnim}"></div>
+          ${!last ? `<div style="flex:1;width:1px;background:${st.done?'var(--paper-30)':'var(--paper-15)'};margin-top:4px;min-height:18px"></div>` : ''}
+        </div>
+        <div style="padding-top:1px">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+            <span style="font-family:var(--font-display);font-style:${st.active?'italic':'normal'};font-size:17px;color:${textColor};white-space:nowrap">${STATUS[st.key].label}</span>
+            ${st.at ? `<span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--paper-50)">${st.at}</span>` : ''}
+          </div>
+          ${st.done||st.active ? `<div style="font-size:12px;color:${subColor};margin-top:3px;line-height:1.45">${STATUS[st.key].verb}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <button class="pv-back" data-back>← Назад до замовлень</button>
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>${orderId(o)} · ${o.product_type ? 'Набір' : 'Роздріб'}</div>
+        <h1 class="pv-ptitle">${setTitle(o)}</h1></div>
+      <div class="pv-pmeta">${badgeHTML(o.status)}</div>
+    </div>
+    <div class="pv-detail-grid">
+      <div>
+        <div class="pv-card" style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="pv-cap">Стадія проявлення</span>
+            ${o.total_amount ? `<span style="font-family:var(--font-display);font-style:italic;font-size:24px;color:var(--paper)">${o.total_amount} ₴</span>` : ''}
+          </div>
+          ${vtimeline}
+        </div>
+        <div class="pv-shead"><h2>Кадри <span class="mono" id="frames-count"></span></h2></div>
+        <div class="pv-detail-frames" id="detail-frames">
+          <span class="pv-cap" style="grid-column:1/-1">Завантажуємо…</span>
+        </div>
+      </div>
+      <div>
+        <div class="pv-shead" style="margin-top:0"><h2>Доставка</h2></div>
+        <div class="pv-card pv-kv">
+          ${o.ttn ? `<div class="pv-kv-row"><span class="k">ТТН</span><span class="v mono" style="overflow-wrap:anywhere;word-break:break-all">${esc(o.ttn)}</span></div>` : ''}
+          <div class="pv-kv-row"><span class="k">Оформлено</span><span class="v">${fmtDate(o.created_at)}</span></div>
+          ${o.shipped_at ? `<div class="pv-kv-row"><span class="k">Відправлено</span><span class="v">${fmtDate(o.shipped_at)}</span></div>` : ''}
+        </div>
+        ${o.ttn ? `
+          <a href="https://tracking.novaposhta.ua/#/uk/${encodeURIComponent(String(o.ttn).replace(/\s/g,''))}"
+            target="_blank" rel="noopener"
+            class="pv-btn pv-btn--mono pv-btn--full" style="margin-top:14px;text-decoration:none">
+            Відстежити на Новій Пошті ↗
+          </a>` : ''}
+        <div class="pv-shead"><h2>Сума</h2></div>
+        <div class="pv-card pv-kv">
+          ${o.qty_total ? `<div class="pv-kv-row"><span class="k">Кадрів</span><span class="v">${o.qty_total}</span></div>` : ''}
+          <div class="pv-kv-row" style="border-top:1px solid var(--pv-line);padding-top:12px">
+            <span class="k" style="color:var(--paper)">Разом</span>
+            <span class="v" style="font-family:var(--font-display);font-style:italic;font-size:20px">${o.total_amount||0} ₴</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <a href="/status?t=${encodeURIComponent(o.token)}" class="pv-btn pv-btn--ghost" style="flex:1;text-decoration:none">Публічний статус</a>
+          <button class="pv-btn pv-btn--primary" style="flex:1" data-page="order">Проявити ще →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ─── Detail: кадри з R2-архіву ─────────────────────────────────────────────── */
+async function loadDetailPhotos(orderToken) {
+  const grid = document.getElementById('detail-frames');
+  const cnt  = document.getElementById('frames-count');
+  if (!grid) return;
+  let photos = [];
+  try {
+    const res = await fetch(`/api-client-photos?t=${encodeURIComponent(orderToken)}`, {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    if (res.ok) photos = (await res.json()).photos || [];
+  } catch {}
+  if (!grid.isConnected) return; // користувач уже пішов з деталі
+  if (!photos.length) {
+    grid.innerHTML = `<span style="grid-column:1/-1;font-size:13px;color:var(--paper-50);font-family:var(--font-body)">Кадри цього замовлення не збережені в кабінеті.</span>`;
+    return;
+  }
+  if (cnt) cnt.textContent = `${photos.length} шт`;
+  grid.innerHTML = photos.map(p => `
+    <div class="pv-frame" style="cursor:default">
+      <img src="${p.url}" alt="Кадр" loading="lazy"
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+      ${p.qty > 1 ? `<span class="pv-frame-idx" style="opacity:1">×${p.qty}</span>` : ''}
+    </div>`).join('');
+}
+
+// ─── Pages map ────────────────────────────────────────────────────────────────
+const PAGES = { home: renderHome, history: renderHistory, order: renderOrder, profile: renderProfile };
+
+// ─── Global event delegation ─────────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const navBtn  = e.target.closest('.pv-nav-btn[data-page]');
+  if (navBtn)  { go(navBtn.dataset.page); return; }
+
+  const goBtn = e.target.closest('[data-page]:not(.pv-nav-btn)');
+  if (goBtn)  { go(goBtn.dataset.page); return; }
+
+  const detail = e.target.closest('[data-detail]');
+  if (detail) { go('detail', detail.dataset.detail); return; }
+
+  const back = e.target.closest('[data-back]');
+  if (back)   { go('home'); return; }
+
+  const goHome = e.target.closest('[data-go="home"]');
+  if (goHome) { go('home'); return; }
+
+  const logout = e.target.closest('#logout-btn');
+  if (logout) { clearToken(); TOKEN = null; CLIENT = null; ORDERS = []; showAuthGate(); return; }
+});
+
+// ─── Auth tab switch ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.pv-auth-tab').forEach(b => b.classList.toggle('is-active', b.dataset.tab === tab));
+  document.getElementById('pv-login-form').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('pv-register-form').style.display = tab === 'register' ? '' : 'none';
+}
+document.querySelectorAll('.pv-auth-tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const phone    = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-err');
+  const btn      = document.getElementById('login-btn');
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res  = await fetch('/api-client-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', phone, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Помилка входу'; return; }
+    saveToken(data.token);
+    TOKEN = data.token; CLIENT = data.client;
+    await loadOrders();
+  } catch { errEl.textContent = 'Мережева помилка. Спробуйте ще.'; }
+  finally { btn.disabled = false; btn.textContent = 'Увійти'; }
+}
+
+document.getElementById('login-btn').addEventListener('click', doLogin);
+['login-phone','login-password'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); }));
+
+// ─── Register ─────────────────────────────────────────────────────────────────
+async function doRegister() {
+  const name     = document.getElementById('reg-name').value.trim();
+  const phone    = document.getElementById('reg-phone').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const errEl    = document.getElementById('reg-err');
+  const btn      = document.getElementById('reg-btn');
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res  = await fetch('/api-client-auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'register', name, phone, password, order_token: PRE_TOKEN || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Помилка реєстрації'; return; }
+    saveToken(data.token);
+    TOKEN = data.token; CLIENT = data.client;
+    await loadOrders();
+  } catch { errEl.textContent = 'Мережева помилка. Спробуйте ще.'; }
+  finally { btn.disabled = false; btn.textContent = 'Зареєструватись'; }
+}
+
+document.getElementById('reg-btn').addEventListener('click', doRegister);
+['reg-name','reg-phone','reg-password'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doRegister(); }));
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+initApp();
+</script>
+</body>
+</html>
