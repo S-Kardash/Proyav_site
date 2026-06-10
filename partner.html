@@ -207,7 +207,6 @@ function initApp(){
   go(start);
   loadData();
 }
-if (TOKEN && PH_DATA) initApp();
 
 async function loadData(){
   try{
@@ -582,6 +581,9 @@ document.addEventListener('keydown',(e)=>{
 function copyText(text,btn){ navigator.clipboard.writeText(text).then(()=>{ const o=btn.textContent; btn.textContent='Скопійовано ✓'; setTimeout(()=>btn.textContent=o,1600); }); }
 let toastTimer;
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),3000); }
+
+/* ════════ BOOT (must run last — after PAGES/go/listeners are defined) ════════ */
+if (TOKEN && PH_DATA) initApp();
 </script>
 </body>
 </html>

@@ -66,6 +66,12 @@ alter table orders add column if not exists cost      numeric default 0;
 alter table orders add column if not exists paid_at   timestamptz;
 alter table orders add column if not exists shipped_at timestamptz;
 
+-- ── 4b. product_type МОЖЕ бути NULL ─────────────────────────────────
+-- Роздрібні (à la carte) замовлення не мають набору → product_type = null.
+-- Зайвий NOT NULL валив усі роздрібні вставки («null value ... violates
+-- not-null constraint»). Знімаємо обмеження.
+alter table orders alter column product_type drop not null;
+
 -- ── 6. Telegram-сповіщення фотографу (MARKETING_CONTEXT 8.4) ────────
 -- tg_chat_id    — куди слати пінг «вашого клієнта оплачено» (set через webhook).
 -- tg_link_token — стабільний токен у deep-link t.me/<bot>?start=<token>, за яким
