@@ -1034,6 +1034,12 @@
           </div>
         </div>
 
+        <!-- Для вже авторизованого клієнта — прямий перехід у кабінет -->
+        <a class="track-order-btn" id="open-cabinet-btn" href="/account" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="6.5" r="2.8"/><path d="M3.5 15c0-2.8 2.5-4.3 5.5-4.3s5.5 1.5 5.5 4.3"/></svg>
+          Це замовлення вже у вашому кабінеті — відкрити
+        </a>
+
         <p style="font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--paper-50);margin-bottom:8px">ЩО ВІДБУВАЄТЬСЯ ДАЛІ</p>
         <ol style="list-style:none;padding:0;display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
           <li style="display:grid;grid-template-columns:28px 1fr;gap:12px"><span style="font-family:var(--font-display);font-style:italic;font-size:22px;color:var(--sepia);line-height:1">i.</span><span style="font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--paper-70)"><strong style="color:var(--paper);font-weight:500">До 4 годин</strong> — ми перевіряємо ваші кадри і пишемо в Telegram, якщо є питання.</span></li>
@@ -2242,6 +2248,9 @@ async function addPhotos(files) {
     S.photos.push(ph);
     // Persist blob so an accidental refresh/close keeps the photo (non-fatal)
     idbPut(storeKey, file).catch(e => console.warn('[idb] put failed:', e?.message));
+    // Persist the draft IMMEDIATELY (not only after async validation finishes),
+    // so closing the tab mid-upload still leaves a draft that points at this blob.
+    saveDraft();
 
     const card = buildPhotoCard(ph);
     // Sync card buttons to actual ph state (in case global differs from defaults)
@@ -2989,9 +2998,13 @@ async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
     ...identField,
   };
 
+  const headers = { 'Content-Type': 'application/json' };
+  // Logged-in client → link the order to their account on the server.
+  try { const ct = localStorage.getItem('pv_client_token'); if (ct) headers.Authorization = 'Bearer ' + ct; } catch {}
+
   const res = await fetchWithTimeout('/api-retail', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body:    JSON.stringify(payload),
   });
 
@@ -3128,7 +3141,14 @@ function setStatusLink(token) {
 /* ─ Registration nudge (shows if not already logged in) ─ */
 let _nudgeToken = null;
 function showRegisterNudge(orderToken) {
-  try { if (localStorage.getItem('pv_client_token')) return; } catch {}
+  // Already logged in → no registration form; show a direct cabinet link instead.
+  let loggedIn = false;
+  try { loggedIn = !!localStorage.getItem('pv_client_token'); } catch {}
+  if (loggedIn) {
+    const btn = document.getElementById('open-cabinet-btn');
+    if (btn) btn.style.display = '';
+    return;
+  }
   _nudgeToken = orderToken;
   const nudge = document.getElementById('register-nudge');
   if (!nudge) return;

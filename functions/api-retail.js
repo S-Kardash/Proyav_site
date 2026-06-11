@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice, commissionFor } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -7,6 +7,17 @@ export async function onRequest(context) {
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
+
+  // Optional: a logged-in client placing a new order → link it to their account
+  // right away (so it shows up in their cabinet without re-registering).
+  let clientId = null;
+  const authH = request.headers.get('Authorization') || '';
+  if (authH.startsWith('Bearer ') && env.JWT_SECRET) {
+    try {
+      const claims = await verifyJWT(authH.slice(7), env.JWT_SECRET);
+      if (claims.role === 'client') clientId = claims.id;
+    } catch { /* invalid/expired token → just save as guest */ }
+  }
 
   const {
     name, phone, product_type, message, source,
@@ -60,6 +71,7 @@ export async function onRequest(context) {
     qty_total:        qty_total   || null,
     total_amount:     finalTotal,
     uploaded_at:      hasPhotos ? new Date().toISOString() : null,
+    client_id:        clientId,
   };
 
   // ── Attribute the photographer only if the ?ph= value resolves to a real
