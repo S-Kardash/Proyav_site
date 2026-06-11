@@ -177,6 +177,64 @@ td b{color:var(--paper);font-weight:500}
 .goal-bar{height:8px;background:var(--paper-08);border:1px solid var(--paper-15);border-radius:var(--r-pill);overflow:hidden}
 .goal-fill{height:100%;background:linear-gradient(90deg,var(--sepia),#d9b48c);border-radius:var(--r-pill);transition:width .6s var(--ease-emerge)}
 
+/* ── KPI hero cards (кольорове кодування, акцент-бордюр) ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:26px}
+.kpi{position:relative;background:linear-gradient(160deg,var(--paper-08),rgba(243,238,230,.02));border:1px solid var(--paper-15);border-radius:var(--r-3);padding:20px 20px 18px;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--sepia))}
+.kpi.green{--accent:#6bbf8a}.kpi.red{--accent:var(--safelight)}.kpi.sepia{--accent:var(--sepia)}.kpi.silver{--accent:var(--silver-400)}
+.kpi-ic{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.kpi-ic svg{width:16px;height:16px}
+.kpi-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50)}
+.kpi-v{font-family:var(--font-display);font-size:36px;line-height:1;color:var(--paper);margin-top:10px}
+.kpi-v .u{font-family:var(--font-body);font-size:15px;color:var(--paper-50);margin-left:3px}
+.kpi-v.col{color:var(--accent)}
+.kpi-sub{font-size:11px;color:var(--paper-50);margin-top:7px;display:flex;align-items:center;gap:5px}
+.trend{font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;padding:1px 6px;border-radius:var(--r-pill)}
+.trend.up{color:#6bbf8a;background:rgba(107,191,138,.14)}.trend.down{color:var(--safelight);background:rgba(178,58,44,.14)}.trend.flat{color:var(--paper-50);background:var(--paper-08)}
+
+/* ── Panels (графіки/блоки з заголовком) ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.panel{background:var(--paper-08);border:1px solid var(--paper-15);border-radius:var(--r-3);padding:18px 20px}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px}
+.panel-title{font-family:var(--font-display);font-size:20px;color:var(--paper)}
+.panel-meta{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-50)}
+
+/* ── Bar chart (SVG) ── */
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:8px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end;min-width:0}
+.bar{width:100%;max-width:42px;background:linear-gradient(180deg,var(--sepia),rgba(196,149,108,.35));border-radius:3px 3px 0 0;position:relative;transition:height .6s var(--ease-emerge);min-height:2px}
+.bar.hot{background:linear-gradient(180deg,#6bbf8a,rgba(107,191,138,.35))}
+.bar-v{font-family:var(--font-mono);font-size:9px;color:var(--paper-70);white-space:nowrap}
+.bar-l{font-family:var(--font-mono);font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--paper-50);white-space:nowrap}
+
+/* ── Horizontal bars (категорії/канали) ── */
+.hbar-row{display:grid;grid-template-columns:96px 1fr 56px;align-items:center;gap:10px;margin-bottom:11px}
+.hbar-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--paper-50);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar-track{height:9px;background:var(--paper-08);border-radius:var(--r-pill);overflow:hidden}
+.hbar-fill{height:100%;border-radius:var(--r-pill);transition:width .6s var(--ease-emerge)}
+.hbar-v{font-family:var(--font-mono);font-size:11px;color:var(--paper);text-align:right}
+
+/* ── Leaderboard / activity ── */
+.lb-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--paper-08)}
+.lb-row:first-child{border-top:none}
+.lb-rank{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;background:var(--paper-08);color:var(--paper-50)}
+.lb-rank.top{background:var(--sepia);color:var(--ink-darkroom)}
+.lb-name{flex:1;min-width:0;font-size:14px;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-val{font-family:var(--font-mono);font-size:12px;color:var(--sepia)}
+.act-row{display:flex;gap:11px;padding:10px 0;border-top:1px solid var(--paper-08);align-items:flex-start}
+.act-row:first-child{border-top:none}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.act-txt{flex:1;font-size:13px;color:var(--paper-70);line-height:1.4}
+.act-txt b{color:var(--paper)}
+.act-at{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-30);white-space:nowrap}
+.donut-wrap{display:flex;align-items:center;gap:18px}
+.donut-legend{flex:1;display:flex;flex-direction:column;gap:8px}
+.dl-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--paper-70)}
+.dl-sw{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dl-v{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--paper)}
+
 /* toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--paper);color:var(--ink-darkroom);padding:12px 22px;border-radius:var(--r-pill);font-size:14px;font-weight:500;z-index:999;transition:transform .25s;pointer-events:none;box-shadow:var(--shadow-dark)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -351,68 +409,150 @@ async function loadSettings(){
 
 // ════════ DASHBOARD ════════
 let dashPeriod='month';
-function periodStart(p){
-  const d=new Date();
-  if(p==='week'){const w=new Date(d);const day=(w.getDay()+6)%7;w.setDate(w.getDate()-day);w.setHours(0,0,0,0);return w;}
-  if(p==='month')return new Date(d.getFullYear(),d.getMonth(),1);
-  return new Date(0);
+const CAT_COLORS=['#C4956C','#6bbf8a','#8A8580','#B23A2C','#9b7bb8','#d9b48c','#7a9bb0','#c98f8f'];
+const STATUS_COLOR={new:'#B5AFA6',uploaded:'#C4956C',in_progress:'#C4956C',sent:'#F3EEE6',paid:'#6bbf8a'};
+const CH_COLORS={photographer:'#C4956C',package:'#7a9bb0',retail:'#8A8580'};
+
+function rangeFor(p){
+  const now=new Date();
+  if(p==='week'){const s=new Date(now);const day=(s.getDay()+6)%7;s.setDate(s.getDate()-day);s.setHours(0,0,0,0);const ps=new Date(s);ps.setDate(ps.getDate()-7);return{start:s,prevStart:ps,prevEnd:s};}
+  if(p==='month'){const s=new Date(now.getFullYear(),now.getMonth(),1);const ps=new Date(now.getFullYear(),now.getMonth()-1,1);return{start:s,prevStart:ps,prevEnd:s};}
+  return{start:new Date(0),prevStart:null,prevEnd:null};
 }
-function inPeriod(iso,p){if(!iso)return false;return new Date(iso)>=periodStart(p);}
+const paidT=o=>o.paid_at||o.created_at;
+function revenueBetween(from,to){return S.orders.filter(o=>o.status==='paid').filter(o=>{const t=new Date(paidT(o));return t>=from&&(!to||t<to);}).reduce((s,o)=>s+(o.total_amount||0),0);}
+function ordersBetween(from,to){return S.orders.filter(o=>{const t=new Date(o.created_at);return t>=from&&(!to||t<to);});}
+function expBetween(from,to){return S.expenses.filter(e=>{const t=new Date(e.date);return t>=from&&(!to||t<to);}).reduce((s,e)=>s+(Number(e.amount)||0),0);}
+function trendTag(cur,prev){
+  if(prev==null)return '';
+  if(!prev&&!cur)return '';
+  if(!prev)return `<span class="trend up">нове</span>`;
+  const d=Math.round((cur-prev)/prev*100);
+  const cls=d>0?'up':d<0?'down':'flat';
+  return `<span class="trend ${cls}">${d>0?'+':''}${d}%</span>`;
+}
+function revByMonth(n){
+  const out=[],now=new Date();
+  for(let i=n-1;i>=0;i--){
+    const dt=new Date(now.getFullYear(),now.getMonth()-i,1), nx=new Date(now.getFullYear(),now.getMonth()-i+1,1);
+    out.push({label:dt.toLocaleDateString('uk-UA',{month:'short'}).replace('.',''),value:revenueBetween(dt,nx)});
+  }
+  return out;
+}
+function barChart(data){
+  const max=Math.max(1,...data.map(d=>d.value));
+  return `<div class="bars">${data.map((d,i)=>`<div class="bar-col"><span class="bar-v">${d.value?money(d.value):''}</span><div class="bar ${i===data.length-1?'hot':''}" style="height:${Math.max(2,Math.round(d.value/max*100))}%"></div><span class="bar-l">${d.label}</span></div>`).join('')}</div>`;
+}
+function hbars(data){
+  const max=Math.max(1,...data.map(d=>d.value));
+  if(!data.length)return `<div class="hint">Немає даних</div>`;
+  return data.map((d,i)=>`<div class="hbar-row"><span class="hbar-k">${esc(d.label)}</span><div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(d.value/max*100)}%;background:${d.color||CAT_COLORS[i%CAT_COLORS.length]}"></div></div><span class="hbar-v">${d.fmt||money(d.value)}</span></div>`).join('');
+}
+function donut(segs){
+  const total=segs.reduce((s,x)=>s+x.value,0)||1, r=42, c=2*Math.PI*r; let acc=0;
+  const arcs=segs.filter(s=>s.value>0).map(s=>{const frac=s.value/total,dash=frac*c,el=`<circle r="${r}" cx="60" cy="60" fill="none" stroke="${s.color}" stroke-width="15" stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-acc*c}" transform="rotate(-90 60 60)"/>`;acc+=frac;return el;}).join('');
+  return `<svg width="118" height="118" viewBox="0 0 120 120" style="flex-shrink:0"><circle r="${r}" cx="60" cy="60" fill="none" stroke="var(--paper-08)" stroke-width="15"/>${arcs}<text x="60" y="57" text-anchor="middle" fill="var(--paper)" font-family="var(--font-display)" font-size="26">${total}</text><text x="60" y="73" text-anchor="middle" fill="var(--paper-50)" font-family="var(--font-mono)" font-size="7" letter-spacing="2">ЗАМОВЛЕНЬ</text></svg>`;
+}
 
 function PAGE_dashboard(){
-  const p=dashPeriod;
-  const paid=S.orders.filter(o=>o.status==='paid');
-  const revenue=paid.filter(o=>inPeriod(o.paid_at||o.created_at,p)).reduce((s,o)=>s+(o.total_amount||0),0);
-  const exp=S.expenses.filter(e=>inPeriod(e.date,p)).reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const p=dashPeriod, R=rangeFor(p), expLoaded=S.loaded.expenses;
+  const revenue=revenueBetween(R.start,null), prevRev=R.prevStart?revenueBetween(R.prevStart,R.prevEnd):null;
+  const exp=expBetween(R.start,null), prevExp=R.prevStart?expBetween(R.prevStart,R.prevEnd):null;
   const profit=revenue-exp;
-  const ordersInP=S.orders.filter(o=>inPeriod(o.created_at,p)).length;
-  const target=Number(S.settings.monthly_target||0);
-  const wTarget=Number(S.settings.weekly_target||0);
-  const goalTarget=p==='week'?wTarget:target;
+  const ordsP=ordersBetween(R.start,null), prevOrds=R.prevStart?ordersBetween(R.prevStart,R.prevEnd).length:null;
+  const paidP=ordsP.filter(o=>o.status==='paid').length;
+  const aov=paidP?Math.round(revenue/paidP):0;
+  const goalTarget=p==='week'?Number(S.settings.weekly_target||0):Number(S.settings.monthly_target||0);
   const pct=goalTarget?Math.min(100,Math.round(revenue/goalTarget*100)):0;
+  const fixed=Number(S.settings.fixed_costs||0);
 
-  // funnel
+  // funnel + channels (всі замовлення)
   const fc={}; FLOW.forEach(k=>fc[k]=S.orders.filter(o=>o.status===k).length);
-  // channels
-  const chPhoto=S.orders.filter(o=>o.source==='photographer').length;
-  const chPkg=S.orders.filter(o=>o.source==='package').length;
-  const chRetail=S.orders.filter(o=>!o.source||o.source==='retail').length;
+  const ch=[
+    {label:'Фотограф',value:S.orders.filter(o=>o.source==='photographer').length,color:CH_COLORS.photographer},
+    {label:'Пакет',value:S.orders.filter(o=>o.source==='package').length,color:CH_COLORS.package},
+    {label:'Роздріб',value:S.orders.filter(o=>!o.source||o.source==='retail').length,color:CH_COLORS.retail},
+  ];
+  // expenses by category
+  const ecm={}; S.expenses.forEach(e=>{ecm[e.category]=(ecm[e.category]||0)+(Number(e.amount)||0);});
+  const ecats=Object.entries(ecm).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,6);
+  // top photographers
+  const phm={}; S.orders.forEach(o=>{const n=o.photographers?.name;if(!n)return;phm[n]=phm[n]||{name:n,count:0,rev:0};phm[n].count++;if(o.status==='paid')phm[n].rev+=o.total_amount||0;});
+  const topPh=Object.values(phm).sort((a,b)=>b.count-a.count).slice(0,5);
+  // recent activity
+  const recent=[...S.orders].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
 
-  const expLoaded=S.loaded.expenses;
   return `
   <div class="phead">
-    <div><div class="peyebrow"><span class="ln"></span>Огляд</div><h1 class="ptitle">Дашборд</h1></div>
+    <div><div class="peyebrow"><span class="ln"></span>Огляд майстерні</div><h1 class="ptitle">Дашборд</h1></div>
     <div class="toolbar" style="margin:0">
       ${['week','month','all'].map(k=>`<button class="chip ${k===p?'active':''}" onclick="dashPeriod='${k}';if(!S.loaded.expenses){loadExpenses().then(()=>go('dashboard'))}else go('dashboard')">${k==='week'?'Тиждень':k==='month'?'Місяць':'Весь час'}</button>`).join('')}
     </div>
   </div>
 
+  <div class="kpis">
+    <div class="kpi green">
+      <div class="kpi-ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 13l4-4 3 3 7-7"/><path d="M12 5h4v4"/></svg></div>
+      <div class="kpi-k">Виручка</div><div class="kpi-v col">${money(revenue)}<span class="u">₴</span></div>
+      <div class="kpi-sub">${trendTag(revenue,prevRev)} <span>проти минулого</span></div>
+    </div>
+    <div class="kpi ${profit>=0?'sepia':'red'}">
+      <div class="kpi-ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5v7M7 7.5h3.2M7 10.5h3.2"/></svg></div>
+      <div class="kpi-k">Прибуток</div><div class="kpi-v col">${expLoaded?money(profit):'—'}<span class="u">₴</span></div>
+      <div class="kpi-sub">${expLoaded?`витрати ${money(exp)}₴`:'відкрийте «Витрати»'}</div>
+    </div>
+    <div class="kpi silver">
+      <div class="kpi-ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="12" height="12"/><path d="M6 7h6M6 10h4"/></svg></div>
+      <div class="kpi-k">Замовлень</div><div class="kpi-v">${ordsP.length}</div>
+      <div class="kpi-sub">${trendTag(ordsP.length,prevOrds)} <span>${paidP} оплачено</span></div>
+    </div>
+    <div class="kpi sepia">
+      <div class="kpi-ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 9h12M9 3v12" opacity=".3"/><circle cx="9" cy="9" r="6.5"/></svg></div>
+      <div class="kpi-k">Середній чек</div><div class="kpi-v col">${money(aov)}<span class="u">₴</span></div>
+      <div class="kpi-sub">на оплачене замовлення</div>
+    </div>
+  </div>
+
   ${goalTarget?`<div class="goal">
-    <div class="goal-top"><span class="card-k">Ціль ${p==='week'?'тижня':'місяця'} · ${money(goalTarget)}₴</span><span style="font-family:var(--font-display);font-style:italic;font-size:20px;color:var(--sepia)">${pct}%</span></div>
-    <div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>
-    <div class="card-sub">Виручка ${money(revenue)}₴ ${revenue<goalTarget?`· ще ${money(goalTarget-revenue)}₴ до цілі`:'· ціль досягнута 🤍'}</div>
+    <div class="goal-top"><span class="card-k">Ціль ${p==='week'?'тижня':'місяця'} · ${money(goalTarget)}₴ ${fixed?`<span style="color:var(--paper-30)">· фікс-витрати ${money(fixed)}₴</span>`:''}</span><span style="font-family:var(--font-display);font-style:italic;font-size:22px;color:${pct>=100?'#6bbf8a':'var(--sepia)'}">${pct}%</span></div>
+    <div class="goal-bar"><div class="goal-fill" style="width:${pct}%${pct>=100?';background:linear-gradient(90deg,#6bbf8a,#9ed8b4)':''}"></div></div>
+    <div class="card-sub">${revenue<goalTarget?`Ще ${money(goalTarget-revenue)}₴ до цілі`:'Ціль досягнута 🤍'}</div>
   </div>`:''}
 
-  <div class="cards">
-    <div class="card"><div class="card-k">Виручка</div><div class="card-v green">${money(revenue)}<span class="u">₴</span></div><div class="card-sub">оплачені за період</div></div>
-    <div class="card"><div class="card-k">Витрати</div><div class="card-v ${exp?'red':''}">${expLoaded?money(exp):'—'}<span class="u">₴</span></div><div class="card-sub">${expLoaded?'за період':'натисніть «Витрати»'}</div></div>
-    <div class="card"><div class="card-k">Прибуток</div><div class="card-v ${profit>=0?'sepia':'red'}">${expLoaded?money(profit):'—'}<span class="u">₴</span></div><div class="card-sub">виручка − витрати</div></div>
-    <div class="card"><div class="card-k">Замовлень</div><div class="card-v">${ordersInP}</div><div class="card-sub">створено за період</div></div>
+  <div class="grid3">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Виручка по місяцях</span><span class="panel-meta">6 міс · оплачено</span></div>
+      ${barChart(revByMonth(6))}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Канали</span><span class="panel-meta">звідки</span></div>
+      <div class="donut-wrap">${donut(ch)}<div class="donut-legend">${ch.map(c=>`<div class="dl-row"><span class="dl-sw" style="background:${c.color}"></span>${c.label}<span class="dl-v">${c.value}</span></div>`).join('')}</div></div>
+    </div>
   </div>
 
-  <div class="shead"><h2>Лійка замовлень <span class="mono">всі</span></h2></div>
-  <div class="cards" style="grid-template-columns:repeat(5,1fr)">
-    ${FLOW.map(k=>`<div class="card" style="cursor:pointer" onclick="curFilter='${k}';go('orders')"><div class="card-k">${STATUS[k].label}</div><div class="card-v" style="font-size:26px">${fc[k]}</div></div>`).join('')}
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Лійка замовлень</span><span class="panel-meta">клік → фільтр</span></div>
+      ${(()=>{const max=Math.max(1,...FLOW.map(k=>fc[k]));return FLOW.map(k=>`<div class="hbar-row" style="cursor:pointer" onclick="curFilter='${k}';go('orders')"><span class="hbar-k">${STATUS[k].label}</span><div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(fc[k]/max*100)}%;background:${STATUS_COLOR[k]}"></div></div><span class="hbar-v">${fc[k]}</span></div>`).join('')})()}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Витрати за категоріями</span><span class="panel-meta">${expLoaded?'усього '+money(S.expenses.reduce((s,e)=>s+(+e.amount||0),0))+'₴':''}</span></div>
+      ${expLoaded?(ecats.length?hbars(ecats.map(c=>({label:c.label,value:c.value,fmt:money(c.value)+'₴'}))):`<div class="hint">Витрат ще немає</div>`):`<div class="hint">Відкрийте вкладку «Витрати», щоб підвантажити дані</div>`}
+    </div>
   </div>
 
-  <div class="shead"><h2>Звідки замовлення</h2></div>
-  <div class="cards" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card"><div class="card-k">Фотограф</div><div class="card-v sepia" style="font-size:26px">${chPhoto}</div></div>
-    <div class="card"><div class="card-k">Пакет (сайт)</div><div class="card-v" style="font-size:26px">${chPkg}</div></div>
-    <div class="card"><div class="card-k">Роздріб</div><div class="card-v" style="font-size:26px">${chRetail}</div></div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Топ фотографи</span><span class="panel-meta">за замовленнями</span></div>
+      ${topPh.length?topPh.map((p,i)=>`<div class="lb-row"><span class="lb-rank ${i===0?'top':''}">${i+1}</span><span class="lb-name">${esc(p.name)}</span><span class="lb-val">${p.count} зам · ${money(p.rev)}₴</span></div>`).join(''):`<div class="hint">Замовлень від фотографів ще немає</div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Остання активність</span><span class="panel-meta">live</span></div>
+      ${recent.length?recent.map(o=>`<div class="act-row"><span class="act-dot" style="background:${STATUS_COLOR[o.status]||'var(--paper-30)'}"></span><span class="act-txt"><b>${esc(o.client_name||'Клієнт')}</b> · ${prodLabel(o)}${o.total_amount?` · ${money(o.total_amount)}₴`:''} <span style="color:var(--paper-30)">(${STATUS[o.status]?.label||o.status})</span></span><span class="act-at">${fmtD(o.created_at)}</span></div>`).join(''):`<div class="hint">Замовлень ще немає</div>`}
+    </div>
   </div>
 
-  ${S.lowCount?`<div class="goal" style="border-color:rgba(178,58,44,.4);margin-top:24px"><div class="goal-top"><span class="card-k" style="color:var(--safelight)">⚠ Закінчується на складі</span><button class="btn btn-mono btn-sm" onclick="go('inventory')">Переглянути</button></div><div class="card-sub">${S.lowCount} позицій нижче порогу</div></div>`:''}
+  ${S.lowCount?`<div class="goal" style="border-color:rgba(178,58,44,.4)"><div class="goal-top"><span class="card-k" style="color:var(--safelight)">⚠ Закінчується на складі · ${S.lowCount} позицій</span><button class="btn btn-mono btn-sm" onclick="go('inventory')">Переглянути</button></div></div>`:''}
   `;
 }
 
