@@ -15,7 +15,8 @@ npm-debug.log*
 .claude/settings.local.json
 
 # Local archive & reference material (not part of the deployed site)
-Proyav_site.zip
+# Усі zip-архіви ігноруємо (Cloudflare Pages має ліміт 25 МБ на файл)
+*.zip
 _reference/
 _research_text.txt
 

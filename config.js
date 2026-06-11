@@ -6,11 +6,13 @@
 (function () {
   // Пакети. photos = скільки відбитків включає набір; price — фікс-ціна.
   // family 'std' — лінійка, що авто-апгрейдиться (10→20→50). 'baby' — окремий тематичний набір.
+  // img — оптимізоване фото-герой набору (assets/products/*). Джерело: товар_фото/.
+  // cap — максимум відбитків у наборі (якщо відрізняється від photos: великий 50→80).
   var packages = {
-    small:  { key:'small',  name:'Малий «Момент»',    short:'Малий набір',    photos:10, price:400, family:'std',  desc:'10 фото · оксамитовий конверт' },
-    medium: { key:'medium', name:'Середній «Спогад»',  short:'Середній набір', photos:20, price:600, family:'std',  desc:'20 фото · оксамитовий конверт' },
-    large:  { key:'large',  name:'Великий «Архів»',    short:'Великий набір',  photos:50, price:900, family:'std',  desc:'50 фото · преміальна коробка' },
-    baby:   { key:'baby',   name:'«Малюк»',            short:'Спогади малюка', photos:10, price:450, family:'baby', desc:'10 фото · конверт з ведмедиком' },
+    small:  { key:'small',  name:'Маленький «Момент»', short:'Маленький набір', photos:12, price:400, family:'std',  desc:'12 фото · оксамитовий конверт',            img:'assets/products/envelopes/envelopes-01.jpg' },
+    medium: { key:'medium', name:'Подвійний «Спогад»',  short:'Подвійний набір', photos:24, price:600, family:'std',  desc:'24 фото · два оксамитові конверти',         img:'assets/products/envelopes/envelopes-04.jpg' },
+    large:  { key:'large',  name:'Великий «Архів»',     short:'Великий набір',   photos:50, cap:80, price:900, family:'std', desc:'50–80 фото · преміальна коробка',    img:'assets/products/box/box-01.jpg' },
+    baby:   { key:'baby',   name:'«Малюк»',             short:'Спогади малюка',  photos:12, price:450, family:'baby', desc:'12 фото · конверт з ведмедиком',           img:'assets/products/newborn/newborn-05.jpg' },
   };
 
   var printPrice = 15;                       // ₴ за відбиток (роздріб à la carte / Напрямок 1)
@@ -30,12 +32,12 @@
     return best;
   }
 
-  // Максимум відбитків для пакета (std = 50, baby = 10).
+  // Максимум відбитків для пакета (std = великий cap 80, baby = 12).
   function photoCap(productType) {
     var pkg = packages[productType];
     if (!pkg) return Infinity;
-    if (pkg.family === 'std') return packages[stdChain[stdChain.length - 1]].photos;
-    return pkg.photos;
+    if (pkg.family === 'std') { var top = packages[stdChain[stdChain.length - 1]]; return top.cap || top.photos; }
+    return pkg.cap || pkg.photos;
   }
 
   // Підрахунок замовлення.
