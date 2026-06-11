@@ -81,3 +81,4 @@ Auto-upgrade std: 12→24→50(до 80). baby cap 12.
 - Токени/секрети (TG_TOKEN, JWT_SECRET, SUPABASE_SERVICE_KEY, EmailJS) — лише env, ніколи в клієнті.
 - Після тестів на локальному сервері — **зупиняти його** (`preview_stop`), власник тестує на проді.
 - Лок. прев'ю: launch config `static` (python http.server :8123).
+- **Cloudflare Pages: ліміт 25 МБ на файл.** Важкі архіви/медіа НЕ комітити. Усі `*.zip` у `.gitignore`. Якщо важкий файл уже закомічено — `.gitignore` не досить, треба `git rm --cached <файл>` + новий коміт (Pages деплоїть дерево останнього коміту, не історію). Уникати `git add -A` біля важких файлів. (Інцидент: `copylounge-main.zip` 43МБ потрапив у 317b5a1 → деплой падав; прибрано в aa029c2.)
