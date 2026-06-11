@@ -72,6 +72,21 @@ alter table orders add column if not exists shipped_at timestamptz;
 -- not-null constraint»). Знімаємо обмеження.
 alter table orders alter column product_type drop not null;
 
+-- ── 4c. orders.source — дозволити всі реальні напрямки (КРИТИЧНО) ────
+-- Старий check-constraint валив вставки: «new row ... violates check
+-- constraint "orders_source_check"». Код шле три значення —
+-- retail / package / photographer (+ direct на майбутнє). Перевизначаємо
+-- обмеження, щоб усі вони були валідні. Заразом дозволяємо NULL (старі рядки).
+do $$
+begin
+  if exists (select 1 from pg_constraint where conname = 'orders_source_check')
+  then alter table orders drop constraint orders_source_check;
+  end if;
+end $$;
+alter table orders
+  add constraint orders_source_check
+  check (source is null or source in ('retail','package','photographer','direct'));
+
 -- ── 6. Telegram-сповіщення фотографу (MARKETING_CONTEXT 8.4) ────────
 -- tg_chat_id    — куди слати пінг «вашого клієнта оплачено» (set через webhook).
 -- tg_link_token — стабільний токен у deep-link t.me/<bot>?start=<token>, за яким
