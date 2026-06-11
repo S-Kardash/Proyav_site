@@ -251,20 +251,20 @@ export async function sheetsAppend(env, rowValues) {
 }
 
 export const PRODUCT_NAMES = {
-  small:  'Малий набір (10 фото)',
-  medium: 'Середній набір (20 фото)',
-  large:  'Великий набір (50 фото)',
-  baby:   'Спогади малюка',
+  small:  'Маленький набір (12 фото)',
+  medium: 'Подвійний набір (24 фото)',
+  large:  'Великий набір (50–80 фото)',
+  baby:   'Спогади малюка (12 фото)',
 };
 
 // ── Authoritative pricing ───────────────────────────────────────────────────
 // KEEP IN SYNC with /config.js (frontend source of truth). Server recomputes
 // package prices so a tampered client total can never be trusted.
 export const PACKAGES = {
-  small:  { photos: 10, price: 400, family: 'std'  },
-  medium: { photos: 20, price: 600, family: 'std'  },
-  large:  { photos: 50, price: 900, family: 'std'  },
-  baby:   { photos: 10, price: 450, family: 'baby' },
+  small:  { photos: 12, price: 400, family: 'std'  },
+  medium: { photos: 24, price: 600, family: 'std'  },
+  large:  { photos: 50, cap: 80, price: 900, family: 'std'  },
+  baby:   { photos: 12, price: 450, family: 'baby' },
 };
 export const PRINT_PRICE = 15; // ₴ per print (à la carte / retail)
 

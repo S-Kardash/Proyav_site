@@ -233,12 +233,12 @@ const STATUS = {
 const isDone = o => o.status === 'paid' || o.status === 'done';
 /* Дзеркало PACKAGES із config.js / _utils.js — ціни не рахуємо, лише показуємо. */
 const SETS = [
-  { id:'small',  name:'Малий набір',    frames:'10 фото · 10×15',  price: 400 },
-  { id:'medium', name:'Середній набір', frames:'20 фото · 10×15',  price: 600 },
-  { id:'large',  name:'Великий набір',  frames:'50 фото · 10×15',  price: 900 },
-  { id:'baby',   name:'Спогади малюка', frames:'10 фото · оксамит', price: 450 },
+  { id:'small',  name:'Маленький набір', frames:'12 фото · 10×15',   price: 400, img:'assets/products/envelopes/envelopes-01.jpg' },
+  { id:'medium', name:'Подвійний набір', frames:'24 фото · 2 конверти', price: 600, img:'assets/products/envelopes/envelopes-04.jpg' },
+  { id:'large',  name:'Великий набір',   frames:'50–80 фото · коробка', price: 900, img:'assets/products/box/box-01.jpg' },
+  { id:'baby',   name:'Спогади малюка',  frames:'12 фото · оксамит',  price: 450, img:'assets/products/newborn/newborn-05.jpg' },
 ];
-const PKG_NAMES = { small:'Малий набір', medium:'Середній набір', large:'Великий набір', baby:'Спогади малюка' };
+const PKG_NAMES = { small:'Маленький набір', medium:'Подвійний набір', large:'Великий набір', baby:'Спогади малюка' };
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let TOKEN = null;
@@ -687,6 +687,7 @@ function renderOrder() {
   const sets = SETS.map(s => `
     <div class="pv-set ${s.id===selSet?'is-sel':''}" data-set="${s.id}">
       <div class="pv-set-radio"><span></span></div>
+      ${s.img ? `<div class="pv-set-thumb"><img src="${s.img}" alt="${s.name}" loading="lazy"></div>` : ''}
       <div class="pv-set-body">
         <div class="pv-set-name">${s.name}</div>
         <div class="pv-set-frames">${s.frames}</div>

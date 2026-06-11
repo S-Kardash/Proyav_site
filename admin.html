@@ -216,10 +216,10 @@ select:focus{border-color:var(--gold)}
     <div class="form-row">
       <label>Продукт</label>
       <select id="co-product">
-        <option value="small">Малий набір (10 фото)</option>
-        <option value="medium">Середній набір (20 фото)</option>
-        <option value="large">Великий набір (50 фото)</option>
-        <option value="baby">Спогади малюка</option>
+        <option value="small">Маленький набір (12 фото)</option>
+        <option value="medium">Подвійний набір (24 фото)</option>
+        <option value="large">Великий набір (50–80 фото)</option>
+        <option value="baby">Спогади малюка (12 фото)</option>
       </select>
     </div>
     <div class="form-row">
@@ -334,7 +334,7 @@ let searchTimer;
 
 const STATUS_LABEL = { new:'Нове', uploaded:'Фото отримано', in_progress:'В роботі', sent:'Відправлено', paid:'Оплачено' };
 const STATUS_CLASS  = { new:'badge-new', uploaded:'badge-uploaded', in_progress:'badge-in_progress', sent:'badge-sent', paid:'badge-paid' };
-const PRODUCT_LABEL = { small:'Малий набір', medium:'Середній набір', large:'Великий набір', baby:'Спогади малюка' };
+const PRODUCT_LABEL = { small:'Маленький набір', medium:'Подвійний набір', large:'Великий набір', baby:'Спогади малюка' };
 
 // Escape user-controlled strings before inserting into innerHTML.
 // Retail orders carry client_name/phone submitted from the PUBLIC order form,

@@ -2218,7 +2218,7 @@ async function addPhotos(files) {
       const curQty = S.photos.reduce((s, p) => s + p.qty, 0);
       if (curQty + 1 > cap) {
         const isBaby = PROYAV.packages[S.productType] && PROYAV.packages[S.productType].family === 'baby';
-        showToast(isBaby ? '⚠ Набір «Малюк» — до 10 фото' : '⚠ Максимум 50 фото у наборі. Для більшого — оберіть роздрібний друк.');
+        showToast(isBaby ? `⚠ Набір «Малюк» — до ${cap} фото` : `⚠ Максимум ${cap} фото у наборі. Для більшого — оберіть роздрібний друк.`);
         break;
       }
     }
@@ -3218,10 +3218,10 @@ function resetApp() {
    ──────────────────────────────────────────────────────────────────────── */
 
 const PRODUCT_DISPLAY = {
-  small:  'Малий набір (10 фото)',
-  medium: 'Середній набір (20 фото)',
-  large:  'Великий набір (50 фото)',
-  baby:   'Спогади малюка',
+  small:  'Маленький набір (12 фото)',
+  medium: 'Подвійний набір (24 фото)',
+  large:  'Великий набір (50–80 фото)',
+  baby:   'Спогади малюка (12 фото)',
 };
 
 function dismissSplash(delay = 400) {

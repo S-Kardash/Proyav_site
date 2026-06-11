@@ -335,10 +335,20 @@
     background: repeating-linear-gradient(135deg, transparent 0, transparent 18px, rgba(255,255,255,0.04) 18px, rgba(255,255,255,0.04) 19px);
   }
   .product-mock-tag {
-    position: absolute; top: 12px; left: 12px;
+    position: absolute; top: 12px; left: 12px; z-index: 2;
     font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
-    text-transform: uppercase; color: var(--paper-50);
+    text-transform: uppercase; color: var(--paper-70);
+    background: rgba(0,0,0,.4); padding: 4px 8px; backdrop-filter: blur(3px);
   }
+  /* Реальні фото товарів (assets/products) поверх мок-градієнтів */
+  .product-mock-img, .hero-photo-img, .gallery-img-real {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .product-mock-img { transition: transform var(--dur-slow, .5s) var(--ease-emerge); }
+  .product:hover .product-mock-img { transform: scale(1.04); }
+  .gallery-img-real { transition: transform var(--dur-normal) var(--ease-emerge); }
+  .gallery-item:hover .gallery-img-real { transform: scale(1.03); }
 
   .product-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 8px; }
   .product-title { font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.1; color: var(--paper); margin-bottom: 4px; }
@@ -675,8 +685,8 @@
 
     <div class="hero-photo-wrap">
       <div class="hero-photo">
-        <span class="hero-photo-num">ЗРАЗОК</span>
-        <span class="hero-photo-label">Приклад набору · АТЕЛЬЄ</span>
+        <img class="hero-photo-img" src="assets/products/envelopes/envelopes-01.jpg" alt="Оксамитовий конверт «Прояв» з тисненням" loading="eager">
+        <span class="hero-photo-label">Оксамитовий конверт · ПРОЯВ</span>
       </div>
       <span class="hero-photo-caption">приклад проявлення</span>
     </div>
@@ -722,12 +732,12 @@
     <div class="products-grid">
       <a href="/order?pkg=small" class="product">
         <div class="product-mock">
-          <span class="product-mock-tag">10 КАДРІВ</span>
-          <div class="product-mock-inner"></div>
+          <span class="product-mock-tag">12 КАДРІВ</span>
+          <img class="product-mock-img" src="assets/products/envelopes/envelopes-01.jpg" alt="Маленький набір «Момент»" loading="lazy">
         </div>
         <div class="product-eyebrow">НАБІР № 01</div>
         <h3 class="product-title"><em>Момент</em></h3>
-        <p class="product-desc">10 кадрів 10×15 · оксамитовий конверт · картка з підписом ательє.</p>
+        <p class="product-desc">12 кадрів 10×15 · оксамитовий конверт · картка з підписом ательє.</p>
         <div class="product-foot">
           <span class="product-price">400 ₴</span>
           <span class="product-cta">Обрати →</span>
@@ -736,12 +746,12 @@
 
       <a href="/order?pkg=medium" class="product">
         <div class="product-mock">
-          <span class="product-mock-tag">20 КАДРІВ</span>
-          <div class="product-mock-inner" style="width: 64%; height: 80%;"></div>
+          <span class="product-mock-tag">24 КАДРИ · ⌥</span>
+          <img class="product-mock-img" src="assets/products/envelopes/envelopes-04.jpg" alt="Подвійний набір «Спогад»" loading="lazy">
         </div>
-        <div class="product-eyebrow">НАБІР № 02</div>
+        <div class="product-eyebrow">НАБІР № 02 · ПОДВІЙНИЙ</div>
         <h3 class="product-title"><em>Спогад</em></h3>
-        <p class="product-desc">20 кадрів 10×15 · оксамитовий конверт · картка · вкладка з номером архіву.</p>
+        <p class="product-desc">24 кадри 10×15 · два оксамитові конверти · картка · вкладка з номером архіву.</p>
         <div class="product-foot">
           <span class="product-price">600 ₴</span>
           <span class="product-cta">Обрати →</span>
@@ -750,12 +760,12 @@
 
       <a href="/order?pkg=large" class="product">
         <div class="product-mock">
-          <span class="product-mock-tag">50 КАДРІВ</span>
-          <div class="product-mock-inner" style="width: 70%; height: 85%;"></div>
+          <span class="product-mock-tag">50–80 КАДРІВ</span>
+          <img class="product-mock-img" src="assets/products/box/box-01.jpg" alt="Великий набір «Архів» — преміальна коробка" loading="lazy">
         </div>
         <div class="product-eyebrow">НАБІР № 03</div>
         <h3 class="product-title"><em>Архів</em></h3>
-        <p class="product-desc">50 кадрів · преміальна коробка · 2 конверти (батькам) · картка з підписом. Для весіль.</p>
+        <p class="product-desc">50–80 кадрів · преміальна коробка · 2 конверти (батькам) · картка з підписом. Для весіль.</p>
         <div class="product-foot">
           <span class="product-price">900 ₴</span>
           <span class="product-cta">Обрати →</span>
@@ -764,12 +774,12 @@
 
       <a href="/order?pkg=baby" class="product" style="border-color: var(--sepia);">
         <div class="product-mock">
-          <span class="product-mock-tag">10 КАДРІВ · ⚭</span>
-          <div class="product-mock-inner" style="background: radial-gradient(ellipse at 50% 40%, rgba(196,149,108,0.45) 0%, transparent 60%), linear-gradient(180deg, #5a4536 0%, #2c2a28 100%);"></div>
+          <span class="product-mock-tag">12 КАДРІВ · ⚭</span>
+          <img class="product-mock-img" src="assets/products/newborn/newborn-05.jpg" alt="Спеціальний набір «Малюк» — конверт з ведмедиком" loading="lazy">
         </div>
         <div class="product-eyebrow" style="color: var(--sepia);">НАБІР № 04 · СПЕЦІАЛЬНИЙ</div>
         <h3 class="product-title"><em>Малюк</em></h3>
-        <p class="product-desc">10 кадрів · конверт з ведмедиком · картка «З народженням». Для ньюборн-сесій.</p>
+        <p class="product-desc">12 кадрів · конверт з ведмедиком · картка «З народженням». Можна замовити подвійний. Для ньюборн-сесій.</p>
         <div class="product-foot">
           <span class="product-price">450 ₴</span>
           <span class="product-cta">Обрати →</span>
@@ -871,44 +881,44 @@
 
     <div class="gallery">
       <div class="gallery-item">
-        <div class="gallery-img tone-a"></div>
-        <div class="gallery-title">Тиша перед світанком</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>МОМЕНТ · 10</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/envelopes/envelopes-01.jpg" alt="Оксамитовий конверт з тисненням" loading="lazy"></div>
+        <div class="gallery-title">Оксамитовий конверт</div>
+        <div class="gallery-meta"><span>ПАКУВАННЯ</span><span>МОМЕНТ · 10</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-b"></div>
-        <div class="gallery-title">Ньюборн · приклад</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>МАЛЮК · 10</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/newborn/newborn-05.jpg" alt="Набір «Малюк» з ведмедиком" loading="lazy"></div>
+        <div class="gallery-title">Набір «Малюк»</div>
+        <div class="gallery-meta"><span>ПАКУВАННЯ</span><span>МАЛЮК · 10</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-c"></div>
-        <div class="gallery-title">Весільний набір</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>АРХІВ · 50</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/box/box-01.jpg" alt="Преміальна коробка зі стрічкою" loading="lazy"></div>
+        <div class="gallery-title">Преміальна коробка</div>
+        <div class="gallery-meta"><span>ПАКУВАННЯ</span><span>АРХІВ · 50</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-d"></div>
-        <div class="gallery-title">Сімейний альбом</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>СПОГАД · 20</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/envelopes/envelopes-04.jpg" alt="Конверт із калькою між кадрами" loading="lazy"></div>
+        <div class="gallery-title">Калька між кадрами</div>
+        <div class="gallery-meta"><span>ДЕТАЛЬ</span><span>СПОГАД · 20</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-b"></div>
-        <div class="gallery-title">Love story</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>МОМЕНТ · 10</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/box/box-05.jpg" alt="Коробка з атласною стрічкою" loading="lazy"></div>
+        <div class="gallery-title">Атласна стрічка</div>
+        <div class="gallery-meta"><span>ДЕТАЛЬ</span><span>АРХІВ · 50</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-a"></div>
-        <div class="gallery-title">Портрет</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>МОМЕНТ · 10</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/newborn/newborn-01.jpg" alt="Ведмедик на кремовому конверті" loading="lazy"></div>
+        <div class="gallery-title">Ведмедик ручної роботи</div>
+        <div class="gallery-meta"><span>ДЕТАЛЬ</span><span>МАЛЮК · 10</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-c"></div>
-        <div class="gallery-title">Перший рік</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>МАЛЮК · 10</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/envelopes/envelopes-07.jpg" alt="Срібне тиснення на оксамиті" loading="lazy"></div>
+        <div class="gallery-title">Тиснення сріблом</div>
+        <div class="gallery-meta"><span>ДЕТАЛЬ</span><span>МОМЕНТ · 10</span></div>
       </div>
       <div class="gallery-item">
-        <div class="gallery-img tone-d"></div>
-        <div class="gallery-title">Великий набір</div>
-        <div class="gallery-meta"><span>ЗРАЗОК</span><span>СПОГАД · 20</span></div>
+        <div class="gallery-img"><img class="gallery-img-real" src="assets/products/newborn/newborn-10.jpg" alt="Ньюборн-набір зі стилізацією" loading="lazy"></div>
+        <div class="gallery-title">Ньюборн-набір</div>
+        <div class="gallery-meta"><span>ПАКУВАННЯ</span><span>МАЛЮК · 10</span></div>
       </div>
     </div>
   </section>

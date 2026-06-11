@@ -24,14 +24,20 @@
   .cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
   .card {
     display: flex; align-items: center; gap: 16px;
-    padding: 18px 20px;
+    padding: 14px 16px;
     border: 1px solid var(--paper-15); border-radius: var(--r-2);
     background: var(--paper-08); color: var(--paper);
     text-decoration: none; cursor: pointer;
     transition: border-color var(--dur-quick) var(--ease-fade), background var(--dur-quick), transform var(--dur-quick) var(--ease-emerge);
   }
   .card:hover { border-color: var(--sepia); background: rgba(243,238,230,.11); transform: translateY(-1px); }
+  .card:hover .card-thumb img { transform: scale(1.05); }
   .card.accent { border-color: rgba(196,149,108,.5); }
+  .card-thumb {
+    width: 64px; height: 64px; flex-shrink: 0; border-radius: var(--r-1);
+    overflow: hidden; background: var(--ink-darkroom); border: 1px solid var(--paper-15);
+  }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-slow, .4s) var(--ease-emerge); }
   .card-body { flex: 1; min-width: 0; }
   .card-name { font-family: var(--font-display); font-size: 19px; font-weight: 500; }
   .card-desc { font-size: 12.5px; color: var(--paper-50); margin-top: 3px; }
@@ -90,7 +96,11 @@
   const order = PROYAV.order.filter(k => k); // small, medium, large, baby
   const html = order.map(key => {
     const p = PROYAV.packages[key];
+    const thumb = p.img
+      ? `<div class="card-thumb"><img src="${p.img}" alt="${p.short}" loading="lazy"></div>`
+      : '';
     return `<a class="card" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}">
+      ${thumb}
       <div class="card-body">
         <div class="card-name">${p.name}</div>
         <div class="card-desc">${p.desc}</div>
