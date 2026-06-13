@@ -8,14 +8,27 @@
   // family 'std' — лінійка, що авто-апгрейдиться (10→20→50). 'baby' — окремий тематичний набір.
   // img — оптимізоване фото-герой набору (assets/products/*). Джерело: товар_фото/.
   // cap — максимум відбитків у наборі (якщо відрізняється від photos: великий 50→80).
+  // Ціна «Архіву» 1200 — рішення власника 12.06.2026 (юніт-економіка: при 900 маржа
+  // падала до 4% у найгіршому кейсі; фікс 1200 покриває 50–80 кадрів без доплат).
   var packages = {
-    small:  { key:'small',  name:'Маленький «Момент»', short:'Маленький набір', photos:12, price:400, family:'std',  desc:'12 фото · оксамитовий конверт',            img:'assets/products/envelopes/envelopes-01.jpg' },
-    medium: { key:'medium', name:'Подвійний «Спогад»',  short:'Подвійний набір', photos:24, price:600, family:'std',  desc:'24 фото · два оксамитові конверти',         img:'assets/products/envelopes/envelopes-04.jpg' },
-    large:  { key:'large',  name:'Великий «Архів»',     short:'Великий набір',   photos:50, cap:80, price:900, family:'std', desc:'50–80 фото · преміальна коробка',    img:'assets/products/box/box-01.jpg' },
-    baby:   { key:'baby',   name:'«Малюк»',             short:'Спогади малюка',  photos:12, price:450, family:'baby', desc:'12 фото · конверт з ведмедиком',           img:'assets/products/newborn/newborn-05.jpg' },
+    small:  { key:'small',  name:'Маленький «Момент»', short:'Маленький набір', photos:12, price:400, family:'std',  desc:'12 фото · оксамитовий конверт',            audience:'один день, який варто памʼятати',  img:'assets/products/envelopes/envelopes-01.jpg' },
+    medium: { key:'medium', name:'Подвійний «Спогад»',  short:'Подвійний набір', photos:24, price:600, family:'std',  desc:'24 фото · два оксамитові конверти',         audience:'сесія цілком — собі й батькам',     popular:true, img:'assets/products/envelopes/envelopes-04.jpg' },
+    large:  { key:'large',  name:'Великий «Архів»',     short:'Великий набір',   photos:50, cap:80, price:1200, family:'std', desc:'50–80 фото · преміальна коробка',   audience:'весілля та великі історії',          img:'assets/products/box/box-01.jpg' },
+    baby:   { key:'baby',   name:'«Малюк»',             short:'Спогади малюка',  photos:12, price:450, family:'baby', desc:'12 фото · конверт з ведмедиком',           audience:'перші дні нової людини',             img:'assets/products/newborn/newborn-05.jpg' },
   };
 
-  var printPrice = 15;                       // ₴ за відбиток (роздріб à la carte / Напрямок 1)
+  var printPrice = 15;                       // ₴ за відбиток (внутрішні розрахунки; роздріб вимкнено)
+  // Роздрібний друк поштучно ВИМКНЕНО (рішення власника 12.06.2026, дослідження
+  // запуску): поштучні 15₴ ставлять бренд в одну лінійку з лабами по 3–7₴ і
+  // руйнують «обряд». Повернення = один флаг (true) тут і RETAIL_ENABLED в _utils.js.
+  var retailEnabled = false;
+
+  // SLA проявлення (П1.2): peak вмикається вручну на сезон весіль.
+  var sla = { standardHours: 48, peakHours: 72, peak: false };
+
+  // «Перша серія» (П1.1): передзамовлення для валідації попиту. Знижку рахує
+  // СЕРВЕР (дзеркало в _utils.js) — тут лише відображення. enabled:false → секція зникає.
+  var firstSeries = { enabled: true, slots: 10, discountPct: 15 };
   var stdChain   = ['small', 'medium', 'large']; // за зростанням ліміту фото
 
   // Авто-апгрейд у межах лінійки std, щоб набір вмістив `qty` відбитків.
@@ -96,6 +109,9 @@
   window.PROYAV = {
     packages: packages,
     printPrice: printPrice,
+    retailEnabled: retailEnabled,
+    sla: sla,
+    firstSeries: firstSeries,
     stdChain: stdChain,
     order: ['small', 'medium', 'large', 'baby'],
     commissionTiers: commissionTiers,

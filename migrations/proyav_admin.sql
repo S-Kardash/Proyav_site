@@ -124,6 +124,11 @@ create table if not exists order_photos (
 );
 create index if not exists idx_order_photos_token on order_photos(order_token);
 
+-- ── 8. «Перша серія» (ТЗ ч.2 П1.1): мітка передзамовлень з −15% ─────
+-- Сервер ставить true, поки слотів < FIRST_SERIES.slots; лічильник місць
+-- на лендінгу читає кількість таких замовлень.
+alter table orders add column if not exists first_series boolean default false;
+
 -- ── 5. Стартові позиції складу під Прояв ────────────────────────────
 insert into inventory (name, unit, qty, min_qty, note) values
   ('Оксамитові конверти latte',            'шт',    0, 5,  'Малий/середній набір'),

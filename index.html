@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ПРОЯВ · Майстерня проявлення</title>
 <link rel="stylesheet" href="tokens.css">
+<script src="config.js"></script>
 <style>
   /* ════════════════════════════════════════════════════════════
      ПРОЯВ · Головна · «Темна кімната»
@@ -382,6 +383,26 @@
   .process-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sepia); }
 
   /* ════════════ FOR PHOTOGRAPHERS ════════════ */
+  /* Перша серія (П1.1) */
+  .first-series-card { max-width: 720px; padding: clamp(28px,4vw,40px); border: 1px solid var(--paper-15); background: rgba(196,149,108,.04); }
+  .fs-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sepia); margin-bottom: 14px; }
+  .fs-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px,4.5vw,42px); line-height: 1.05; color: var(--paper); margin-bottom: 12px; }
+  .fs-title em { font-style: italic; color: var(--sepia); }
+  .fs-text { font-size: 15px; line-height: 1.6; color: var(--paper-70); max-width: 540px; margin-bottom: 22px; }
+  .fs-text strong { color: var(--sepia); font-weight: 500; }
+  .fs-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .fs-left { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--paper-50); }
+
+  /* Економіка партнера в гривнях (П0.5) — на світлій смузі */
+  .pho-econ { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--ink-15); max-width: 480px; }
+  .pho-econ-h { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-50); margin-bottom: 12px; }
+  .pho-econ-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--ink-10); }
+  .pho-econ-row .n { font-size: 14px; color: var(--ink-graphite); }
+  .pho-econ-row .n .p { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; color: var(--ink-50); margin-left: 6px; }
+  .pho-econ-row .v { font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; color: var(--ink-70); white-space: nowrap; }
+  .pho-econ-note { font-size: 12px; line-height: 1.55; color: var(--ink-60); margin-top: 10px; }
+  .pho-econ-note strong { color: var(--ink-graphite); font-weight: 500; }
+
   .photographers-band {
     margin: 0 clamp(20px, 4vw, 56px);
     padding: clamp(56px, 8vw, 96px) clamp(28px, 5vw, 80px);
@@ -767,7 +788,7 @@
         <h3 class="product-title"><em>Архів</em></h3>
         <p class="product-desc">50–80 кадрів · преміальна коробка · 2 конверти (батькам) · картка з підписом. Для весіль.</p>
         <div class="product-foot">
-          <span class="product-price">900 ₴</span>
+          <span class="product-price">1 200 ₴</span>
           <span class="product-cta">Обрати →</span>
         </div>
       </a>
@@ -785,6 +806,19 @@
           <span class="product-cta">Обрати →</span>
         </div>
       </a>
+    </div>
+  </section>
+
+  <!-- ════════════ FIRST SERIES (П1.1) — тиха секція, з'являється лише поки є слоти ════════════ -->
+  <section class="band" id="first-series" style="display:none; padding-top: clamp(32px,4vw,56px); padding-bottom: clamp(32px,4vw,56px);">
+    <div class="first-series-card">
+      <div class="fs-eyebrow"><span class="safelight-dot" style="display:inline-block;vertical-align:middle;margin-right:8px;"></span>Перша серія</div>
+      <h2 class="fs-title">Перші <em>десять</em> наборів.</h2>
+      <p class="fs-text">Ми відкриваємо запис на перші десять наборів. Для них — <strong id="fs-discount">−15%</strong> і окрема увага до кожного кадру. Залиште кадри — напишемо, коли ваша черга проявлятись.</p>
+      <div class="fs-row">
+        <a href="/nabir" class="btn-primary">Зайняти місце →</a>
+        <span class="fs-left" id="fs-left"></span>
+      </div>
     </div>
   </section>
 
@@ -848,12 +882,20 @@
           <a href="/partner" class="btn-dark">Стати співавтором →</a>
           <a href="#process" class="btn-dark-ghost">Як це працює</a>
         </div>
+
+        <!-- Економіка в гривнях — рендериться з config.js (П0.5) -->
+        <div class="pho-econ" id="pho-econ" style="display:none">
+          <div class="pho-econ-h">Скільки це в грошах</div>
+          <div id="pho-econ-rows"></div>
+          <p class="pho-econ-note" id="pho-econ-note"></p>
+          <p class="pho-econ-note">Виплата на картку протягом 1–2 днів після отримання замовлення клієнтом. Мінімального порогу немає. Тон поплив — передрук за наш кошт.</p>
+        </div>
       </div>
 
       <div class="photographers-stats">
         <div class="pho-stat">
-          <span class="pho-stat-key">Комісія</span>
-          <span class="pho-stat-val">12<span> %</span></span>
+          <span class="pho-stat-key">Комісія · рівнями</span>
+          <span class="pho-stat-val">12<span>–20 %</span></span>
         </div>
         <div class="pho-stat">
           <span class="pho-stat-key">Пробний відбиток</span>
@@ -954,6 +996,20 @@
       </details>
       <details class="faq-item">
         <summary class="faq-q">
+          <span>Чи можна надрукувати кілька окремих фото?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">Ми працюємо лише з наборами — так кожна історія отримує своє пакування і свій ритм. Найменший — «Момент»: 12 кадрів, яких достатньо, щоб розповісти один день.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>А якщо відбиток мене не влаштує?</span>
+          <span class="toggle">+</span>
+        </summary>
+        <p class="faq-a">Передрукуємо за наш кошт. Якщо тон поплив або папір повівся не так, як задумано, — це наша відповідальність, не ваша.</p>
+      </details>
+      <details class="faq-item">
+        <summary class="faq-q">
           <span>Чи можу я замовити чорно-білий друк?</span>
           <span class="toggle">+</span>
         </summary>
@@ -1024,20 +1080,21 @@
         <h4>ЗАМОВЛЕННЯ</h4>
         <a href="#products">Набори</a>
         <a href="/nabir">Обрати набір</a>
-        <a href="/order">Завантажити кадри</a>
+        <a href="/account">Кабінет клієнта</a>
       </div>
 
       <div class="foot-col">
         <h4>КОНТАКТ</h4>
-        <a href="#">@proyav · Instagram</a>
-        <a href="#">Telegram</a>
+        <a href="https://www.instagram.com/proyav_ua" target="_blank" rel="noopener">@proyav_ua · Instagram</a>
+        <a href="https://t.me/copylounge" target="_blank" rel="noopener">Telegram</a>
+        <a href="tel:+380737679757">+38 073 767 97 57</a>
         <a href="/partner">Кабінет фотографа</a>
       </div>
     </div>
 
     <div class="foot-bottom">
       <span>© ПРОЯВ · 2026</span>
-      <span>MADE WITH CARE · SAMBIR</span>
+      <span>MADE WITH CARE</span>
     </div>
   </footer>
 
@@ -1070,6 +1127,37 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('in'); });
 }, { threshold: 0.15 });
 document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+
+// ── Економіка партнера в гривнях — рендер з config.js (П0.5 ТЗ ч.2) ──
+(function () {
+  if (!window.PROYAV) return;
+  const box = document.getElementById('pho-econ');
+  const rowsEl = document.getElementById('pho-econ-rows');
+  if (!box || !rowsEl) return;
+  const tiers = PROYAV.commissionTiers;
+  rowsEl.innerHTML = ['small', 'medium', 'large'].map(k => {
+    const p = PROYAV.packages[k];
+    const vals = tiers.map(t => Math.round(p.price * t.pct / 100)).join(' / ');
+    return `<div class="pho-econ-row"><span class="n">${p.name}<span class="p">${p.price} ₴</span></span><span class="v">${vals} ₴</span></div>`;
+  }).join('');
+  document.getElementById('pho-econ-note').innerHTML =
+    `Три числа — рівні: ${tiers.map(t => `<strong>${t.name} ${t.pct}%</strong>${t.minOrders ? ` (від ${t.minOrders})` : ''}`).join(' → ')}. Рівень росте з виконаними замовленнями і ніколи не знижується.`;
+  box.style.display = '';
+})();
+
+// ── «Перша серія» (П1.1): показуємо секцію лише поки є вільні слоти ──
+(function () {
+  const sec = document.getElementById('first-series');
+  if (!sec) return;
+  fetch('/api-first-series').then(r => r.json()).then(d => {
+    if (!d || !d.enabled) return;            // вимкнено або слоти вичерпані → секція лишається схованою
+    const disc = document.getElementById('fs-discount');
+    if (disc && d.discountPct) disc.textContent = '−' + d.discountPct + '%';
+    const left = document.getElementById('fs-left');
+    if (left) left.textContent = `Залишилось ${d.left} з ${d.slots}`;
+    sec.style.display = '';
+  }).catch(() => { /* мережа недоступна — секція лишається схованою */ });
+})();
 </script>
 
 </body>

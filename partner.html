@@ -28,6 +28,28 @@
   select.inp option { background: var(--ink-graphite, #2c2a28); color: var(--paper); }
   .auth-toggle { text-align: center; font-size: 13px; color: var(--paper-50); margin-top: 18px; }
   .auth-toggle a { color: var(--sepia); cursor: pointer; text-decoration: none; }
+
+  /* ── Економіка партнера (до входу) ── */
+  .econ { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--paper-15); }
+  .econ-h { font-family: var(--font-display); font-size: 22px; color: var(--paper); margin-bottom: 6px; }
+  .econ-h em { font-style: italic; color: var(--sepia); }
+  .econ-sub { font-size: 13px; line-height: 1.55; color: var(--paper-70); margin-bottom: 14px; }
+  .econ-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--paper-08); }
+  .econ-row .n { font-size: 13.5px; color: var(--paper); }
+  .econ-row .n .p { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; color: var(--paper-50); margin-left: 6px; }
+  .econ-row .v { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--sepia); white-space: nowrap; }
+  .econ-note { font-size: 12px; line-height: 1.55; color: var(--paper-50); margin-top: 12px; }
+  .econ-note strong { color: var(--paper-70); font-weight: 500; }
+  .econ-guarantee { display: flex; gap: 9px; align-items: flex-start; margin-top: 14px; padding: 11px 13px; background: rgba(196,149,108,.07); border: 1px solid rgba(196,149,108,.25); border-radius: 4px; font-size: 12.5px; line-height: 1.5; color: var(--paper-70); }
+  .econ-guarantee svg { color: var(--sepia); flex-shrink: 0; margin-top: 2px; }
+  .econ-faq { margin-top: 20px; }
+  .efq { border-top: 1px solid var(--paper-08); }
+  .efq:last-child { border-bottom: 1px solid var(--paper-08); }
+  .efq summary { padding: 11px 0; font-size: 13px; color: var(--paper); cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .efq summary::-webkit-details-marker { display: none; }
+  .efq summary::after { content: '+'; color: var(--paper-50); font-size: 15px; transition: transform .2s; flex-shrink: 0; }
+  .efq[open] summary::after { transform: rotate(45deg); color: var(--sepia); }
+  .efq p { font-size: 12.5px; line-height: 1.6; color: var(--paper-70); padding-bottom: 12px; }
   .err { color: var(--safelight); font-size: 13px; margin-top: 10px; min-height: 18px; text-align: center; }
   .hide { display: none !important; }
 
@@ -89,6 +111,30 @@
       <button class="pv-btn pv-btn--primary pv-btn--full" id="l-btn" onclick="login()" style="margin-top:6px">Увійти</button>
       <div class="err" id="l-err"></div>
       <div class="auth-toggle">Ще не з нами? <a onclick="showRegister()">Спробувати безкоштовно</a></div>
+    </div>
+
+    <!-- Економіка партнера в гривнях (ТЗ ч.2, П0.5) — рендер з config.js, не хардкод -->
+    <div class="econ" id="econ-block">
+      <div class="econ-h">Скільки це <em>в грошах</em></div>
+      <p class="econ-sub">Комісія — від кожного набору, замовленого за вашим посиланням.</p>
+      <div id="econ-rows"></div>
+      <p class="econ-note" id="econ-note"></p>
+      <p class="econ-note">Виплата на картку протягом одного-двох днів після того, як клієнт отримав набір. Мінімального порогу немає.</p>
+      <div class="econ-guarantee">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+        <span>Тон поплив — передрук за наш кошт. Ваш колір недоторканний.</span>
+      </div>
+
+      <div class="econ-faq">
+        <details class="efq"><summary>Що, як клієнту не сподобається друк?</summary>
+          <p>Передрукуємо за наш кошт. Розмову з клієнтом ведемо ми — ваше ім'я залишається поруч із результатом, а не з проблемою.</p></details>
+        <details class="efq"><summary>Чи бачить клієнт, що це партнерське посилання?</summary>
+          <p>Клієнт бачить звичайну сторінку замовлення. Ціна для нього однакова — з посиланням чи без.</p></details>
+        <details class="efq"><summary>Мій колір правитимуть?</summary>
+          <p>Ні. Ваш ґрейдинг — недоторканний. Ми калібруємо лише відтворення: щоб папір показав те, що ви задумали.</p></details>
+        <details class="efq"><summary>Коли я отримую гроші?</summary>
+          <p>Протягом одного-двох днів після того, як клієнт забрав замовлення. На картку, без порогів.</p></details>
+      </div>
     </div>
   </div>
 </div>
@@ -402,6 +448,7 @@ function renderOrder(){
         <div class="field"><label>Телефон</label><input class="inp" id="c-phone" type="tel" placeholder="+380"></div>
         <div class="field"><label>Instagram <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-instagram" placeholder="@username"></div>
         <div class="field"><label>Набір</label><select class="inp" id="c-product">${sets}</select></div>
+        <div class="field"><label>Підпис на картці <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-signature" placeholder="Кадр: Олена Кравець"></div>
         <div class="field"><label>Нотатка для Прояву <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="c-notes" placeholder="весілля 15 травня…"></div>
         <button class="pv-btn pv-btn--primary pv-btn--full" id="c-btn" onclick="createOrder()">Створити посилання</button>
         <div id="c-result" class="hide">
@@ -422,13 +469,14 @@ async function createOrder(){
       client_name:name, client_phone:phone,
       client_instagram:val('c-instagram').replace('@',''),
       product_type:document.getElementById('c-product').value,
+      card_signature:val('c-signature'),
       notes:val('c-notes'),
     })});
     lastLink=r.link;
     document.getElementById('c-url').textContent=r.link;
     document.getElementById('c-result').classList.remove('hide');
     DATA.orders.unshift(r.order);
-    ['c-name','c-phone','c-instagram','c-notes'].forEach(id=>document.getElementById(id).value='');
+    ['c-name','c-phone','c-instagram','c-signature','c-notes'].forEach(id=>document.getElementById(id).value='');
     btn.textContent='Створити ще';
     toast('Посилання створено');
   }catch(e){ toast(e.message); btn.textContent='Створити посилання'; }
@@ -588,6 +636,24 @@ document.addEventListener('keydown',(e)=>{
 function copyText(text,btn){ navigator.clipboard.writeText(text).then(()=>{ const o=btn.textContent; btn.textContent='Скопійовано ✓'; setTimeout(()=>btn.textContent=o,1600); }); }
 let toastTimer;
 function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),3000); }
+
+/* ════════ Економіка партнера до входу — рендер з config.js (П0.5 ТЗ ч.2) ════════ */
+(function renderEcon(){
+  if (!window.PROYAV) return;
+  const tiers = PROYAV.commissionTiers; // [{pct:12},{pct:15},{pct:20}]
+  const rows = ['small','medium','large'].map(k => {
+    const p = PROYAV.packages[k];
+    const vals = tiers.map(t => Math.round(p.price * t.pct / 100)).join(' / ');
+    return `<div class="econ-row"><span class="n">${p.name}<span class="p">${p.price} ₴</span></span><span class="v">${vals} ₴</span></div>`;
+  }).join('');
+  const rowsEl = document.getElementById('econ-rows');
+  if (rowsEl) rowsEl.innerHTML = rows;
+  const noteEl = document.getElementById('econ-note');
+  if (noteEl) {
+    const t = tiers;
+    noteEl.innerHTML = `Три числа — рівні: ${t.map(x=>`<strong>${x.name} ${x.pct}%</strong>${x.minOrders?` (від ${x.minOrders})`:''}`).join(' → ')}. Рівень росте з виконаними замовленнями і ніколи не знижується.`;
+  }
+})();
 
 /* ════════ BOOT (must run last — after PAGES/go/listeners are defined) ════════ */
 if (TOKEN && PH_DATA) initApp();
