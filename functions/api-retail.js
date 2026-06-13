@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, packagePrice, commissionFor } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, firstSeriesUsed, packagePrice, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -51,6 +51,23 @@ export async function onRequest(context) {
   // Free trial print (self-serve onboarding) — owner fulfils, zero charge.
   if (free) finalTotal = 0;
 
+  // Роздріб поштучно вимкнено (рішення 12.06.2026): приймаємо лише набори.
+  // Пробний відбиток фотографа (free) — окремий онбординг-флоу, він живе.
+  if (!RETAIL_ENABLED && !isPackage && !free) {
+    return fail('Ми працюємо лише з наборами — оберіть формат на /nabir. Найменший «Момент» — 12 кадрів.', 422);
+  }
+
+  // ── «Перша серія» (П1.1): знижку рахує ЛИШЕ сервер ──────────────────────
+  // Кожне платне package-замовлення отримує −discountPct, поки слотів < ліміту.
+  let firstSeries = false;
+  if (FIRST_SERIES.enabled && isPackage && !free && finalTotal > 0) {
+    const used = await firstSeriesUsed(client).catch(() => FIRST_SERIES.slots);
+    if (used < FIRST_SERIES.slots) {
+      firstSeries = true;
+      finalTotal  = Math.round(finalTotal * (100 - FIRST_SERIES.discountPct) / 100);
+    }
+  }
+
   // Optional card signature ("Кадр: …") the owner prints on the physical card.
   const signature = card_signature?.trim() || null;
   const signatureNote = signature ? `✍️ Підпис на картці: Кадр — ${signature}` : '';
@@ -72,6 +89,7 @@ export async function onRequest(context) {
     total_amount:     finalTotal,
     uploaded_at:      hasPhotos ? new Date().toISOString() : null,
     client_id:        clientId,
+    first_series:     firstSeries,
   };
 
   // ── Attribute the photographer only if the ?ph= value resolves to a real
@@ -132,7 +150,8 @@ export async function onRequest(context) {
       `📦 ${productLabel} · ${finalSource === 'photographer' ? 'фотограф' : finalSource === 'package' ? 'пакет' : 'роздріб'}`,
       photo_count ? `🖼 Фото: ${photo_count} шт / ${qty_total || '?'} відбитків` : null,
       signature ? `✍️ Кадр: ${signature}` : null,
-      free ? `🎁 Безкоштовний пробний відбиток` : `💰 Сума: ${finalTotal} грн`,
+      free ? `🎁 Безкоштовний пробний відбиток` : `💰 Сума: ${finalTotal} грн${firstSeries ? ` (−${FIRST_SERIES.discountPct}% перша серія)` : ''}`,
+      firstSeries ? `✨ ПЕРША СЕРІЯ` : null,
       order_ref ? `🆔 Ref: ${order_ref}` : null,
       message   ? `💬 ${message.trim()}` : null,
       ``,

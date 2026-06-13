@@ -6,6 +6,7 @@
 <title>ПРОЯВ · Мої замовлення</title>
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="cabinet.css">
+<script src="config.js"></script>
 <style>
 /* ── Auth gate ── */
 .pv-auth-overlay {
@@ -231,14 +232,13 @@ const STATUS = {
   closed:     { label:'Прибуло',     short:'Прибуло', verb:'Кадри у вас' },
 };
 const isDone = o => o.status === 'paid' || o.status === 'done';
-/* Дзеркало PACKAGES із config.js / _utils.js — ціни не рахуємо, лише показуємо. */
-const SETS = [
-  { id:'small',  name:'Маленький набір', frames:'12 фото · 10×15',   price: 400, img:'assets/products/envelopes/envelopes-01.jpg' },
-  { id:'medium', name:'Подвійний набір', frames:'24 фото · 2 конверти', price: 600, img:'assets/products/envelopes/envelopes-04.jpg' },
-  { id:'large',  name:'Великий набір',   frames:'50–80 фото · коробка', price: 900, img:'assets/products/box/box-01.jpg' },
-  { id:'baby',   name:'Спогади малюка',  frames:'12 фото · оксамит',  price: 450, img:'assets/products/newborn/newborn-05.jpg' },
-];
-const PKG_NAMES = { small:'Маленький набір', medium:'Подвійний набір', large:'Великий набір', baby:'Спогади малюка' };
+/* SETS і назви — напряму з config.js (єдине джерело цін; дубль прибрано за ТЗ ч.2). */
+const SETS = (window.PROYAV ? PROYAV.order.map(k => {
+  const p = PROYAV.packages[k];
+  return { id: k, name: p.short, frames: p.desc, price: p.price, img: p.img };
+}) : []);
+const PKG_NAMES = {};
+SETS.forEach(s => { PKG_NAMES[s.id] = s.name; });
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let TOKEN = null;
@@ -718,7 +718,7 @@ function renderOrder() {
       <a id="order-link" href="/order?pkg=${selSet}" class="pv-btn pv-btn--primary pv-btn--full" style="text-decoration:none">
         Перейти до завантаження кадрів →
       </a>
-      <a href="/order" class="pv-btn pv-btn--mono pv-btn--full" style="text-decoration:none">Або поштучно · 15 ₴ за відбиток</a>
+      ${window.PROYAV && PROYAV.retailEnabled ? `<a href="/order" class="pv-btn pv-btn--mono pv-btn--full" style="text-decoration:none">Або поштучно · ${PROYAV.printPrice} ₴ за відбиток</a>` : ''}
     </div>`;
 }
 

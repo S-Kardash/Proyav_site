@@ -3,7 +3,7 @@
 <head>
   <link rel="stylesheet" href="tokens.css">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ · Замовлення друку</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -799,6 +799,16 @@
         <span>Замовляєте напряму, без фотографа? Усе правильно — це поле лише щоб знайти ваше замовлення.</span>
       </div>
 
+      <div class="direct-note" style="margin-top:8px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.6 8.6 0 0 1-3.7-.8L3 21l1.9-5.6a8.3 8.3 0 0 1-.9-3.9A8.4 8.4 0 0 1 12.5 3a8.4 8.4 0 0 1 8.5 8.5z"/></svg>
+        <span>Є питання — <a href="https://t.me/copylounge" target="_blank" rel="noopener" style="color:var(--sepia)">напишіть</a>. Відповідає майстер, не бот.</span>
+      </div>
+
+      <div class="direct-note" style="margin-top:8px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span id="sla-note">Зазвичай — 48 годин від кадрів до відправки.</span>
+      </div>
+
       <div class="seg" id="ident-seg">
         <button class="seg-btn active" data-type="instagram" onclick="setIdentType('instagram')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
@@ -927,7 +937,7 @@
 
       <div class="privacy-note">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>Ваші кадри лишаються вашими. Не передаємо третім і видаляємо файли після того, як набір готовий.</span>
+        <span>Ваші кадри бачить лише майстер під час друку. Ми не публікуємо їх без вашої згоди — вони зберігаються в захищеному архіві вашого кабінету.</span>
       </div>
 
       <div class="photos-list" id="photos-list" style="margin-top:16px"></div>
@@ -1046,6 +1056,13 @@
           <li style="display:grid;grid-template-columns:28px 1fr;gap:12px"><span style="font-family:var(--font-display);font-style:italic;font-size:22px;color:var(--sepia);line-height:1">ii.</span><span style="font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--paper-70)"><strong style="color:var(--paper);font-weight:500">24–48 годин</strong> — проявляємо, перевіряємо ще раз і пакуємо в оксамитовий конверт.</span></li>
           <li style="display:grid;grid-template-columns:28px 1fr;gap:12px"><span style="font-family:var(--font-display);font-style:italic;font-size:22px;color:var(--sepia);line-height:1">iii.</span><span style="font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--paper-70)"><strong style="color:var(--paper);font-weight:500">Відправляємо ТТН</strong> у Telegram і SMS. Очікуйте конверт за 1–2 дні Новою Поштою.</span></li>
         </ol>
+
+        <p style="font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--paper-70);margin-bottom:20px" id="sla-success">Зазвичай — 48 годин від кадрів до відправки. У сезон весіль — до 72: ми не прискорюємо те, що має бути зроблене точно.</p>
+
+        <div class="direct-note" style="margin-bottom:8px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>
+          <span>Оплата — при отриманні (накладений платіж Нової Пошти) або переказ на картку після підтвердження. Реквізити надішлемо особисто.</span>
+        </div>
 
         <div class="post-email" id="post-email-block" style="display:none">
           <div class="post-email-title">Хочете цифрові копії?</div>
@@ -1402,8 +1419,20 @@ function dismissPhotoBanner() {
   if (b) { b.style.animation = 'bannerOut .25s ease forwards'; setTimeout(() => b.remove(), 260); }
 }
 
+/* ─ SLA-рядки з config.sla (П1.2): peak вмикається вручну на сезон ─ */
+function renderSLA() {
+  const s = window.PROYAV && PROYAV.sla;
+  if (!s) return;
+  const txt = s.peak
+    ? `Зараз сезон — до ${s.peakHours} годин від кадрів до відправки: ми не прискорюємо те, що має бути зроблене точно.`
+    : `Зазвичай — ${s.standardHours} годин від кадрів до відправки. У сезон весіль — до ${s.peakHours}: ми не прискорюємо те, що має бути зроблене точно.`;
+  const a = document.getElementById('sla-note');    if (a) a.textContent = txt;
+  const b = document.getElementById('sla-success'); if (b) b.textContent = txt;
+}
+
 /* ─ Init ─ */
 window.addEventListener('DOMContentLoaded', () => {
+  renderSLA();
   // ── Magic link: validate token from URL ──
   if (MAGIC_TOKEN) {
     validateMagicToken();
@@ -1422,6 +1451,15 @@ window.addEventListener('DOMContentLoaded', () => {
       showPackageBanner(pkgParam);
     } else if (isTrial) {
       showTrialBanner();
+    } else if (!PROYAV.retailEnabled) {
+      // Роздріб поштучно вимкнено: прямий вхід без набору веде у вибір формату.
+      // АЛЕ якщо є збережена чернетка з пакетом (користувач повертається допрацювати) —
+      // не редіректимо, даємо відновити прогрес. ?ph= зберігаємо для атрибуції.
+      const dft = loadDraft();
+      if (!(dft && dft.mode === 'package' && dft.step > 1)) {
+        location.replace('/nabir' + (phRef ? '?ph=' + encodeURIComponent(phRef) : ''));
+        return;
+      }
     } else if (phRef) {
       showRefBanner();
     }
@@ -1960,14 +1998,15 @@ async function validatePhoto(file, url) {
         We check short side ≥ 1181 and long side ≥ 1772               */
   const shortSide = Math.min(dims.w, dims.h);
   const longSide  = Math.max(dims.w, dims.h);
-  const MIN_SHORT = 1181;
-  const MIN_LONG  = 1772;
+  const MIN_SHORT = 1200;   // ≈300 dpi для 10 см (ТЗ ч.2 П1.7)
+  const MIN_LONG  = 1772;   // ≈300 dpi для 15 см
 
   if (shortSide < MIN_SHORT || longSide < MIN_LONG) {
-    const megapix = ((dims.w * dims.h) / 1e6).toFixed(1);
+    result.lowRes = true;   // мітка їде в Telegram-капшн — власник бачить до друку
     result.warnings.push(
-      `Низька роздільна здатність: ${dims.w}×${dims.h}px (${megapix} МП). ` +
-      `Для якісного друку рекомендується мінімум ${MIN_LONG}×${MIN_SHORT}px`
+      `Цей кадр менший за потрібний для чистого друку 10×15 ` +
+      `(${dims.w}×${dims.h}px, потрібно від ${MIN_LONG}×${MIN_SHORT}). ` +
+      `Надрукуємо як є — або заміните файл.`
     );
   }
 
@@ -2930,8 +2969,9 @@ async function tgSendPhotoSecure(file, caption, ph) {
 function buildPhotoCaption(ph, num, orderId) {
   const color = ph.color === 'color' ? 'Кольорове' : 'Чорно-біле';
   const paper = ph.paper === 'mat'   ? 'Мат'       : 'Глянець';
+  const low   = ph.validationResult?.lowRes ? '\n⚠ LOW-RES — нижче 300 dpi для 10×15' : '';
   const warn  = ph.hasError ? '\n⚠ Є питання по якості' : '';
-  return `${orderId} — Фото ${num}\n${color}, ${paper}, ї${ph.qty}${warn}`;
+  return `${orderId} — Фото ${num}\n${color}, ${paper}, ×${ph.qty}${low}${warn}`;
 }
 
 function buildOrderMessage(orderId, tq) {

@@ -263,10 +263,24 @@ export const PRODUCT_NAMES = {
 export const PACKAGES = {
   small:  { photos: 12, price: 400, family: 'std'  },
   medium: { photos: 24, price: 600, family: 'std'  },
-  large:  { photos: 50, cap: 80, price: 900, family: 'std'  },
+  large:  { photos: 50, cap: 80, price: 1200, family: 'std'  },
   baby:   { photos: 12, price: 450, family: 'baby' },
 };
-export const PRINT_PRICE = 15; // ₴ per print (à la carte / retail)
+export const PRINT_PRICE = 15; // ₴ per print (внутрішні розрахунки)
+// Роздріб поштучно вимкнено (рішення 12.06.2026). KEEP IN SYNC з config.js.
+export const RETAIL_ENABLED = false;
+
+// «Перша серія» (П1.1 ТЗ ч.2): знижку рахує ЛИШЕ сервер. KEEP IN SYNC з config.js.
+// Поки enabled і слоти не вичерпані — кожне нове package-замовлення отримує −15%.
+export const FIRST_SERIES = { enabled: true, slots: 10, discountPct: 15 };
+
+// Скільки слотів «Першої серії» вже використано (рахуємо по мітці в orders).
+export async function firstSeriesUsed(client) {
+  const rows = await client.query('orders', {
+    select: 'id', filters: { first_series: 'is.true' }, limit: FIRST_SERIES.slots + 1,
+  }).catch(() => []);
+  return (rows || []).length;
+}
 
 const STD_CHAIN = ['small', 'medium', 'large'];
 

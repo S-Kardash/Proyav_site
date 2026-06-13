@@ -70,9 +70,14 @@ export async function onRequest(context) {
     let body;
     try { body = await request.json(); } catch { return fail('Invalid JSON'); }
 
-    const { client_name, client_phone, client_instagram, product_type, notes } = body;
+    const { client_name, client_phone, client_instagram, product_type, notes, card_signature } = body;
     if (!client_name?.trim())  return fail("Ім'я клієнта обов'язкове");
     if (!client_phone?.trim()) return fail('Телефон обов\'язковий');
+
+    // Підпис фотографа на картці (8.8): «Кадр: …» — у нотатки для майстра.
+    const signature = card_signature?.trim() || null;
+    const fullNotes = [signature ? `✍️ Підпис на картці: Кадр — ${signature}` : '', notes?.trim() || '']
+      .filter(Boolean).join(' · ') || null;
 
     const token = randomToken(8);
     const data  = await client.query('orders', {
@@ -86,7 +91,7 @@ export async function onRequest(context) {
         product_type:     product_type || 'small',
         photographer_id:  phId,
         source:           'photographer',
-        notes:            notes?.trim() || null,
+        notes:            fullNotes,
         status:           'new',
       },
     });

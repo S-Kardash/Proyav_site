@@ -41,6 +41,8 @@
   .card-body { flex: 1; min-width: 0; }
   .card-name { font-family: var(--font-display); font-size: 19px; font-weight: 500; }
   .card-desc { font-size: 12.5px; color: var(--paper-50); margin-top: 3px; }
+  .card-who { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; color: var(--paper-30); margin-top: 5px; }
+  .card-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border: 1px solid rgba(196,149,108,.45); border-radius: 999px; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--sepia); vertical-align: 2px; }
   .card-price { font-family: var(--font-display); font-size: 22px; font-weight: 500; white-space: nowrap; color: var(--paper); }
   .card-price .per { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; color: var(--paper-50); display: block; text-align: right; margin-top: 2px; text-transform: uppercase; }
   .card-arrow { color: var(--sepia); font-size: 18px; flex-shrink: 0; }
@@ -68,10 +70,10 @@
     <p class="section-label">Готові набори</p>
     <div class="cards" id="package-cards"></div>
 
-    <div class="divider">або</div>
+    <div class="divider" id="retail-divider">або</div>
 
-    <p class="section-label">Окремі фото</p>
-    <div class="cards">
+    <p class="section-label" id="retail-label">Окремі фото</p>
+    <div class="cards" id="retail-cards">
       <a class="card accent" id="retail-card" href="/order">
         <div class="card-body">
           <div class="card-name">Роздрібний друк</div>
@@ -82,7 +84,7 @@
       </a>
     </div>
 
-    <p class="footer-note">Маєте питання або хочете подарунковий сертифікат?<br><a href="/">Напишіть нам</a> — підкажемо.</p>
+    <p class="footer-note">Маєте питання або хочете подарунковий сертифікат?<br><a href="https://t.me/copylounge" target="_blank" rel="noopener">Напишіть нам у Telegram</a> — підкажемо.</p>
   </div>
 
 <script>
@@ -99,20 +101,31 @@
     const thumb = p.img
       ? `<div class="card-thumb"><img src="${p.img}" alt="${p.short}" loading="lazy"></div>`
       : '';
-    return `<a class="card" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}">
+    const badge = p.popular ? `<span class="card-badge">Найчастіший вибір</span>` : '';
+    const who = p.audience ? `<div class="card-who">для: ${p.audience}</div>` : '';
+    return `<a class="card${p.popular ? ' accent' : ''}" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}">
       ${thumb}
       <div class="card-body">
-        <div class="card-name">${p.name}</div>
+        <div class="card-name">${p.name}${badge}</div>
         <div class="card-desc">${p.desc}</div>
+        ${who}
       </div>
       <div class="card-price">${p.price}₴</div>
       <span class="card-arrow">→</span>
     </a>`;
   }).join('');
   document.getElementById('package-cards').innerHTML = html;
-  document.getElementById('retail-price').innerHTML = PROYAV.printPrice + '₴<span class="per">за відбиток</span>';
-  // Retail card carries ph too (just no pkg → à la carte).
-  document.getElementById('retail-card').href = phRef ? '/order?ph=' + encodeURIComponent(phRef) : '/order';
+
+  // Роздріб поштучно вимкнено (config.retailEnabled) — працюємо лише з наборами.
+  if (PROYAV.retailEnabled) {
+    document.getElementById('retail-price').innerHTML = PROYAV.printPrice + '₴<span class="per">за відбиток</span>';
+    // Retail card carries ph too (just no pkg → à la carte).
+    document.getElementById('retail-card').href = phRef ? '/order?ph=' + encodeURIComponent(phRef) : '/order';
+  } else {
+    ['retail-divider', 'retail-label', 'retail-cards'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+  }
 })();
 </script>
 </body>
