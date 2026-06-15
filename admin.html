@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ПРОЯВ · Внутрішня панель</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
 <script src="config.js"></script>
 <style>
@@ -498,7 +499,13 @@ function openOrder(id){
         <div class="dfield"><span class="k">Канал</span><span class="v"><em>${ph?esc(ph.name+(ph.city?' · '+ph.city:'')):CH[ck].label}</em></span></div>
         <div class="dfield"><span class="k">Фото / відбитків</span><span class="v">${esc(o.photo_count||'—')} / ${esc(o.qty_total||'—')}</span></div>
       </div></div>
-      <div class="dsec"><div class="dsec-h">Кадри <span id="pcount"></span></div><div class="dphotos" id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
+      <div class="dsec"><div class="dsec-h">Кадри <span id="pcount"></span>
+        <span style="display:flex;gap:6px">
+          <button class="action ghost sm" onclick="document.getElementById('adm-upload').click()">↑ Завантажити</button>
+          <button class="action ghost sm" id="dl-all" onclick="downloadAllPhotos()" style="display:none">↓ Усі</button>
+        </span></div>
+        <input type="file" id="adm-upload" accept="image/*" multiple style="display:none" onchange="adminUploadPhotos(this)">
+        <div class="dphotos" id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
       <div class="dsec"><div class="dsec-h">Доставка та сума</div><div class="dgrid">
         <div class="dfield full"><span class="k">ТТН Нової Пошти</span><input class="input" id="d-ttn" value="${esc(o.ttn||'')}" placeholder="59 …"></div>
         <div class="dfield"><span class="k">Сума замовлення</span><input class="input" id="d-amount" type="number" value="${o.total_amount||''}"></div>
@@ -520,13 +527,35 @@ function openOrder(id){
 }
 function closeDrawer(){document.getElementById('drawer-overlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');document.body.style.overflow='';curOrder=null;}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeLb();closeModal();}});
+let _drawerPhotos=[];
 async function loadOrderPhotos(token){
   const box=document.getElementById('ophotos');if(!box)return;let photos=[];
   try{const r=await apiFetch(`${API}/api-admin-photos?t=${encodeURIComponent(token)}`);photos=r.photos||[];}catch{}
   if(!box.isConnected)return;
-  if(!photos.length){box.innerHTML=`<span class="hint">Кадри не збережені в архіві (R2). Старі замовлення або фото ще не надіслані.</span>`;return;}
-  const pc=document.getElementById('pcount');if(pc)pc.textContent='· '+photos.length+' шт';
-  box.innerHTML=photos.map(p=>`<div class="dphoto" onclick="openLb('${p.url}')"><img src="${p.url}" alt="Кадр" loading="lazy"></div>`).join('');
+  _drawerPhotos=photos;
+  const dlAll=document.getElementById('dl-all');if(dlAll)dlAll.style.display=photos.length?'':'none';
+  const pc=document.getElementById('pcount');if(pc)pc.textContent=photos.length?'· '+photos.length+' шт':'';
+  if(!photos.length){box.innerHTML=`<span class="hint">Кадрів ще немає. Завантажте з кнопки «↑ Завантажити» або зачекайте, поки клієнт надішле.</span>`;return;}
+  box.innerHTML=photos.map((p,i)=>`<div class="dphoto"><img src="${p.url}" alt="Кадр" loading="lazy" onclick="openLb('${p.url}')"><a href="${p.url}" download="kadr-${i+1}.jpg" onclick="event.stopPropagation()" title="Завантажити" style="position:absolute;bottom:3px;right:3px;width:20px;height:20px;border-radius:3px;background:rgba(0,0,0,.6);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none">↓</a></div>`).join('');
+}
+function downloadAllPhotos(){
+  if(!_drawerPhotos.length)return;
+  _drawerPhotos.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=p.url;a.download='kadr-'+(i+1)+'.jpg';document.body.appendChild(a);a.click();a.remove();},i*400));
+  toast('Завантаження '+_drawerPhotos.length+' кадрів…');
+}
+async function adminUploadPhotos(input){
+  if(!curOrder||!input.files.length)return;
+  const token=curOrder.token,files=[...input.files];input.value='';
+  const box=document.getElementById('ophotos');if(box)box.innerHTML='<span class="hint">Завантажуємо…</span>';
+  let okc=0;
+  for(const f of files){
+    try{
+      const res=await fetch(`${API}/api-upload?t=${encodeURIComponent(token)}`,{method:'POST',headers:{'Content-Type':f.type||'image/jpeg',Authorization:`Bearer ${TOKEN}`,'X-Filename':encodeURIComponent(f.name)},body:f});
+      if(res.ok)okc++;
+    }catch{}
+  }
+  toast(`Завантажено ${okc}/${files.length}`);
+  loadOrderPhotos(token);
 }
 async function advance(id,next){
   const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;

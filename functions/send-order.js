@@ -27,11 +27,25 @@ function r(body, status = 200) {
   );
 }
 
+// Best-effort анти-абʼюз квоти Telegram (AUDIT A1). ~80 фото/хв на IP вистачає.
+const _soRl = new Map();
+function sendLimited(request, limit = 80, windowMs = 60000) {
+  try {
+    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'x';
+    const now = Date.now(); let b = _soRl.get(ip);
+    if (!b || now > b.reset) { b = { count: 0, reset: now + windowMs }; _soRl.set(ip, b); }
+    b.count++;
+    if (_soRl.size > 5000) for (const [k, v] of _soRl) if (now > v.reset) _soRl.delete(k);
+    return b.count > limit;
+  } catch { return false; }
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
 
   if (request.method === 'OPTIONS') return new Response('', { status: 200, headers: CORS });
   if (request.method !== 'POST') return r('Method Not Allowed', 405);
+  if (sendLimited(request)) return r({ error: 'Забагато запитів. Спробуйте за хвилину.' }, 429);
 
   if (!env.TG_TOKEN || !env.TG_CHAT_ID) {
     return r({ error: 'TG_TOKEN або TG_CHAT_ID не налаштовано' }, 500);

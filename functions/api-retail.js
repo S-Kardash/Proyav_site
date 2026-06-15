@@ -1,9 +1,12 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, firstSeriesUsed, packagePrice, commissionFor } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, rateLimited, tooMany, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, firstSeriesUsed, packagePrice, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'POST') return fail('Method not allowed', 405);
+
+  // Анти-спам публічного оформлення замовлень (AUDIT A1/A4).
+  if (rateLimited(request, { key: 'retail', limit: 12, windowMs: 60000 })) return tooMany();
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
@@ -193,9 +196,10 @@ export async function onRequest(context) {
     } catch (e) { console.error('[retail] photographer notify:', e.message); }
   }
 
-  // ── Google Sheets sync (non-fatal) ───────────────────────────────────
+  // ── Google Sheets sync — НЕ блокує відповідь (AUDIT B2): waitUntil виконує
+  // синк після відправлення відповіді клієнту; затримка/збій Google не гальмує замовлення.
   const date = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' });
-  await sheetsAppend(env, [
+  const sheetsRow = sheetsAppend(env, [
     date,
     token.toUpperCase(),
     finalSource === 'package' ? 'Пакет (сайт)' : 'Роздріб (сайт)',
@@ -211,7 +215,8 @@ export async function onRequest(context) {
     order_ref   || '',
     hasPhotos ? 'Фото отримано' : 'Нова заявка',
     '',
-  ]);
+  ]).catch(e => console.error('[retail] sheets:', e.message));
+  if (context.waitUntil) context.waitUntil(sheetsRow); else await sheetsRow;
 
   return ok({
     ok:        !dbError,

@@ -23,6 +23,28 @@ export function preflight() {
   return new Response('', { status: 200, headers: CORS });
 }
 
+// ── Rate limiting (best-effort, per-isolate) ───────────────────────────────
+// Cloudflare Workers не мають вбудованого стану між запитами; цей лічильник
+// живе в памʼяті ізоляту й гасить сплески брутфорсу/абʼюзу на «теплому» ізоляті.
+// Промислове рішення — Cloudflare WAF Rate Limiting Rules (дія власника, AUDIT A1).
+const _rlBuckets = new Map();
+export function rateLimited(request, { key = 'global', limit = 30, windowMs = 60000 } = {}) {
+  try {
+    const ip = request.headers.get('CF-Connecting-IP')
+      || request.headers.get('x-forwarded-for') || 'unknown';
+    const k = key + ':' + ip;
+    const now = Date.now();
+    let b = _rlBuckets.get(k);
+    if (!b || now > b.reset) { b = { count: 0, reset: now + windowMs }; _rlBuckets.set(k, b); }
+    b.count++;
+    if (_rlBuckets.size > 5000) { for (const [kk, vv] of _rlBuckets) if (now > vv.reset) _rlBuckets.delete(kk); }
+    return b.count > limit;
+  } catch { return false; }
+}
+export function tooMany() {
+  return new Response(JSON.stringify({ error: 'Забагато запитів. Спробуйте за хвилину.' }), { status: 429, headers: CORS });
+}
+
 // ── Supabase REST client ──────────────────────────────────────────────────
 export function db(env) {
   const base = (env.SUPABASE_URL || '').trim()
@@ -80,7 +102,21 @@ export function db(env) {
     return data;
   }
 
-  return { query, rest, H };
+  // Дешевий точний підрахунок без завантаження рядків (AUDIT B1).
+  // Використовує Prefer: count=exact + Range 0-0 → кількість у Content-Range.
+  async function count(table, filters = {}) {
+    const params = new URLSearchParams({ select: 'id' });
+    for (const [k, v] of Object.entries(filters)) params.set(k, v);
+    const res = await fetch(`${rest}/${table}?${params}`, {
+      method: 'GET',
+      headers: { ...H, Prefer: 'count=exact', Range: '0-0', 'Range-Unit': 'items' },
+    });
+    const cr = res.headers.get('content-range') || '';      // напр. "0-0/123"
+    const total = parseInt((cr.split('/')[1] || '0'), 10);
+    return Number.isFinite(total) ? total : 0;
+  }
+
+  return { query, count, rest, H };
 }
 
 // ── JWT (HS256) via Web Crypto ────────────────────────────────────────────

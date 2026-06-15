@@ -33,11 +33,12 @@ export async function onRequest(context) {
   // Telegram only ever POSTs. Ignore everything else (incl. health checks).
   if (request.method !== 'POST') return new Response('ok', { status: 200 });
 
-  // Optional shared-secret check (Telegram sends it back in this header when the
-  // webhook was registered with `secret_token`). Reject spoofed callers.
-  if (env.TG_WEBHOOK_SECRET) {
-    const got = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
-    if (got !== env.TG_WEBHOOK_SECRET) return new Response('forbidden', { status: 403 });
+  // Shared-secret check ОБОВ'ЯЗКОВИЙ (AUDIT A3): без секрета будь-хто міг би
+  // POST'ом підробити Telegram-апдейт і прив'язати свій chat_id до фотографа.
+  // Якщо секрет не налаштовано — відмовляємо (форсує безпечне налаштування).
+  if (!env.TG_WEBHOOK_SECRET) return new Response('forbidden: secret not configured', { status: 403 });
+  if (request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.TG_WEBHOOK_SECRET) {
+    return new Response('forbidden', { status: 403 });
   }
 
   let update;

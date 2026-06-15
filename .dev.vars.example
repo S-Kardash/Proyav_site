@@ -1,0 +1,29 @@
+# ════════════════════════════════════════════════════════════════
+# ПРОЯВ · приклад змінних середовища (Cloudflare Pages → Settings → Variables)
+# Скопіюйте у .dev.vars для локального `wrangler pages dev`. НЕ комітьте реальні значення.
+# Окремо в Bindings додайте R2-бакет з іменем PHOTOS (сховище фото).
+# ════════════════════════════════════════════════════════════════
+
+# ── Supabase ──
+SUPABASE_URL=
+SUPABASE_SERVICE_KEY=
+
+# ── Авторизація ──
+JWT_SECRET=                 # довгий випадковий рядок (HS256)
+ADMIN_PASSWORD=             # СИЛЬНИЙ пароль — це майстер-ключ до адмінки
+
+# ── Сайт ──
+SITE_URL=https://proyav.pages.dev
+
+# ── Telegram (сповіщення) ──
+TG_TOKEN=
+TG_CHAT_ID=
+TG_BOT_USERNAME=
+TG_WEBHOOK_SECRET=          # ОБОВ'ЯЗКОВО: інакше /tg-webhook відмовляє (AUDIT A3)
+
+# ── Google Sheets (синк замовлень) ──
+GOOGLE_SA_KEY_B64=          # service-account JSON у base64
+GOOGLE_SHEET_ID=
+
+# ── Нова Пошта (проксі) ──
+NOVA_POSHTA_KEY=
