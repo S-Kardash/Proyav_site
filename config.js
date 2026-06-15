@@ -106,12 +106,29 @@
     };
   }
 
+  // ── Юридичні реквізити (єдине джерело для privacy/oferta/partnerstvo + футерів) ──
+  // ⚠️ ВЛАСНИКУ ЗАПОВНИТИ поля [...]. Юр-документи рекомендовано показати юристу
+  // перед запуском. Контакти (telegram/phone/instagram) — реальні.
+  var legal = {
+    brand:     'ПРОЯВ',
+    entity:    '[ЗАПОВНІТЬ: ФОП Прізвище Ім’я По батькові]', // напр. «ФОП Кардаш Олександр …»
+    taxId:     '[ЗАПОВНІТЬ: РНОКПП (ІПН) або ЄДРПОУ]',
+    reg:       '[ЗАПОВНІТЬ: дата та номер запису про держреєстрацію — необов’язково]',
+    address:   '[ЗАПОВНІТЬ: адреса для листування/звернень]',
+    email:     '[ЗАПОВНІТЬ: робочий email для звернень щодо даних]', // створіть окремий, не особистий
+    phone:     '+380737679757',
+    telegram:  'https://t.me/copylounge',
+    instagram: 'https://www.instagram.com/proyav_ua',
+    updated:   '12 червня 2026',
+  };
+
   window.PROYAV = {
     packages: packages,
     printPrice: printPrice,
     retailEnabled: retailEnabled,
     sla: sla,
     firstSeries: firstSeries,
+    legal: legal,
     stdChain: stdChain,
     order: ['small', 'medium', 'large', 'baby'],
     commissionTiers: commissionTiers,

@@ -28,6 +28,9 @@
   select.inp option { background: var(--ink-graphite, #2c2a28); color: var(--paper); }
   .auth-toggle { text-align: center; font-size: 13px; color: var(--paper-50); margin-top: 18px; }
   .auth-toggle a { color: var(--sepia); cursor: pointer; text-decoration: none; }
+  .pv-consent { display: flex; align-items: flex-start; gap: 9px; margin: 14px 0 4px; font-size: 12.5px; line-height: 1.5; color: var(--paper-70); cursor: pointer; }
+  .pv-consent input { width: 17px; height: 17px; margin-top: 1px; flex-shrink: 0; accent-color: var(--sepia); cursor: pointer; }
+  .pv-consent a { color: var(--sepia); }
 
   /* ── Економіка партнера (до входу) ── */
   .econ { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--paper-15); }
@@ -98,6 +101,7 @@
       <div class="field"><label>Пароль</label><input class="inp" id="r-pass" type="password" placeholder="мінімум 6 символів" autocomplete="new-password"></div>
       <div class="field"><label>Місто</label><input class="inp" id="r-city" placeholder="Ваше місто"></div>
       <div class="field"><label>Телефон <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="r-phone" type="tel" placeholder="+380"></div>
+      <label class="pv-consent"><input type="checkbox" id="r-consent"><span>Погоджуюся з <a href="/partnerstvo" target="_blank">Умовами партнерства</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span></label>
       <button class="pv-btn pv-btn--primary pv-btn--full" id="r-btn" onclick="register()" style="margin-top:6px">Спробувати безкоштовно →</button>
       <div class="err" id="r-err"></div>
       <div class="auth-toggle">Уже маєте акаунт? <a onclick="showLogin()">Увійти</a></div>
@@ -215,6 +219,7 @@ async function register(){
   if(!name) return err.textContent='Введіть ім\'я';
   if(!email) return err.textContent='Введіть email';
   if(password.length<6) return err.textContent='Пароль — мінімум 6 символів';
+  if(!document.getElementById('r-consent').checked) return err.textContent='Підтвердіть згоду з умовами';
   const btn=document.getElementById('r-btn'); btn.disabled=true; btn.textContent='Створюємо акаунт…';
   try{
     const r=await fetch(`${API}/api-partner-register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,city,phone})});
