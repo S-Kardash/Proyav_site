@@ -138,6 +138,10 @@
           <label>Пароль</label>
           <input class="pv-auth-input" id="reg-password" type="password" placeholder="Мінімум 6 символів" autocomplete="new-password">
         </div>
+        <label style="display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.5;color:var(--paper-70);cursor:pointer">
+          <input type="checkbox" id="reg-consent" style="width:17px;height:17px;margin-top:1px;flex-shrink:0;accent-color:var(--sepia)">
+          <span>Погоджуюся з <a href="/oferta" target="_blank" style="color:var(--sepia)">Офертою</a> та <a href="/privacy" target="_blank" style="color:var(--sepia)">Політикою конфіденційності</a>.</span>
+        </label>
         <div id="reg-err" class="pv-auth-err"></div>
         <button class="pv-btn pv-btn--primary pv-btn--full" id="reg-btn">Зареєструватись</button>
       </div>
@@ -964,6 +968,7 @@ async function doRegister() {
   const errEl    = document.getElementById('reg-err');
   const btn      = document.getElementById('reg-btn');
   errEl.textContent = '';
+  if (!document.getElementById('reg-consent').checked) { errEl.textContent = 'Підтвердіть згоду з умовами'; return; }
   btn.disabled = true; btn.textContent = '…';
   try {
     const res  = await fetch('/api-client-auth', {

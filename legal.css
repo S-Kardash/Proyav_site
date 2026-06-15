@@ -1,0 +1,68 @@
+/* ════════════════════════════════════════════════════════════════
+   ПРОЯВ · Юридичні сторінки (privacy / oferta / partnerstvo)
+   На бренді (tokens.css), але регістр — формальний і читабельний.
+   ════════════════════════════════════════════════════════════════ */
+body.legal {
+  background: var(--ink-darkroom);
+  color: var(--silver-500);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.lg-wrap { max-width: 760px; margin: 0 auto; padding: 40px clamp(20px, 5vw, 40px) 80px; }
+
+.lg-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 36px; flex-wrap: wrap; }
+.lg-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.lg-mark { width: 30px; height: 30px; border: 1.5px solid var(--paper); border-radius: 50%; position: relative; flex-shrink: 0; }
+.lg-mark::before { content: ''; position: absolute; inset: 5px; border: 1px solid var(--paper-30); border-radius: 50%; }
+.lg-mark::after { content: ''; position: absolute; top: 50%; left: 50%; width: 3px; height: 3px; background: var(--paper); border-radius: 50%; transform: translate(-50%,-50%); }
+.lg-brand-name { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.32em; font-size: 17px; color: var(--paper); }
+.lg-back { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--paper-50); text-decoration: none; }
+.lg-back:hover { color: var(--paper); }
+
+.lg-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sepia); margin-bottom: 12px; }
+.lg-h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; letter-spacing: -0.01em; color: var(--paper); margin-bottom: 10px; }
+.lg-h1 em { font-style: italic; color: var(--sepia); }
+.lg-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 8px; }
+.lg-lead { font-size: 15px; line-height: 1.65; color: var(--paper-70); margin: 20px 0 32px; }
+
+/* Зміст (anchor nav) */
+.lg-toc { border: 1px solid var(--paper-15); padding: 16px 18px; margin-bottom: 36px; }
+.lg-toc-h { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); margin-bottom: 10px; }
+.lg-toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; columns: 2; column-gap: 24px; }
+@media (max-width: 560px) { .lg-toc ol { columns: 1; } }
+.lg-toc li { counter-increment: toc; margin-bottom: 6px; }
+.lg-toc a { font-size: 13px; color: var(--paper-70); text-decoration: none; }
+.lg-toc a::before { content: counter(toc) '. '; color: var(--sepia); font-family: var(--font-mono); font-size: 11px; }
+.lg-toc a:hover { color: var(--paper); }
+
+/* Секції */
+.lg-sec { margin-bottom: 30px; scroll-margin-top: 20px; }
+.lg-sec h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; color: var(--paper); margin-bottom: 12px; line-height: 1.2; }
+.lg-sec h3 { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--paper); margin: 16px 0 6px; }
+.lg-sec p { font-size: 14.5px; line-height: 1.7; color: var(--paper-70); margin-bottom: 12px; }
+.lg-sec ul, .lg-sec ol { margin: 0 0 12px; padding-left: 22px; }
+.lg-sec li { font-size: 14.5px; line-height: 1.7; color: var(--paper-70); margin-bottom: 7px; }
+.lg-sec strong { color: var(--paper); font-weight: 500; }
+.lg-sec a { color: var(--sepia); }
+.lg-sec em { color: var(--sepia); font-style: italic; }
+
+/* Таблиця процесорів даних */
+.lg-table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 13.5px; }
+.lg-table th, .lg-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--paper-15); vertical-align: top; }
+.lg-table th { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-50); font-weight: 400; }
+.lg-table td { color: var(--paper-70); line-height: 1.5; }
+.lg-table td strong { color: var(--paper); }
+
+/* Реквізити-блок */
+.lg-req { border: 1px solid var(--paper-15); background: rgba(243,238,230,.02); padding: 18px 20px; margin: 24px 0; }
+.lg-req .k { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--paper-50); }
+.lg-req .v { font-size: 14px; color: var(--paper); margin-bottom: 10px; }
+.lg-req .v:last-child { margin-bottom: 0; }
+.lg-req a { color: var(--sepia); }
+
+/* Виноска / попередження */
+.lg-note { border-left: 2px solid var(--sepia); padding: 4px 0 4px 16px; margin: 16px 0; font-size: 13.5px; line-height: 1.6; color: var(--paper-70); }
+
+.lg-foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--paper-15); display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; }
+.lg-foot a { color: var(--paper-50); text-decoration: none; }
+.lg-foot a:hover { color: var(--paper); }

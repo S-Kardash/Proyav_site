@@ -287,6 +287,13 @@
   }
   .direct-note svg { color: var(--sepia); flex-shrink: 0; margin-top: 2px; }
   .direct-note.hidden { display: none; }
+  .consent {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 18px 0 6px; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--paper-70);
+  }
+  .consent input { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: var(--sepia); cursor: pointer; }
+  .consent a { color: var(--sepia); }
   .signature-note {
     font-family: var(--font-body); font-size: 12.5px; line-height: 1.5;
     color: var(--paper-50); margin: 0 0 12px;
@@ -996,6 +1003,12 @@
         <div class="total-row"><span class="total-key">Орієнтовна вартість</span><span class="total-price" id="rv-total-price">0 ₴</span></div>
       </div>
 
+      <label class="consent" id="consent-order">
+        <input type="checkbox" id="consent-cb" onchange="document.getElementById('consent-err').classList.remove('show')">
+        <span>Я маю право на друк цих кадрів і погоджуюся з <a href="/oferta" target="_blank">Публічною офертою</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span>
+      </label>
+      <div class="field-error" id="consent-err">Підтвердіть згоду, щоб передати замовлення в роботу</div>
+
       <button class="btn-primary" id="btn-submit" onclick="submitOrder(event)">Передати в роботу <span class="arrow">→</span></button>
     </div>
 
@@ -1035,6 +1048,7 @@
             <div class="register-nudge-row">
               <input class="input-field" id="rn-password" type="password" placeholder="Придумайте пароль (мін. 6 символів)" autocomplete="new-password">
             </div>
+            <label class="consent" style="margin:4px 0"><input type="checkbox" id="rn-consent"><span>Погоджуюся з <a href="/oferta" target="_blank">Офертою</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span></label>
             <div class="field-error" id="rn-err"></div>
             <button class="btn-primary" id="rn-submit" onclick="submitRegisterNudge()">Зберегти в кабінеті →</button>
           </div>
@@ -1078,7 +1092,9 @@
       </div>
     </div>
   </main>
-  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ</footer>
+  <footer class="footer">ПРОЯВ · МАЙСТЕРНЯ ПРОЯВЛЕННЯ<br>
+    <span style="font-size:10px;letter-spacing:.18em"><a href="/privacy" style="color:var(--paper-50)">Конфіденційність</a> · <a href="/oferta" style="color:var(--paper-50)">Оферта</a></span>
+  </footer>
 </div>
 
 <script>
@@ -3057,6 +3073,14 @@ async function saveRetailOrderToSupabase(orderId, qtyTotal, totalAmount) {
 
 /* ── Main submit ── */
 async function submitOrder(e) {
+  // Юридична згода обов'язкова (оферта + приватність + право на кадри).
+  const cb = document.getElementById('consent-cb');
+  if (cb && !cb.checked) {
+    document.getElementById('consent-err').classList.add('show');
+    document.getElementById('consent-order').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
   btn.innerHTML = '<div class="btn-spinner"></div> Надсилаємо...';
@@ -3209,6 +3233,7 @@ async function submitRegisterNudge() {
   if (!name)           { errEl.textContent = "Введіть ім'я";          errEl.classList.add('show'); return; }
   if (!phone)          { errEl.textContent = 'Введіть телефон';       errEl.classList.add('show'); return; }
   if (password.length < 6) { errEl.textContent = 'Пароль — мінімум 6 символів'; errEl.classList.add('show'); return; }
+  if (!document.getElementById('rn-consent').checked) { errEl.textContent = 'Підтвердіть згоду з умовами'; errEl.classList.add('show'); return; }
   btn.disabled = true; btn.textContent = '…';
   try {
     const res  = await fetch('/api-client-auth', {
