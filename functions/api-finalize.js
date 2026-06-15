@@ -43,9 +43,9 @@ export async function onRequest(context) {
     },
   });
 
-  // Google Sheets sync (non-fatal)
+  // Google Sheets sync — не блокує відповідь (AUDIT B2).
   const date = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' });
-  await sheetsAppend(env, [
+  const sheetsRow = sheetsAppend(env, [
     date,
     order.token.toUpperCase(),
     order.source === 'photographer' ? 'Від фотографа' : 'Роздріб',
@@ -61,7 +61,8 @@ export async function onRequest(context) {
     'Фото отримано',
     '',
     '',
-  ]);
+  ]).catch(e => console.error('[finalize] sheets:', e.message));
+  if (context.waitUntil) context.waitUntil(sheetsRow); else await sheetsRow;
 
   return ok({ ok: true, total_amount: finalTotal, product_type: finalType });
 }

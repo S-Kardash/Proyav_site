@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <link rel="stylesheet" href="tokens.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ · Замовлення друку</title>
@@ -2962,24 +2963,35 @@ async function tgSendText(text) {
   return apiPost({ type: 'text', text });
 }
 
-async function tgSendPhotoSecure(file, caption, ph) {
-  /* Compress → base64 → send through serverless function.
-     order_token + налаштування кадру дозволяють серверу заархівувати фото
-     в R2 під цим замовленням (durability для кабінету клієнта). */
-  const compressed = await compressImage(file);
-  if (!compressed) throw new Error('Compression failed');
-  const base64 = await blobToBase64(compressed);
-  return apiPost({
-    type:     'photo',
-    base64,
-    mimeType: 'image/jpeg',
-    filename: file.name.replace(/\.[^.]+$/, '.jpg'),
-    caption,
-    order_token: CURRENT_ORDER_TOKEN || undefined,
-    color: ph ? ph.color : undefined,
-    paper: ph ? ph.paper : undefined,
-    qty:   ph ? ph.qty   : undefined,
-  });
+/* ── Пряме бінарне завантаження кадру в R2 (без base64/Telegram) ──
+   Для друкарні важлива ПОВНА якість: вантажимо оригінал, якщо не завеликий;
+   інакше — щадне стиснення (до ~4000px), а не агресивне «телеграмне». */
+const UPLOAD_API = '/api-upload';
+const UPLOAD_ORIGINAL_MAX = 22 * 1024 * 1024; // ≤22 МБ → оригінал
+
+async function uploadPhotoToR2(ph, token) {
+  const file = ph.file;
+  let blob, type, name = file.name || 'photo.jpg';
+  if (file.size <= UPLOAD_ORIGINAL_MAX) {
+    blob = file; type = file.type || 'image/jpeg';
+  } else {
+    blob = await compressImage(file, 9000, 4000); // до ~9МБ, до 4000px
+    type = 'image/jpeg'; name = name.replace(/\.[^.]+$/, '.jpg');
+  }
+  if (!blob) throw new Error('Не вдалося підготувати файл');
+  const res = await fetchWithTimeout(UPLOAD_API + '?t=' + encodeURIComponent(token), {
+    method:  'POST',
+    headers: {
+      'Content-Type': type,
+      'X-Filename':   encodeURIComponent(name),
+      'X-Color':      ph.color || '',
+      'X-Paper':      ph.paper || '',
+      'X-Qty':        String(ph.qty || 1),
+    },
+    body: blob,
+  }, 90000);
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || ('HTTP ' + res.status)); }
+  return res.json();
 }
 
 function buildPhotoCaption(ph, num, orderId) {
@@ -3111,32 +3123,35 @@ async function submitOrder(e) {
 
   let tgOk = false;
 
-  /* 1. Text summary → Cloudflare Function → Telegram */
+  /* 1. Кадри → R2 (повна якість). Джерело істини — R2 + order_photos; власник
+     дивиться/завантажує їх в адмінці. Не залежить від Telegram. */
+  let r2Ok = 0, r2Fail = 0;
+  if (S.photos.length > 0 && CURRENT_ORDER_TOKEN) {
+    for (let i = 0; i < S.photos.length; i++) {
+      const ph  = S.photos[i];
+      const pct = Math.round(((i + 1) / S.photos.length) * 100);
+      btn.innerHTML = '<div class="btn-spinner"></div> Кадр ' + (i + 1) + '/' + S.photos.length + ' (' + pct + '%)...';
+      try { await uploadPhotoToR2(ph, CURRENT_ORDER_TOKEN); r2Ok++; }
+      catch (err) { r2Fail++; console.warn('[submit] R2 upload', i + 1, 'failed:', err.message); }
+    }
+  }
+
+  /* 2. Текстовий пінг власнику → Telegram (без файлів) */
+  btn.innerHTML = '<div class="btn-spinner"></div> Завершуємо...';
   try {
-    await tgSendText(buildOrderMessage(orderId, tq));
+    const note = S.photos.length
+      ? `\n🖼 Кадрів: ${S.photos.length} (${r2Ok} в R2${r2Fail ? `, ${r2Fail} не вдалось` : ''}) — у /admin`
+      : '';
+    await tgSendText(buildOrderMessage(orderId, tq) + note);
     tgOk = true;
   } catch (err) {
     console.error('[submit] TG text failed:', err.message);
   }
 
-  /* 2. Photos → Netlify Function → Telegram (one by one) */
-  if (tgOk && S.photos.length > 0) {
-    for (let i = 0; i < S.photos.length; i++) {
-      const ph  = S.photos[i];
-      const pct = Math.round(((i + 1) / S.photos.length) * 100);
-      btn.innerHTML = '<div class="btn-spinner"></div> Фото ' + (i + 1) + '/' + S.photos.length + ' (' + pct + '%)...';
-      try {
-        await tgSendPhotoSecure(ph.file, buildPhotoCaption(ph, i + 1, orderId), ph);
-      } catch (err) {
-        console.warn('[submit] photo', i + 1, 'failed:', err.message);
-        /* continue — don't abort all photos if one fails */
-      }
-    }
-  }
-
-  /* Result — order is also persisted to Supabase (finalize/retail above);
-     Telegram is the live ping to the owner. No third-party email from the client. */
-  if (!tgOk) {
+  /* Result — замовлення успішне, якщо збережене в Supabase (є токен) АБО
+     пройшов Telegram-пінг. Лише повний збій (ні те, ні те) → ретрай. Це робить
+     флоу стійким до тимчасового падіння Telegram (не губимо замовлення). */
+  if (!tgOk && !CURRENT_ORDER_TOKEN) {
     btn.disabled = false;
     btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-4 5 4 5-10-5z"/></svg> Надіслати замовлення';
     showToast("Помилка з'єднання. Спробуйте ще раз.");

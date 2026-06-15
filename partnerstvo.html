@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ · Умови партнерства</title>
 <meta name="robots" content="index,follow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="legal.css">
 <script src="config.js"></script>
@@ -25,7 +26,7 @@
   <div class="lg-toc">
     <div class="lg-toc-h">Зміст</div>
     <ol>
-      <li><a href="#suть">Суть співпраці</a></li>
+      <li><a href="#sut">Суть співпраці</a></li>
       <li><a href="#komisiya">Комісія та рівні</a></li>
       <li><a href="#vyplaty">Виплати</a></li>
       <li><a href="#dani">Дані клієнтів</a></li>
@@ -36,7 +37,7 @@
     </ol>
   </div>
 
-  <div class="lg-sec" id="suть">
+  <div class="lg-sec" id="sut">
     <h2>1. Суть співпраці</h2>
     <p>1.1. Партнер рекомендує послуги «Прояв» своїм клієнтам за персональним посиланням. Коли клієнт оформлює набір за цим посиланням, замовлення закріплюється за Партнером.</p>
     <p>1.2. Виготовлення, спілкування з клієнтом щодо замовлення, оплату й доставку бере на себе «Прояв». Партнер не зобов’язаний нічого продавати чи оплачувати.</p>
@@ -121,10 +122,11 @@
 <script>
 (function () {
   var P = window.PROYAV || {}, L = P.legal || {};
-  function setText(attr, val){ document.querySelectorAll('[data-legal="'+attr+'"]').forEach(function(el){ el.textContent = val || '—'; }); }
-  setText('entity', L.entity); setText('updated', L.updated);
+  function hideRow(el){ var v = el.classList && el.classList.contains('v') ? el : el.closest('.v'); if(!v) return; v.style.display='none'; var k=v.previousElementSibling; if(k && k.classList.contains('k')) k.style.display='none'; }
+  document.querySelectorAll('[data-legal="entity"]').forEach(function(el){ el.textContent = L.entity || '—'; });
+  document.querySelectorAll('[data-legal="updated"]').forEach(function(el){ el.textContent = L.updated || ''; });
   document.querySelectorAll('[data-legal="telegram"]').forEach(function(el){ if (L.telegram) el.href = L.telegram; });
-  document.querySelectorAll('[data-legal="emailLink"]').forEach(function(el){ el.textContent = L.email || '—'; if (L.email && L.email.indexOf('@')>0) el.href = 'mailto:'+L.email; });
+  document.querySelectorAll('[data-legal="emailLink"]').forEach(function(el){ if(L.email){ el.textContent=L.email; if(L.email.indexOf('@')>0) el.href='mailto:'+L.email; } else hideRow(el); });
   document.querySelectorAll('[data-legal="phoneLink"]').forEach(function(el){ el.textContent = L.phone || '—'; if (L.phone) el.href = 'tel:'+L.phone.replace(/[^+\d]/g,''); });
   // Рівні комісії — з config (не хардкод)
   var tiers = P.commissionTiers || [];

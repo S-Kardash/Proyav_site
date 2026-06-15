@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT } from './_utils.js';
+import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT, rateLimited, tooMany } from './_utils.js';
 
 /**
  * api-client-auth.js — клієнтські акаунти (кабінет клієнта).
@@ -15,6 +15,7 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'POST') return fail('Method not allowed', 405);
   if (!env.JWT_SECRET) return fail('JWT_SECRET не налаштовано', 500);
+  if (rateLimited(request, { key: 'client-auth', limit: 10, windowMs: 60000 })) return tooMany();
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }

@@ -62,13 +62,17 @@ export async function onRequest(context) {
       );
     }
 
-    // Stats
-    const all = await client.query('orders', { select: 'status,total_amount', limit: 9999 });
+    // Stats — лічильники дешевим count, виручка лише по оплачених (AUDIT B1):
+    // не тягнемо всю таблицю в воркер.
+    const [total, newC, uploaded, paidRows] = await Promise.all([
+      client.count('orders'),
+      client.count('orders', { status: 'eq.new' }),
+      client.count('orders', { status: 'eq.uploaded' }),
+      client.query('orders', { select: 'total_amount', filters: { status: 'eq.paid' }, limit: 5000 }).catch(() => []),
+    ]);
     const stats = {
-      total:    (all || []).length,
-      new:      (all || []).filter(o => o.status === 'new').length,
-      uploaded: (all || []).filter(o => o.status === 'uploaded').length,
-      revenue:  (all || []).filter(o => o.status === 'paid').reduce((s, o) => s + (o.total_amount || 0), 0),
+      total, new: newC, uploaded,
+      revenue: (paidRows || []).reduce((s, o) => s + (o.total_amount || 0), 0),
     };
 
     return ok({ orders: orders || [], stats });

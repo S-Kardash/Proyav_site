@@ -1,9 +1,12 @@
-import { ok, fail, preflight, signJWT } from './_utils.js';
+import { ok, fail, preflight, signJWT, rateLimited, tooMany } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'POST') return fail('Method not allowed', 405);
+
+  // Брутфорс-захист: адмін-пароль — майстер-ключ до всіх даних (AUDIT A1/A2).
+  if (rateLimited(request, { key: 'admin-login', limit: 8, windowMs: 60000 })) return tooMany();
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ · Публічна оферта</title>
 <meta name="robots" content="index,follow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="legal.css">
 <script src="config.js"></script>
@@ -134,8 +135,6 @@
     <div class="lg-req">
       <div class="k">Виконавець</div><div class="v" data-legal="entity">—</div>
       <div class="k">Ідентифікаційний код</div><div class="v" data-legal="taxId">—</div>
-      <div class="k">Реєстрація</div><div class="v" data-legal="reg">—</div>
-      <div class="k">Адреса</div><div class="v" data-legal="address">—</div>
       <div class="k">Email</div><div class="v"><a data-legal="emailLink" href="#">—</a></div>
       <div class="k">Telegram</div><div class="v"><a data-legal="telegram" href="#" target="_blank" rel="noopener">@copylounge</a></div>
       <div class="k">Телефон</div><div class="v"><a data-legal="phoneLink" href="#">—</a></div>
@@ -152,10 +151,12 @@
 <script>
 (function () {
   var L = (window.PROYAV && PROYAV.legal) || {};
-  function setText(attr, val){ document.querySelectorAll('[data-legal="'+attr+'"]').forEach(function(el){ el.textContent = val || '—'; }); }
-  setText('entity', L.entity); setText('taxId', L.taxId); setText('reg', L.reg); setText('address', L.address); setText('updated', L.updated);
+  function hideRow(el){ var v = el.classList && el.classList.contains('v') ? el : el.closest('.v'); if(!v) return; v.style.display='none'; var k=v.previousElementSibling; if(k && k.classList.contains('k')) k.style.display='none'; }
+  function fill(attr, val){ document.querySelectorAll('[data-legal="'+attr+'"]').forEach(function(el){ if(val) el.textContent=val; else hideRow(el); }); }
+  fill('entity', L.entity); fill('taxId', L.taxId);
+  document.querySelectorAll('[data-legal="updated"]').forEach(function(el){ el.textContent = L.updated || ''; });
   document.querySelectorAll('[data-legal="telegram"]').forEach(function(el){ if (L.telegram) el.href = L.telegram; });
-  document.querySelectorAll('[data-legal="emailLink"]').forEach(function(el){ el.textContent = L.email || '—'; if (L.email && L.email.indexOf('@')>0) el.href = 'mailto:'+L.email; });
+  document.querySelectorAll('[data-legal="emailLink"]').forEach(function(el){ if(L.email){ el.textContent=L.email; if(L.email.indexOf('@')>0) el.href='mailto:'+L.email; } else hideRow(el); });
   document.querySelectorAll('[data-legal="phoneLink"]').forEach(function(el){ el.textContent = L.phone || '—'; if (L.phone) el.href = 'tel:'+L.phone.replace(/[^+\d]/g,''); });
 })();
 </script>

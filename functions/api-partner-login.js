@@ -1,9 +1,11 @@
-import { ok, fail, preflight, db, verifyPassword, signJWT } from './_utils.js';
+import { ok, fail, preflight, db, verifyPassword, signJWT, rateLimited, tooMany } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'POST') return fail('Method not allowed', 405);
+
+  if (rateLimited(request, { key: 'partner-login', limit: 10, windowMs: 60000 })) return tooMany();
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
