@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT, verifyJWT, randomToken, rateLimited, tooMany } from './_utils.js';
+import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT, verifyJWT, randomToken, rateLimited, tooMany, logAudit } from './_utils.js';
 
 /**
  * api-client-auth.js — клієнтські акаунти (кабінет клієнта).
@@ -35,6 +35,7 @@ export async function onRequest(context) {
       method: 'PATCH', filters: { id: `eq.${body.client_id}` },
       body: { password_hash: await hashPassword(temp) },
     });
+    await logAudit(env, 'client_reset', 'client:' + body.client_id, 'Скинуто пароль клієнта');
     return ok({ ok: true, temp_password: temp });
   }
 

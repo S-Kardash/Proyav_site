@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, randomToken, commissionFor } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, randomToken, commissionFor, logAudit } from './_utils.js';
 
 // Пінг фотографу в Telegram при оплаті його замовлення (8.4).
 // Комісія — за тим самим тарифом, що й у кабінеті (commissionFor за к-стю замовлень).
@@ -139,6 +139,16 @@ export async function onRequest(context) {
     if (updates.status === 'paid' && env.TG_TOKEN) {
       await notifyPhotographerPaid(env, client, data);
     }
+
+    // Журнал дій (CRM).
+    const oidStr = 'ПРЯ-' + String(data.id || '').replace(/\D/g, '').padStart(6, '0').slice(-6);
+    const what = [];
+    if (updates.status !== undefined) what.push('статус → ' + updates.status);
+    if (updates.ttn !== undefined && updates.ttn) what.push('ТТН ' + updates.ttn);
+    if (updates.total_amount !== undefined) what.push('сума ' + updates.total_amount + '₴');
+    if (updates.notes !== undefined) what.push('нотатки');
+    await logAudit(env, updates.status !== undefined ? 'order_status' : 'order_edit',
+      'order:' + oidStr, `${data.client_name || ''}: ${what.join(', ')}`);
 
     // Авто-сповіщення клієнту в кабінет при зміні статусу (CRM, non-fatal).
     if (updates.status && data.client_id) {

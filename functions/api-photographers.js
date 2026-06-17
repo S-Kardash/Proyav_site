@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, hashPassword, randomToken } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, hashPassword, randomToken, logAudit } from './_utils.js';
 
 function randomPassword() {
   return randomToken(8).toUpperCase();
@@ -69,6 +69,7 @@ export async function onRequest(context) {
       throw e;
     });
 
+    await logAudit(env, 'photographer', 'photographer:' + data.id, 'Додано партнера: ' + data.name);
     return ok({ photographer: data, temp_password: tempPwd }, 201);
   }
 
@@ -101,6 +102,8 @@ export async function onRequest(context) {
       body:    updates,
     });
 
+    await logAudit(env, 'photographer', 'photographer:' + id,
+      (data.name || '') + ': ' + (reset_password ? 'скинуто пароль' : active !== undefined ? (active ? 'увімкнено' : 'вимкнено') : 'редаговано'));
     return ok({ photographer: data, ...(tempPassword ? { temp_password: tempPassword } : {}) });
   }
 

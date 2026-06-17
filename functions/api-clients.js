@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, logAudit } from './_utils.js';
 
 /**
  * api-clients.js — клієнтські акаунти для адмінки (CRM).
@@ -28,6 +28,7 @@ export async function onRequest({ request, env }) {
       method: 'PATCH', filters: { id: `eq.${b.id}` }, single: true,
       select: 'id,name,phone,instagram,email,notes,tags,created_at', body: updates,
     });
+    await logAudit(env, 'client_edit', 'client:' + b.id, 'Оновлено профіль (' + Object.keys(updates).join(', ') + ')');
     return ok({ client: row });
   }
 

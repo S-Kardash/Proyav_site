@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, logAudit } from './_utils.js';
 
 /**
  * api-notifications.js — сповіщення клієнтам (показуються в кабінеті account.html).
@@ -32,6 +32,7 @@ export async function onRequest({ request, env }) {
         kind:        b.kind || 'info',
       },
     });
+    await logAudit(env, 'notify', 'client:' + b.client_id, 'Сповіщення: ' + (b.title || b.body || '').slice(0, 80));
     return ok({ notification: row }, 201);
   }
 
