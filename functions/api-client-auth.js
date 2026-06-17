@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT, rateLimited, tooMany } from './_utils.js';
+import { ok, fail, preflight, db, hashPassword, verifyPassword, signJWT, verifyJWT, randomToken, rateLimited, tooMany } from './_utils.js';
 
 /**
  * api-client-auth.js — клієнтські акаунти (кабінет клієнта).
@@ -22,6 +22,21 @@ export async function onRequest(context) {
 
   const client = db(env);
   const TTL = 2592000; // 30 днів
+
+  // ── Адмін: скидання пароля клієнту (CRM) ────────────────────────────
+  if (body.action === 'admin_reset') {
+    const authH = request.headers.get('Authorization') || '';
+    let isAdmin = false;
+    if (authH.startsWith('Bearer ')) { try { isAdmin = (await verifyJWT(authH.slice(7), env.JWT_SECRET)).role === 'admin'; } catch {} }
+    if (!isAdmin) return fail('Forbidden', 403);
+    if (!body.client_id) return fail('client_id обов\'язковий');
+    const temp = randomToken(8).toUpperCase();
+    await client.query('clients', {
+      method: 'PATCH', filters: { id: `eq.${body.client_id}` },
+      body: { password_hash: await hashPassword(temp) },
+    });
+    return ok({ ok: true, temp_password: temp });
+  }
 
   // ── Реєстрація ──────────────────────────────────────────────────────
   if (body.action === 'register') {

@@ -140,6 +140,23 @@ export async function onRequest(context) {
       await notifyPhotographerPaid(env, client, data);
     }
 
+    // Авто-сповіщення клієнту в кабінет при зміні статусу (CRM, non-fatal).
+    if (updates.status && data.client_id) {
+      const MSG = {
+        uploaded:    { title: 'Кадри отримано', body: 'Ми прийняли ваші кадри й беремося до роботи.' },
+        in_progress: { title: 'Проявляємо',     body: 'Ваше замовлення в роботі — контролюємо друк.' },
+        sent:        { title: 'Відправлено',    body: data.ttn ? `Замовлення в дорозі. ТТН: ${data.ttn}` : 'Ваше замовлення передано Новій Пошті.' },
+        paid:        { title: 'Дякуємо!',        body: 'Оплату отримано. Сподіваємось, набір вас потішив 🤍' },
+      };
+      const m = MSG[updates.status];
+      if (m) {
+        client.query('client_notifications', {
+          method: 'POST',
+          body: { client_id: data.client_id, order_token: data.token, kind: 'status', title: m.title, body: m.body },
+        }).catch(e => console.error('[api-orders] notify client:', e.message));
+      }
+    }
+
     return ok({ order: data });
   }
 
