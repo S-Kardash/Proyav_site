@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ — Оберіть формат</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script defer src="/track.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,7 +106,7 @@
       : '';
     const badge = p.popular ? `<span class="card-badge">Найчастіший вибір</span>` : '';
     const who = p.audience ? `<div class="card-who">для: ${p.audience}</div>` : '';
-    return `<a class="card${p.popular ? ' accent' : ''}" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}">
+    return `<a class="card${p.popular ? ' accent' : ''}" href="/order?pkg=${encodeURIComponent(key)}${phSuffix}" data-track="format_select" data-track-meta="${key}">
       ${thumb}
       <div class="card-body">
         <div class="card-name">${p.name}${badge}</div>

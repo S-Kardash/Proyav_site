@@ -266,6 +266,7 @@ select.input{background:rgba(243,238,230,.04);cursor:pointer}select.input option
 <div id="app">
   <aside class="sidebar">
     <div class="side-brand"><div class="side-mark"></div><div class="side-brand-text"><div class="side-brand-name">ПРОЯВ</div><div class="side-brand-meta">АДМІН · v.02</div></div></div>
+    <input class="search" id="gsearch" placeholder="Пошук усюди…" oninput="clearTimeout(searchTimer);searchTimer=setTimeout(()=>globalSearch(this.value),250)" style="margin:0">
     <nav class="side-nav" id="nav"></nav>
     <div class="side-bottom"><div class="side-status"><span class="safelight-dot"></span>Майстерня · ONLINE</div><button class="logout-btn" onclick="doLogout()">Вийти</button></div>
   </aside>
@@ -284,7 +285,7 @@ select.input{background:rgba(243,238,230,.04);cursor:pointer}select.input option
 const API='', SITE=location.origin;
 let TOKEN=sessionStorage.getItem('admin_token');
 const S={orders:[],photographers:[],clients:[],expenses:[],expCats:[],inventory:[],lowCount:0,settings:{},loaded:{}};
-let curFilter='all',curOrder=null,searchTimer,editPhId=null,dashPeriod='month';
+let curFilter='all',curOrder=null,searchTimer,editPhId=null,dashPeriod='month',anRange='7d';
 
 const PKG=(window.PROYAV&&PROYAV.packages)||{};
 const PRODUCT_LABEL={small:'Маленький набір',medium:'Подвійний набір',large:'Великий набір',baby:'Спогади малюка'};
@@ -296,12 +297,15 @@ const CH={photographer:{label:'Партнер',color:'#C4956C'},package:{label:'
 
 const NAV=[
   ['dashboard','Огляд','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="7.5" y="2" width="4.5" height="4.5"/><rect x="2" y="7.5" width="4.5" height="4.5"/><rect x="7.5" y="7.5" width="4.5" height="4.5"/></svg>'],
+  ['analytics','Аналітика','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12V8M5 12V4M8 12V6M11 12V2"/></svg>'],
   ['orders','Замовлення','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="10" height="10" rx="1"/><line x1="2" y1="5.5" x2="12" y2="5.5"/></svg>'],
   ['expenses','Витрати','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="5"/><path d="M7 4v6M5.5 8c0 .9.7 1.3 1.5 1.3s1.5-.4 1.5-1.3-.8-1-1.5-1.2-1.5-.4-1.5-1.2.7-1.3 1.5-1.3 1.5.4 1.5 1.3"/></svg>'],
   ['inventory','Матеріали','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4.5L7 2l5 2.5v5L7 12 2 9.5z"/><path d="M2 4.5L7 7l5-2.5M7 7v5"/></svg>'],
   ['cash','Каса','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="10" height="7" rx="1"/><circle cx="7" cy="7" r="1.6"/></svg>'],
   ['photographers','Партнери','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="5" r="2.3"/><path d="M2.5 12c0-2 2.2-3.3 4.5-3.3s4.5 1.3 4.5 3.3"/></svg>'],
   ['clients','Клієнти','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="5" cy="5.5" r="2"/><circle cx="10" cy="6" r="1.6"/><path d="M1.5 12c0-1.8 1.6-2.9 3.5-2.9 1 0 1.9.3 2.5.8M8.5 12c.2-1.4 1.3-2.2 2.8-2.2 1.4 0 2.2.7 2.2 2.2"/></svg>'],
+  ['tasks','Завдання','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7l2.5 2.5L11 4"/><rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/></svg>'],
+  ['audit','Журнал','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h6l3 3v7H3z"/><path d="M9 2v3h3M5 8h4M5 10h4"/></svg>'],
   ['settings','Налаштування','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>'],
 ];
 function renderNav(active){
@@ -309,6 +313,7 @@ function renderNav(active){
     let badge='';
     if(id==='orders'){const n=S.orders.filter(o=>o.status==='new'||o.status==='uploaded').length;if(n)badge=`<span class="count">${n}</span>`;}
     if(id==='inventory'&&S.lowCount)badge=`<span class="count warn">${S.lowCount}</span>`;
+    if(id==='tasks'&&S.tasks){const today=new Date().toISOString().slice(0,10);const due=S.tasks.filter(t=>!t.done&&t.due&&t.due<=today).length;if(due)badge=`<span class="count warn">${due}</span>`;}
     return `<button class="nav-btn ${id===active?'active':''}" onclick="go('${id}')"><span class="ic">${icon}</span><span>${label}</span>${badge}</button>`;
   }).join('');
 }
@@ -345,6 +350,7 @@ async function boot(){
   document.getElementById('app').classList.add('show');
   try{await loadOrders();}catch(e){toast(e.message,'err');}
   loadInventory().catch(()=>{});loadSettings().catch(()=>{});
+  loadTasks().then(()=>renderNav('dashboard')).catch(()=>{});
   go('dashboard');
 }
 if(TOKEN)boot();
@@ -358,7 +364,10 @@ function go(page){
   if(page==='expenses'&&!S.loaded.expenses)loadExpenses().then(()=>go('expenses'));
   if(page==='photographers'&&!S.loaded.photographers)loadPhotographers().then(()=>go('photographers'));
   if(page==='clients'&&!S.loaded.clients)loadClients().then(()=>go('clients'));
+  if(page==='audit'&&!S.loaded.audit)loadAudit().then(()=>go('audit'));
+  if(page==='tasks'&&!S.loaded.tasks)loadTasks().then(()=>go('tasks'));
   if(page==='inventory'&&!S.loaded.inventory)loadInventory().then(()=>go('inventory'));
+  if(page==='analytics'&&S.anRange!==anRange)loadAnalytics().then(()=>go('analytics')).catch(()=>{});
   if((page==='dashboard'||page==='cash')&&!S.loaded.expenses)loadExpenses().then(()=>go(page));
 }
 
@@ -369,6 +378,9 @@ async function loadClients(){const r=await apiFetch(`${API}/api-clients`);S.clie
 async function loadExpenses(){const r=await apiFetch(`${API}/api-expenses`);S.expenses=r.expenses||[];S.expCats=r.categories||[];S.loaded.expenses=true;}
 async function loadInventory(){const r=await apiFetch(`${API}/api-inventory`);S.inventory=r.items||[];S.lowCount=r.low_count||0;S.loaded.inventory=true;}
 async function loadSettings(){const r=await apiFetch(`${API}/api-settings`);S.settings=r.settings||{};S.loaded.settings=true;}
+async function loadAnalytics(){const r=await apiFetch(`${API}/api-analytics?range=${anRange}`);S.analytics=r;S.anRange=anRange;}
+async function loadAudit(){const r=await apiFetch(`${API}/api-audit?limit=200`);S.audit=r.entries||[];S.loaded.audit=true;}
+async function loadTasks(){const r=await apiFetch(`${API}/api-tasks`);S.tasks=r.tasks||[];S.loaded.tasks=true;}
 
 // ════ DASHBOARD ════
 function rangeFor(p){const now=new Date();if(p==='week'){const s=new Date(now);const day=(s.getDay()+6)%7;s.setDate(s.getDate()-day);s.setHours(0,0,0,0);const ps=new Date(s);ps.setDate(ps.getDate()-7);return{start:s,prevStart:ps,prevEnd:s};}if(p==='month'){const s=new Date(now.getFullYear(),now.getMonth(),1);const ps=new Date(now.getFullYear(),now.getMonth()-1,1);return{start:s,prevStart:ps,prevEnd:s};}return{start:new Date(0),prevStart:null,prevEnd:null};}
@@ -381,6 +393,33 @@ function revByMonth(n){const out=[],now=new Date();for(let i=n-1;i>=0;i--){const
 function barChart(d){const max=Math.max(1,...d.map(x=>x.value));return `<div class="bars">${d.map((x,i)=>`<div class="bar-col"><span class="bar-v">${x.value?money(x.value):''}</span><div class="bar ${i===d.length-1?'hot':''}" style="height:${Math.max(2,Math.round(x.value/max*100))}%"></div><span class="bar-l">${x.label}</span></div>`).join('')}</div>`;}
 function hbars(d){const max=Math.max(1,...d.map(x=>x.value));if(!d.length)return`<div class="hint">Немає даних</div>`;return d.map((x,i)=>`<div class="hbar-row"><span class="hbar-k">${esc(x.label)}</span><div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(x.value/max*100)}%;background:${x.color||CAT_COLORS[i%CAT_COLORS.length]}"></div></div><span class="hbar-v">${x.fmt||money(x.value)}</span></div>`).join('');}
 function donut(segs){const total=segs.reduce((s,x)=>s+x.value,0)||1,r=42,c=2*Math.PI*r;let acc=0;const arcs=segs.filter(s=>s.value>0).map(s=>{const fr=s.value/total,dash=fr*c,el=`<circle r="${r}" cx="60" cy="60" fill="none" stroke="${s.color}" stroke-width="15" stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-acc*c}" transform="rotate(-90 60 60)"/>`;acc+=fr;return el;}).join('');return `<svg width="116" height="116" viewBox="0 0 120 120" style="flex-shrink:0"><circle r="${r}" cx="60" cy="60" fill="none" stroke="var(--paper-08)" stroke-width="15"/>${arcs}<text x="60" y="56" text-anchor="middle" fill="var(--paper)" font-family="var(--font-display)" font-style="italic" font-size="26">${total}</text><text x="60" y="72" text-anchor="middle" fill="var(--paper-50)" font-family="var(--font-mono)" font-size="7" letter-spacing="2">ЗАМОВЛЕНЬ</text></svg>`;}
+
+// ════ ANALYTICS (first-party трекінг дій) ════
+function anChips(){return ['today','7d','30d','all'].map(k=>`<button class="filter-btn ${k===anRange?'active':''}" onclick="anRange='${k}';go('analytics')">${k==='today'?'Сьогодні':k==='all'?'Весь час':k}</button>`).join('');}
+function PAGE_analytics(){
+  const a=S.analytics;
+  if(!a||S.anRange!==anRange) return `<div class="page-h"><div><div class="eyebrow">ДІЇ · ТРЕКІНГ</div><h1 class="page-h-title">Що роблять <em>відвідувачі</em></h1></div><div class="toolbar-actions">${anChips()}</div></div><p class="hint">Завантажуємо…</p>`;
+  const f=a.funnel||{};
+  const byDay=(a.byDay||[]).map(d=>({label:(d.day||'').slice(5),value:d.value}));
+  return `
+  <div class="page-h"><div><div class="eyebrow">ДІЇ · ТРЕКІНГ${a.capped?' · ОБМЕЖЕНО 20K':''}</div><h1 class="page-h-title">Що роблять <em>відвідувачі</em></h1></div><div class="toolbar-actions">${anChips()}</div></div>
+  <div class="kpis">
+    <div class="kpi sepia"><div class="kpi-k">Відвідувачі</div><div class="kpi-v col">${a.visitors||0}</div><div class="kpi-sub">унікальні сесії</div></div>
+    <div class="kpi silver"><div class="kpi-k">Перегляди</div><div class="kpi-v">${a.pageviews||0}</div><div class="kpi-sub">сторінок</div></div>
+    <div class="kpi green"><div class="kpi-k">Замовлень</div><div class="kpi-v col">${f.order_submit||0}</div><div class="kpi-sub">${f.order_start||0} почали оформлення</div></div>
+    <div class="kpi sepia"><div class="kpi-k">Конверсія</div><div class="kpi-v col">${f.conversion||0}<span class="cur">%</span></div><div class="kpi-sub">старт → замовлення</div></div>
+  </div>
+  <div class="grid3">
+    <div class="panel"><div class="panel-head"><span class="panel-title">Відвідуваність по днях</span><span class="panel-meta">перегляди</span></div>${byDay.length?barChart(byDay):'<div class="hint">Поки немає даних. Трекер починає збирати після деплою.</div>'}</div>
+    <div class="panel"><div class="panel-head"><span class="panel-title">Джерела</span><span class="panel-meta">звідки прийшли</span></div>${(a.sources&&a.sources.length)?hbars(a.sources.map(s=>({label:s.key,value:s.value,fmt:String(s.value)}))):'<div class="hint">—</div>'}</div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="panel-head"><span class="panel-title">Воронка</span><span class="panel-meta">кроки</span></div>${hbars([{label:'Перегляди',value:a.pageviews||0},{label:'Вибір набору',value:f.format_select||0},{label:'Почали оформл.',value:f.order_start||0},{label:'Замовили',value:f.order_submit||0,color:'#6bbf8a'}].map(x=>({...x,fmt:String(x.value)})))}</div>
+    <div class="panel"><div class="panel-head"><span class="panel-title">Топ сторінки</span><span class="panel-meta">перегляди</span></div>${(a.topPaths&&a.topPaths.length)?hbars(a.topPaths.map(p=>({label:p.key,value:p.value,fmt:String(p.value)}))):'<div class="hint">—</div>'}</div>
+  </div>
+  <div class="panel" style="margin-top:16px"><div class="panel-head"><span class="panel-title">Усі події</span><span class="panel-meta">за період</span></div>${(a.byType&&a.byType.length)?hbars(a.byType.map(t=>({label:t.key,value:t.value,fmt:String(t.value)}))):'<div class="hint">—</div>'}</div>
+  `;
+}
 
 function PAGE_dashboard(){
   const p=dashPeriod,R=rangeFor(p),eL=S.loaded.expenses;
@@ -433,6 +472,7 @@ function PAGE_dashboard(){
     <div class="panel"><div class="panel-head"><span class="panel-title">Топ партнери</span><span class="panel-meta">за замовленнями</span></div>${topPh.length?topPh.map((x,i)=>`<div class="lb-row"><span class="lb-rank ${i===0?'top':''}">${i+1}</span><span class="lb-name">${esc(x.name)}</span><span class="lb-val">${x.count} зам · ${money(x.rev)}₴</span></div>`).join(''):`<div class="hint">Замовлень від партнерів ще немає</div>`}</div>
     <div class="panel"><div class="panel-head"><span class="panel-title">Остання активність</span><span class="panel-meta">live</span></div>${recent.length?recent.map(o=>`<div class="act-row"><span class="act-dot" style="background:${STATUS_COLOR[o.status]||'var(--paper-30)'}"></span><span class="act-txt"><b>${esc(o.client_name||'Клієнт')}</b> · ${prodLabel(o)}${o.total_amount?` · ${money(o.total_amount)}₴`:''} <span style="color:var(--paper-30)">(${STATUS[o.status]?.label||o.status})</span></span><span class="act-at">${fmtD(o.created_at)}</span></div>`).join(''):`<div class="hint">Замовлень ще немає</div>`}</div>
   </div>
+  ${(()=>{const t=(S.tasks||[]).filter(x=>!x.done);if(!t.length)return '';const today=new Date().toISOString().slice(0,10);const od=t.filter(x=>x.due&&x.due<=today);const show=(od.length?od:t).slice(0,4);return `<div class="panel" style="margin-bottom:16px"><div class="panel-head"><span class="panel-title">Завдання${od.length?` · <span style="color:var(--safelight)">${od.length} прострочених</span>`:''}</span><button class="action ghost sm" onclick="go('tasks')">Усі →</button></div>${show.map(x=>`<div class="lb-row"><span style="width:8px;height:8px;border-radius:50%;background:${PRIO_COLOR[x.priority]||'var(--sepia)'};flex-shrink:0"></span><span class="lb-name">${esc(x.title)}</span>${x.due?`<span class="act-at" style="color:${x.due<=today?'var(--safelight)':'var(--paper-50)'}">${fmtD(x.due)}</span>`:''}</div>`).join('')}</div>`;})()}
   ${S.lowCount?`<div class="goal" style="border-color:rgba(178,58,44,.4)"><div class="goal-top"><span class="stat-key" style="color:var(--safelight)">⚠ Закінчується · ${S.lowCount} позицій</span><button class="action ghost sm" onclick="go('inventory')">Переглянути</button></div></div>`:''}
   `;
 }
@@ -459,10 +499,47 @@ function PAGE_orders(){
     <input class="search" id="osearch" placeholder="Пошук: ім'я, телефон, токен…" oninput="clearTimeout(searchTimer);searchTimer=setTimeout(renderOrdersTable,200)">
     <button class="action ghost" onclick="exportCSV('orders')">Експорт CSV</button>
   </div>
+  <div class="toolbar" id="bulk-bar" style="display:none;background:rgba(196,149,108,.08);border:1px solid var(--paper-15);padding:8px 12px">
+    <span class="stat-key" id="bulk-count" style="color:var(--sepia)">0 обрано</span>
+    <span style="flex:1"></span>
+    <button class="action sm" onclick="bulkAdvance()">Просунути статус →</button>
+    <button class="action ghost sm" onclick="bulkExport()">Експорт обраних</button>
+    <button class="action ghost sm" onclick="selOrders.clear();renderOrdersTable()">Скинути</button>
+  </div>
   <div class="tcard"><div class="table-wrap"><table>
-    <thead><tr><th>№</th><th>Клієнт</th><th class="hide-sm">Канал</th><th>Статус</th><th>Сума</th><th class="hide-sm">Дата</th></tr></thead>
+    <thead><tr><th style="width:28px"><input type="checkbox" id="sel-all" onclick="toggleSelAll(this)" style="cursor:pointer"></th><th>№</th><th>Клієнт</th><th class="hide-sm">Канал</th><th>Статус</th><th>Сума</th><th class="hide-sm">Дата</th></tr></thead>
     <tbody id="otbody"></tbody>
   </table></div></div>`;
+}
+const selOrders=new Set();
+function updateBulkBar(){const bar=document.getElementById('bulk-bar');if(!bar)return;bar.style.display=selOrders.size?'flex':'none';const c=document.getElementById('bulk-count');if(c)c.textContent=selOrders.size+' обрано';}
+function toggleSelOrder(id,el){if(el.checked)selOrders.add(String(id));else selOrders.delete(String(id));updateBulkBar();}
+function toggleSelAll(el){const vis=visibleOrders();if(el.checked)vis.forEach(o=>selOrders.add(String(o.id)));else vis.forEach(o=>selOrders.delete(String(o.id)));renderOrdersTable();}
+function visibleOrders(){const s=(document.getElementById('osearch')?.value||'').toLowerCase();let list=S.orders;if(curFilter!=='all')list=list.filter(o=>o.status===curFilter);if(s)list=list.filter(o=>(o.client_name||'').toLowerCase().includes(s)||(o.client_phone||'').includes(s)||(o.token||'').toLowerCase().includes(s));return list;}
+async function bulkAdvance(){
+  const ids=[...selOrders];if(!ids.length)return;
+  if(!confirm(`Просунути ${ids.length} замовлень на наступний статус?`))return;
+  let done=0;
+  for(const id of ids){const o=S.orders.find(x=>String(x.id)===id);if(!o)continue;const ni=FLOW.indexOf(o.status)+1;if(ni>=FLOW.length)continue;try{await advance(o.id,FLOW[ni]);done++;}catch{}}
+  selOrders.clear();renderOrdersTable();toast(`Просунуто ${done}`);
+}
+function bulkExport(){const ids=new Set([...selOrders]);const saved=S.orders;S.orders=saved.filter(o=>ids.has(String(o.id)));exportCSV('orders');S.orders=saved;}
+
+// ── Глобальний пошук (замовлення + клієнти + партнери) ──
+async function globalSearch(q){
+  q=(q||'').trim().toLowerCase();
+  if(q.length<2){closeModal();return;}
+  if(!S.loaded.clients){try{await loadClients();}catch{}}
+  if(!S.loaded.photographers){try{await loadPhotographers();}catch{}}
+  const orders=S.orders.filter(o=>(o.client_name||'').toLowerCase().includes(q)||(o.client_phone||'').includes(q)||(o.token||'').toLowerCase().includes(q)||oid(o).toLowerCase().includes(q)).slice(0,8);
+  const clients=(S.clients||[]).filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(q)||(c.email||'').toLowerCase().includes(q)).slice(0,8);
+  const phs=(S.photographers||[]).filter(p=>(p.name||'').toLowerCase().includes(q)||(p.email||'').toLowerCase().includes(q)||(p.city||'').toLowerCase().includes(q)).slice(0,6);
+  const sec=(t,h)=>h?`<div class="dsec-h" style="margin:14px 0 6px">${t}</div>${h}`:'';
+  const oRows=orders.map(o=>`<div class="lb-row" style="cursor:pointer" onclick="closeModal();go('orders');setTimeout(()=>openOrder('${o.id}'),60)"><span class="lb-name"><b>${esc(o.client_name||'—')}</b> · ${prodLabel(o)} <span class="tsub">${oid(o)}</span></span><span class="badge badge-${o.status}" style="font-size:8px">${STATUS[o.status]?.label||esc(o.status)}</span></div>`).join('');
+  const cRows=clients.map(c=>`<div class="lb-row" style="cursor:pointer" onclick="closeModal();go('clients');setTimeout(()=>openClient('${c.id}'),60)"><span class="lb-name">${esc(c.name)} <span class="tsub">${esc(c.phone||'')}</span></span><span class="lb-val">${money(c.total_spent||0)}₴</span></div>`).join('');
+  const pRows=phs.map(p=>`<div class="lb-row" style="cursor:pointer" onclick="closeModal();go('photographers');setTimeout(()=>openPh('${p.id}'),60)"><span class="lb-name">${esc(p.name)} <span class="tsub">${esc(p.city||'')}</span></span><span class="lb-val">${p.commission_pct}%</span></div>`).join('');
+  const empty=!orders.length&&!clients.length&&!phs.length;
+  modal(`<div class="modal-head"><div class="modal-title">Пошук: «${esc(q)}»</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" onclick="closeModal()">✕</button></div>${empty?'<div class="hint">Нічого не знайдено</div>':sec('Замовлення',oRows)+sec('Клієнти',cRows)+sec('Партнери',pRows)}`);
 }
 function renderOrdersTable(){
   const tb=document.getElementById('otbody');if(!tb)return;
@@ -470,8 +547,9 @@ function renderOrdersTable(){
   let list=S.orders;
   if(curFilter!=='all')list=list.filter(o=>o.status===curFilter);
   if(s)list=list.filter(o=>(o.client_name||'').toLowerCase().includes(s)||(o.client_phone||'').includes(s)||(o.token||'').toLowerCase().includes(s));
-  if(!list.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty">Замовлень не знайдено</div></td></tr>`;return;}
-  tb.innerHTML=list.map(o=>{const ck=chKey(o);const ni=FLOW.indexOf(o.status)+1;const next=ni<FLOW.length?FLOW[ni]:null;return `<tr class="clickable" onclick="openOrder('${esc(o.id)}')">
+  if(!list.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty">Замовлень не знайдено</div></td></tr>`;return;}
+  tb.innerHTML=list.map(o=>{const ck=chKey(o);const ni=FLOW.indexOf(o.status)+1;const next=ni<FLOW.length?FLOW[ni]:null;const sel=selOrders.has(String(o.id));return `<tr class="clickable" onclick="openOrder('${esc(o.id)}')">
+    <td onclick="event.stopPropagation()"><input type="checkbox" ${sel?'checked':''} onclick="toggleSelOrder('${esc(o.id)}',this)" style="cursor:pointer"></td>
     <td class="num">${oid(o)}</td>
     <td class="client"><em>${esc(o.client_name||'—')}</em> · ${prodLabel(o)}<div class="tsub">${esc(o.client_phone||'')}</div></td>
     <td class="hide-sm"><span class="badge badge-ch-${ck}">${CH[ck].label}${o.photographers?' · '+esc(o.photographers.name.split(' ')[0]):''}</span></td>
@@ -479,6 +557,7 @@ function renderOrdersTable(){
     <td class="price">${o.total_amount?money(o.total_amount)+' ₴':'—'}</td>
     <td class="hide-sm date">${fmtD(o.created_at)}</td>
   </tr>`;}).join('');
+  updateBulkBar();
 }
 
 // ── DRAWER: order detail ──
@@ -502,7 +581,7 @@ function openOrder(id){
       <div class="dsec"><div class="dsec-h">Кадри <span id="pcount"></span>
         <span style="display:flex;gap:6px">
           <button class="action ghost sm" onclick="document.getElementById('adm-upload').click()">↑ Завантажити</button>
-          <button class="action ghost sm" id="dl-all" onclick="downloadAllPhotos()" style="display:none">↓ Усі</button>
+          <button class="action ghost sm" id="dl-all" onclick="zipAllPhotos()" style="display:none">↓ ZIP усіх</button>
         </span></div>
         <input type="file" id="adm-upload" accept="image/*" multiple style="display:none" onchange="adminUploadPhotos(this)">
         <div class="dphotos" id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
@@ -542,6 +621,35 @@ function downloadAllPhotos(){
   if(!_drawerPhotos.length)return;
   _drawerPhotos.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=p.url;a.download='kadr-'+(i+1)+'.jpg';document.body.appendChild(a);a.click();a.remove();},i*400));
   toast('Завантаження '+_drawerPhotos.length+' кадрів…');
+}
+// ── ZIP (store-метод, без бібліотек) ──
+function _crc32(buf){let t=_crc32.t;if(!t){t=_crc32.t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}}let crc=0xFFFFFFFF;for(let i=0;i<buf.length;i++)crc=(crc>>>8)^t[(crc^buf[i])&0xFF];return (crc^0xFFFFFFFF)>>>0;}
+function buildZip(files){
+  const u16=n=>[n&0xFF,(n>>8)&0xFF],u32=n=>[n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF];
+  const parts=[],central=[];let offset=0;
+  for(const f of files){
+    const name=new TextEncoder().encode(f.name),data=f.data,crc=_crc32(data);
+    const lh=[0x50,0x4b,0x03,0x04,...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)];
+    const head=new Uint8Array(lh.length+name.length);head.set(lh,0);head.set(name,lh.length);
+    parts.push(head,data);
+    const cd=[0x50,0x4b,0x01,0x02,...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset)];
+    const ce=new Uint8Array(cd.length+name.length);ce.set(cd,0);ce.set(name,cd.length);central.push(ce);
+    offset+=head.length+data.length;
+  }
+  const cenSize=central.reduce((s,c)=>s+c.length,0);
+  const end=new Uint8Array([0x50,0x4b,0x05,0x06,...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cenSize),...u32(offset),...u16(0)]);
+  return new Blob([...parts,...central,end],{type:'application/zip'});
+}
+async function zipAllPhotos(){
+  if(!_drawerPhotos.length)return;
+  const btn=document.getElementById('dl-all');if(btn){btn.disabled=true;btn.textContent='Готуємо…';}
+  try{
+    const files=[];
+    for(let i=0;i<_drawerPhotos.length;i++){const r=await fetch(_drawerPhotos[i].url);files.push({name:`kadr-${String(i+1).padStart(2,'0')}.jpg`,data:new Uint8Array(await r.arrayBuffer())});}
+    const blob=buildZip(files);const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${curOrder?oid(curOrder):'order'}-kadry.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast('ZIP готовий · '+files.length+' кадрів');
+  }catch(e){toast('Помилка ZIP: '+e.message,'err');}
+  if(btn){btn.disabled=false;btn.textContent='↓ ZIP усіх';}
 }
 async function adminUploadPhotos(input){
   if(!curOrder||!input.files.length)return;
@@ -712,7 +820,95 @@ function PAGE_clients(){
     <div class="stat"><span class="stat-key">Виручка від акаунтів</span><span class="stat-val green">${money(revenue)}<span class="cur">₴</span></span><span class="stat-sub">оплачені замовлення</span></div>
     <div class="stat"><span class="stat-key">Середній LTV</span><span class="stat-val">${withOrders?money(revenue/withOrders):0}<span class="cur">₴</span></span><span class="stat-sub">на активного клієнта</span></div>
   </div>
-  <div class="tcard"><div class="table-wrap"><table><thead><tr><th>Клієнт</th><th class="hide-sm">Контакт</th><th>Замовлень</th><th>Витратив</th><th class="hide-sm">З нами з</th></tr></thead><tbody>${S.clients.length?S.clients.map(c=>`<tr><td class="client"><em>${esc(c.name)}</em>${c.instagram?`<div class="tsub">@${esc(c.instagram)}</div>`:''}</td><td class="hide-sm tsub">${esc(c.phone||'—')}${c.email?'<br>'+esc(c.email):''}</td><td class="price">${c.order_count}</td><td class="price">${money(c.total_spent)} ₴</td><td class="hide-sm date">${fmtD(c.created_at)}</td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">Зареєстрованих клієнтів ще немає</div></td></tr>`}</tbody></table></div></div>`;
+  <div class="tcard"><div class="table-wrap"><table><thead><tr><th>Клієнт</th><th class="hide-sm">Контакт</th><th>Замовлень</th><th>Витратив</th><th class="hide-sm">З нами з</th></tr></thead><tbody>${S.clients.length?S.clients.map(c=>`<tr class="clickable" onclick="openClient('${c.id}')"><td class="client"><em>${esc(c.name)}</em>${c.tags?` <span class="tsub">· ${esc(c.tags)}</span>`:''}${c.instagram?`<div class="tsub">@${esc(c.instagram)}</div>`:''}</td><td class="hide-sm tsub">${esc(c.phone||'—')}${c.email?'<br>'+esc(c.email):''}</td><td class="price">${c.order_count}</td><td class="price">${money(c.total_spent)} ₴</td><td class="hide-sm date">${fmtD(c.created_at)}</td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">Зареєстрованих клієнтів ще немає</div></td></tr>`}</tbody></table></div></div>`;
+}
+
+let curClient=null;
+async function openClient(id){
+  let d; try{ d=await apiFetch(`${API}/api-clients?id=${encodeURIComponent(id)}`);}catch(e){return toast(e.message,'err');}
+  curClient=d.client;
+  const c=d.client, orders=d.orders||[], events=d.events||[], notifs=d.notifications||[];
+  const since=fmtD(c.created_at);
+  document.getElementById('drawer').innerHTML=`
+    <div class="drawer-h"><div><div class="num">КЛІЄНТ${c.tags?' · '+esc(c.tags):''}</div><div class="title">${esc(c.name)}</div></div>
+      <button class="close" onclick="closeDrawer()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button></div>
+    <div class="drawer-body">
+      <div class="dgrid">
+        <div class="dfield"><span class="k">Телефон</span><span class="v">${esc(c.phone||'—')}</span></div>
+        <div class="dfield"><span class="k">Instagram</span><span class="v">${c.instagram?'@'+esc(c.instagram):'—'}</span></div>
+        <div class="dfield"><span class="k">Email</span><span class="v">${esc(c.email||'—')}</span></div>
+        <div class="dfield"><span class="k">З нами з</span><span class="v">${since}</span></div>
+        <div class="dfield"><span class="k">Замовлень</span><span class="v big">${orders.length}</span></div>
+        <div class="dfield"><span class="k">LTV (оплачено)</span><span class="v big" style="color:#6bbf8a">${money(d.total_spent||0)} ₴</span></div>
+      </div>
+      <div class="dsec"><div class="dsec-h">Теги (через кому)</div><input class="input" id="cl-tags" value="${esc(c.tags||'')}" placeholder="VIP, весілля, повторний"></div>
+      <div class="dsec"><div class="dsec-h">Нотатки (внутрішні)</div><textarea class="input" id="cl-notes">${esc(c.notes||'')}</textarea><button class="action" style="margin-top:8px" onclick="saveClient('${c.id}')">Зберегти профіль</button></div>
+      <div class="dsec"><div class="dsec-h">Надіслати сповіщення в кабінет</div>
+        <input class="input" id="cl-ntitle" placeholder="Заголовок" style="margin-bottom:8px">
+        <textarea class="input" id="cl-nbody" placeholder="Текст для клієнта…"></textarea>
+        <button class="action" style="margin-top:8px" onclick="sendNotif('${c.id}')">Надіслати →</button></div>
+      <div class="dsec"><div class="dsec-h">Замовлення · ${orders.length}</div>${orders.length?orders.map(o=>`<div class="lb-row" style="cursor:pointer" onclick="(function(){const x=S.orders.find(z=>String(z.id)==='${o.id}');if(x){closeDrawer();openOrder('${o.id}');}else toast('Відкрийте вкладку Замовлення','err');})()"><span class="lb-name">${prodLabel(o)} <span class="tsub">· ${fmtD(o.created_at)}</span></span><span class="lb-val"><span class="badge badge-${o.status}" style="font-size:8px">${STATUS[o.status]?.label||o.status}</span> ${o.total_amount?money(o.total_amount)+'₴':''}</span></div>`).join(''):'<div class="hint">Замовлень ще немає</div>'}</div>
+      <div class="dsec"><div class="dsec-h">Активність · останні дії</div>${events.length?events.slice(0,12).map(e=>`<div class="act-row"><span class="act-dot" style="background:var(--sepia)"></span><span class="act-txt">${esc(e.type)} <span style="color:var(--paper-30)">${esc(e.path||'')}</span></span><span class="act-at">${fmtDT(e.ts)}</span></div>`).join(''):'<div class="hint">Подій ще немає (трекер збирає після деплою)</div>'}</div>
+      <div class="dsec"><div class="dsec-h">Надіслані сповіщення</div>${notifs.length?notifs.map(n=>`<div class="act-row"><span class="act-dot" style="background:${n.read?'var(--paper-30)':'#6bbf8a'}"></span><span class="act-txt"><b>${esc(n.title||'')}</b> ${esc(n.body||'')}</span><span class="act-at">${fmtD(n.created_at)}</span></div>`).join(''):'<div class="hint">Ще не надсилали</div>'}</div>
+    </div>
+    <div class="drawer-foot"><button class="action ghost" onclick="closeDrawer()">Закрити</button><button class="action danger" onclick="resetClientPw('${c.id}')">Скинути пароль</button></div>`;
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+async function saveClient(id){
+  try{const r=await apiFetch(`${API}/api-clients`,{method:'PUT',body:JSON.stringify({id,notes:document.getElementById('cl-notes').value,tags:document.getElementById('cl-tags').value})});
+    const i=S.clients.findIndex(c=>c.id===id);if(i>=0)S.clients[i].tags=r.client.tags;toast('Збережено');
+  }catch(e){toast(e.message,'err');}
+}
+async function sendNotif(id){
+  const title=document.getElementById('cl-ntitle').value.trim(), body=document.getElementById('cl-nbody').value.trim();
+  if(!title&&!body)return toast('Порожнє сповіщення','err');
+  try{await apiFetch(`${API}/api-notifications`,{method:'POST',body:JSON.stringify({client_id:id,title,body})});
+    document.getElementById('cl-ntitle').value='';document.getElementById('cl-nbody').value='';toast('Сповіщення надіслано');openClient(id);
+  }catch(e){toast(e.message,'err');}
+}
+async function resetClientPw(id){
+  if(!confirm('Скинути пароль клієнту? Він отримає тимчасовий.'))return;
+  try{const r=await apiFetch(`${API}/api-client-auth`,{method:'POST',body:JSON.stringify({action:'admin_reset',client_id:id})});
+    alert(`Новий тимчасовий пароль клієнта:\n\n${r.temp_password}\n\nНадішліть йому (телефон — логін).`);
+  }catch(e){toast(e.message,'err');}
+}
+
+// ════ TASKS (завдання/нагадування) ════
+const PRIO_COLOR={low:'var(--paper-30)',normal:'var(--sepia)',high:'var(--safelight)'};
+function PAGE_tasks(){
+  if(!S.loaded.tasks)return head('CRM · ЗАВДАННЯ','Що треба <em>зробити</em>')+`<p class="hint">Завантажуємо…</p>`;
+  const today=new Date().toISOString().slice(0,10);
+  const open=S.tasks.filter(t=>!t.done), done=S.tasks.filter(t=>t.done);
+  const overdue=open.filter(t=>t.due&&t.due<=today).length;
+  const row=t=>{const od=t.due&&t.due<=today&&!t.done;return `<div class="lb-row"><span style="width:9px;height:9px;border-radius:50%;background:${PRIO_COLOR[t.priority]||'var(--sepia)'};flex-shrink:0;cursor:pointer" title="${t.priority}"></span><label style="flex:1;display:flex;gap:10px;align-items:center;cursor:pointer;min-width:0"><input type="checkbox" ${t.done?'checked':''} onclick="toggleTask(${t.id},this.checked)" style="cursor:pointer"><span class="lb-name" style="${t.done?'text-decoration:line-through;color:var(--paper-30)':''}">${esc(t.title)}</span></label>${t.due?`<span class="act-at" style="color:${od?'var(--safelight)':'var(--paper-50)'}">${fmtD(t.due)}</span>`:''}<button class="action danger sm" onclick="delTask(${t.id})">✕</button></div>`;};
+  return head('CRM · ЗАВДАННЯ','Що треба <em>зробити</em>',`<span>${open.length} відкритих${overdue?` · <strong style="color:var(--safelight)">${overdue} прострочених</strong>`:''}</span>`)+`
+  <div class="fcard">
+    <div class="frow2"><div class="frow" style="grid-column:1/-1"><label class="lbl">Нове завдання</label><input class="input" id="tk-title" placeholder="Напр.: передзвонити клієнту, замовити конверти…"></div></div>
+    <div class="frow2"><div class="frow"><label class="lbl">Термін</label><input class="input" id="tk-due" type="date"></div><div class="frow"><label class="lbl">Пріоритет</label><select class="input" id="tk-prio"><option value="normal">Звичайний</option><option value="high">Високий</option><option value="low">Низький</option></select></div></div>
+    <button class="action" onclick="addTask()">+ Додати завдання</button>
+  </div>
+  <div class="panel">${open.length?open.map(row).join(''):'<div class="hint">Відкритих завдань немає 🤍</div>'}</div>
+  ${done.length?`<div class="dsec-h" style="margin:22px 0 10px">Виконано · ${done.length}</div><div class="panel" style="opacity:.7">${done.slice(0,20).map(row).join('')}</div>`:''}`;
+}
+async function addTask(){
+  const title=document.getElementById('tk-title').value.trim();if(!title)return toast('Введіть завдання','err');
+  try{const r=await apiFetch(`${API}/api-tasks`,{method:'POST',body:JSON.stringify({title,due:document.getElementById('tk-due').value||null,priority:document.getElementById('tk-prio').value})});S.tasks.unshift(r.task);toast('Додано');renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}
+}
+async function toggleTask(id,done){try{await apiFetch(`${API}/api-tasks`,{method:'PUT',body:JSON.stringify({id,done})});const t=S.tasks.find(x=>x.id===id);if(t)t.done=done;renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}}
+async function delTask(id){if(!confirm('Видалити завдання?'))return;try{await apiFetch(`${API}/api-tasks?id=${id}`,{method:'DELETE'});S.tasks=S.tasks.filter(x=>x.id!==id);renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}}
+
+// ════ AUDIT (журнал дій) ════
+let auditFilter='all';
+const AUDIT_LABEL={order_status:'Статус',order_edit:'Редаг.',payout:'Виплата',client_reset:'Пароль',client_edit:'Клієнт',notify:'Сповіщ.',photographer:'Партнер',expense:'Витрата',inventory:'Склад',upload:'Файл'};
+function PAGE_audit(){
+  if(!S.loaded.audit)return head('ЖУРНАЛ · ДІЇ','Хто що <em>робив</em>')+`<p class="hint">Завантажуємо…</p>`;
+  let list=S.audit||[]; if(auditFilter!=='all')list=list.filter(e=>e.action===auditFilter);
+  const chips=[['all','Усі'],['order_status','Статуси'],['payout','Виплати'],['notify','Сповіщення'],['client_reset','Паролі'],['expense','Витрати'],['photographer','Партнери']];
+  return head('ЖУРНАЛ · ДІЇ','Хто що <em>робив</em>',`<span>${(S.audit||[]).length} записів</span>`)+`
+  <div class="toolbar">${chips.map(([k,l])=>`<button class="filter-btn ${k===auditFilter?'active':''}" onclick="auditFilter='${k}';go('audit')">${l}</button>`).join('')}</div>
+  <div class="tcard"><div class="table-wrap"><table><thead><tr><th>Час</th><th>Дія</th><th>Об'єкт</th><th>Деталі</th><th class="hide-sm">Хто</th></tr></thead><tbody>${list.length?list.map(e=>`<tr><td class="date">${fmtDT(e.ts)}</td><td><span class="badge badge-uploaded">${AUDIT_LABEL[e.action]||esc(e.action)}</span></td><td class="num">${esc(e.entity||'')}</td><td>${esc(e.detail||'')}</td><td class="hide-sm tsub">${esc(e.actor||'')}</td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">Записів ще немає</div></td></tr>`}</tbody></table></div></div>`;
 }
 
 // ════ SETTINGS ════
@@ -737,7 +933,7 @@ function exportCSV(kind){let rows=[];if(kind==='orders'){rows.push(['№','То�
 // ── shared head ──
 function head(eyebrow,title,meta,action){return `<div class="page-h"><div><div class="eyebrow">${eyebrow}</div><h1 class="page-h-title">${title}</h1></div><div class="page-h-meta">${meta||''}${action||''}</div></div>`;}
 
-const PAGES={dashboard:PAGE_dashboard,orders:PAGE_orders,expenses:PAGE_expenses,inventory:PAGE_inventory,cash:PAGE_cash,photographers:PAGE_photographers,clients:PAGE_clients,settings:PAGE_settings};
+const PAGES={dashboard:PAGE_dashboard,analytics:PAGE_analytics,orders:PAGE_orders,expenses:PAGE_expenses,inventory:PAGE_inventory,cash:PAGE_cash,photographers:PAGE_photographers,clients:PAGE_clients,tasks:PAGE_tasks,audit:PAGE_audit,settings:PAGE_settings};
 
 // ── modal / lightbox / toast ──
 function modal(html){document.getElementById('modal-inner').innerHTML=html;document.getElementById('modal').classList.add('open');}

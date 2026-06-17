@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, logAudit } from './_utils.js';
 
 const CATEGORIES = [
   'Матеріали', 'Доставка', 'Оренда', 'Маркетинг',
@@ -59,6 +59,9 @@ export async function onRequest(context) {
         note:     b.note || '',
       },
     });
+    const isPayout = (b.category || '') === 'Комісія фотографу';
+    await logAudit(env, isPayout ? 'payout' : 'expense', 'expense:' + data.id,
+      `${b.category || 'Інше'} ${Number(b.amount)}₴${b.descr ? ' · ' + b.descr : ''}`);
     return ok({ expense: data }, 201);
   }
 

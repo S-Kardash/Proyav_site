@@ -119,6 +119,18 @@ export function db(env) {
   return { query, count, rest, H };
 }
 
+// (helper used by admin endpoints)
+// ── Audit log: журнал дій адміна (CRM) ─────────────────────────────────────
+// Запис не фатальний — ніколи не валить основну дію.
+export async function logAudit(env, action, entity, detail, actor = 'admin') {
+  try {
+    await db(env).query('audit_log', {
+      method: 'POST',
+      body: { action, entity: entity || null, detail: (detail || '').slice(0, 500) || null, actor },
+    });
+  } catch (e) { console.error('[audit]', e.message); }
+}
+
 // ── JWT (HS256) via Web Crypto ────────────────────────────────────────────
 function b64url(obj) {
   const str = typeof obj === 'string' ? obj : JSON.stringify(obj);

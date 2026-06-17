@@ -249,6 +249,7 @@ SETS.forEach(s => { PKG_NAMES[s.id] = s.name; });
 let TOKEN = null;
 let CLIENT = null;
 let ORDERS = [];
+let NOTIFS = [];
 let selSet = 'medium';
 
 const params = new URLSearchParams(location.search);
@@ -284,6 +285,7 @@ async function loadOrders(loader) {
     const data = await res.json();
     CLIENT = data.client;
     ORDERS = data.orders || [];
+    try { const n = await fetch('/api-notifications', { headers: { Authorization: `Bearer ${TOKEN}` } }); if (n.ok) NOTIFS = (await n.json()).notifications || []; } catch {}
   } catch {
     clearToken();
     if (loader) loader.classList.add('is-gone');
@@ -542,13 +544,26 @@ function badgeHTML(dbStatus) {
   return `<span class="pv-badge ${s}">${STATUS[s].label}</span>`;
 }
 
+// ─── Сповіщення (від адмінки + авто при зміні статусу) ───
+function notifHTML() {
+  if (!NOTIFS.length) return '';
+  const unread = NOTIFS.filter(n => !n.read).length;
+  return `<div class="pv-card" style="border-color:rgba(196,149,108,.3);margin-bottom:22px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="pv-cap" style="color:var(--sepia)">Сповіщення${unread?' · '+unread+' нових':''}</span>${unread?'<button class="pv-link" onclick="markNotifsRead()">Прочитано</button>':''}</div>
+    ${NOTIFS.slice(0,4).map(n => `<div style="padding:9px 0;border-top:1px solid var(--pv-line);display:flex;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:${n.read?'var(--paper-30)':'var(--sepia)'};margin-top:6px;flex-shrink:0"></span><div><div style="font-size:14px;color:var(--paper);line-height:1.45">${n.title?'<b>'+esc(n.title)+'</b> ':''}${esc(n.body||'')}</div><div class="pv-cap" style="margin-top:3px">${fmtDate(n.created_at)}</div></div></div>`).join('')}
+  </div>`;
+}
+async function markNotifsRead() {
+  try { await fetch('/api-notifications', { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${TOKEN}` }, body: JSON.stringify({ all:true }) }); NOTIFS.forEach(n => n.read = true); go('home'); } catch {}
+}
+
 // ─── PAGE: home ──────────────────────────────────────────────────────────────
 function renderHome() {
   const active = ORDERS.filter(o => !isDone(o));
   const firstName = esc((CLIENT.name || '').split(' ')[0]);
 
   if (!active.length) {
-    return `
+    return notifHTML() + `
       <div class="pv-phead">
         <div><div class="pv-eyebrow"><span class="ln"></span>Кабінет</div>
           <h1 class="pv-ptitle">Активних <em>замовлень немає</em></h1></div>
@@ -586,7 +601,7 @@ function renderHome() {
       </div>
     </div>` : '';
 
-  return `
+  return notifHTML() + `
     <div class="pv-phead">
       <div><div class="pv-eyebrow"><span class="ln"></span>Доброго дня, ${firstName}</div>
         <h1 class="pv-ptitle">Кадри <em>в роботі</em></h1></div>

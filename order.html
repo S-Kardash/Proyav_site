@@ -2,6 +2,7 @@
 <html lang="uk">
 <head>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script defer src="/track.js"></script>
 <link rel="stylesheet" href="tokens.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1450,6 +1451,7 @@ function renderSLA() {
 /* ─ Init ─ */
 window.addEventListener('DOMContentLoaded', () => {
   renderSLA();
+  if (window.pvTrack) pvTrack('order_start');
   // ── Magic link: validate token from URL ──
   if (MAGIC_TOKEN) {
     validateMagicToken();
@@ -3158,6 +3160,7 @@ async function submitOrder(e) {
     return;
   }
 
+  if (window.pvTrack) pvTrack('order_submit', { set: S.productType || 'retail', photos: S.photos.length });
   document.getElementById('success-order-num').textContent = orderId;
   // Offer email capture only if the client didn't already provide one
   const peb = document.getElementById('post-email-block');

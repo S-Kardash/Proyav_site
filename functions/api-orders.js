@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, randomToken, commissionFor } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, randomToken, commissionFor, logAudit } from './_utils.js';
 
 // Пінг фотографу в Telegram при оплаті його замовлення (8.4).
 // Комісія — за тим самим тарифом, що й у кабінеті (commissionFor за к-стю замовлень).
@@ -138,6 +138,33 @@ export async function onRequest(context) {
     // Newly marked paid → ping the photographer (non-blocking, non-fatal).
     if (updates.status === 'paid' && env.TG_TOKEN) {
       await notifyPhotographerPaid(env, client, data);
+    }
+
+    // Журнал дій (CRM).
+    const oidStr = 'ПРЯ-' + String(data.id || '').replace(/\D/g, '').padStart(6, '0').slice(-6);
+    const what = [];
+    if (updates.status !== undefined) what.push('статус → ' + updates.status);
+    if (updates.ttn !== undefined && updates.ttn) what.push('ТТН ' + updates.ttn);
+    if (updates.total_amount !== undefined) what.push('сума ' + updates.total_amount + '₴');
+    if (updates.notes !== undefined) what.push('нотатки');
+    await logAudit(env, updates.status !== undefined ? 'order_status' : 'order_edit',
+      'order:' + oidStr, `${data.client_name || ''}: ${what.join(', ')}`);
+
+    // Авто-сповіщення клієнту в кабінет при зміні статусу (CRM, non-fatal).
+    if (updates.status && data.client_id) {
+      const MSG = {
+        uploaded:    { title: 'Кадри отримано', body: 'Ми прийняли ваші кадри й беремося до роботи.' },
+        in_progress: { title: 'Проявляємо',     body: 'Ваше замовлення в роботі — контролюємо друк.' },
+        sent:        { title: 'Відправлено',    body: data.ttn ? `Замовлення в дорозі. ТТН: ${data.ttn}` : 'Ваше замовлення передано Новій Пошті.' },
+        paid:        { title: 'Дякуємо!',        body: 'Оплату отримано. Сподіваємось, набір вас потішив 🤍' },
+      };
+      const m = MSG[updates.status];
+      if (m) {
+        client.query('client_notifications', {
+          method: 'POST',
+          body: { client_id: data.client_id, order_token: data.token, kind: 'status', title: m.title, body: m.body },
+        }).catch(e => console.error('[api-orders] notify client:', e.message));
+      }
     }
 
     return ok({ order: data });
