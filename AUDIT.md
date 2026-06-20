@@ -4,6 +4,7 @@
 > Кожна знахідка — з доказом (файл:рядок) і конкретним фіксом. Стек: статичні HTML + Cloudflare Pages Functions → Supabase + R2 + Telegram + Nova Poshta + Google Sheets.
 
 ## ✅ ВИПРАВЛЕНО В КОДІ (2026-06-20)
+- **C5 (OpenGraph/соц-прев'ю)** — додано `og:*` + `twitter:card` + meta description на index/nabir/order/partner (копірайт за конституцією: «колір недоторканний», без знижок/соц-доказу). Спільна OG-картка `assets/og/og-cover.jpg` (1200×630, оксамитовий конверт із тисненим «ПРОЯВ», згенерована з геро-фото). Тепер шеринг `nabir?ph=` посилань фотографом у Telegram/Viber дає преміальне прев'ю. Домен у URL — `proyav.pages.dev` (за зміни домену — find/replace у 4 файлах; нотатка в коментарі кожного блоку).
 - **A5 (НОВЕ, P0 авторизація)** Закрито діру доступу: staff-ендпоінти (`api-orders`, `api-admin-photos`, `api-clients`, `api-tasks`, `api-notifications POST`, `api-inventory`, `api-upload`) перевіряли лише `authRequest` — **будь-який** валідний JWT, включно з клієнтським (`role:'client'`), проходив. Додано `isStaff(c)` (admin|manager) / `isOwner(c)` (admin) у `_utils.js`; staff-ендпоінти → `isStaff`, гроші/налаштування/партнери/дебаг/аналітика/журнал → `isOwner`. Клієнтський токен тепер відхиляється (перевірено). Побічно введено ролі **owner/manager** (`MANAGER_PASSWORD` → `role:'manager'`; admin.html ховає від менеджера гроші/аналітику/партнерів/журнал/налаштування).
 
 ## ✅ ВИПРАВЛЕНО В КОДІ (2026-06-12)
@@ -12,7 +13,7 @@
 - **B1** прибрано `limit:9999` в api-orders stats → дешевий `db.count()` (Content-Range) + виручка лише по оплачених. *(api-photographers/api-clients ще тягнуть усі orders для агрегації — оптимізувати при CRM-рефакторі через БД-агрегати/в'юхи.)*
 - **B2** Google Sheets синк через `context.waitUntil` (api-retail, api-finalize) — не блокує відповідь замовлення.
 - **C1** anchor-id у partnerstvo → латиниця. **C3** favicon.svg на всіх 10 сторінках. **C4** `.dev.vars.example` додано.
-- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** C2 (показ знижки на успіху), C5 (OpenGraph), C6 (модалки в адмінці), C7 (Web Analytics), B1-хвіст (агрегати для photographers/clients), B5 (атомарний лічильник first-series).
+- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** C2 (показ знижки на успіху), ~~C5 (OpenGraph)~~ ✅ 20.06, C6 (модалки в адмінці), C7 (Web Analytics), B1-хвіст (агрегати для photographers/clients), B5 (атомарний лічильник first-series).
 
 ---
 
@@ -74,7 +75,7 @@
 - **C2.** `order.html` екран успіху показує ПОВНУ ціну, а сервер застосовує −15% «першої серії» → клієнт бачить інше число, ніж заплатить. Прийнятно (підтверджуємо особисто), але можна показувати знижену суму після збереження.
 - **C3.** Немає favicon на більшості сторінок → додати `/favicon.ico` + `<link rel=icon>` (бренд-монограма).
 - **C4.** Немає `.dev.vars.example` → додати приклад env-змінних (без значень) для онбордингу/документації.
-- **C5.** OpenGraph/мета відсутні (index/nabir/partner) → прев'ю при шерингу в месенджери (фотографи пересилають посилання). З ТЗ П2.
+- **C5.** ✅ (20.06.2026) OpenGraph/мета додано (index/nabir/order/partner) + спільна OG-картка `assets/og/og-cover.jpg` → прев'ю при шерингу в месенджери (фотографи пересилають `nabir?ph=`). Домен `proyav.pages.dev` зашито абсолютно — за зміни find/replace.
 - **C6.** Адмінка використовує `alert()/confirm()/prompt()` для дій (виплата, скидання, видалення) → замінити на нормальні модалки при переході на CRM.
 - **C7.** Cloudflare Web Analytics (cookieless) ще не підключено (ТЗ П2) — без метрик воронки.
 
