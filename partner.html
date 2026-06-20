@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПРОЯВ — Кабінет автора</title>
+<meta name="description" content="Віддавайте клієнту гідний фізичний результат, не виглядаючи продажником. Ваш колір недоторканний. Почніть із безкоштовного пробного відбитка.">
+<!-- OpenGraph / соц-прев'ю при шерингу. Домен — proyav.pages.dev. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ПРОЯВ">
+<meta property="og:locale" content="uk_UA">
+<meta property="og:title" content="ПРОЯВ для фотографів">
+<meta property="og:description" content="Віддавайте клієнту гідний фізичний результат, не виглядаючи продажником. Ваш колір недоторканний. Почніть із безкоштовного пробного відбитка.">
+<meta property="og:url" content="https://proyav.pages.dev/partner">
+<meta property="og:image" content="https://proyav.pages.dev/assets/og/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Оксамитовий конверт із тисненим «ПРОЯВ»">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script defer src="/track.js"></script>
 <link rel="stylesheet" href="tokens.css">
@@ -85,6 +98,16 @@
   .pv-kv-row .v.mono, .pv-url { overflow-wrap: anywhere; word-break: break-all; }
   .pv-wrap { min-width: 0; }
   body.pv { overflow-x: clip; }
+
+  /* ── Партнерський кіт (Матеріали) ── */
+  .kit-asset { margin-bottom: 16px; }
+  .kit-asset:last-child { margin-bottom: 0; }
+  .kit-snippet { flex: 1; min-width: 0; background: var(--ink-darkroom); border: 1px solid var(--pv-line); padding: 11px 13px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; color: var(--paper-70); overflow-wrap: anywhere; word-break: break-word; }
+  .kit-principles { display: flex; flex-direction: column; gap: 15px; }
+  .kit-principle { display: flex; gap: 13px; align-items: baseline; }
+  .kit-principle .num { font-family: var(--font-display); font-style: italic; font-size: 19px; color: var(--acc); flex-shrink: 0; width: 18px; }
+  .kit-principle .txt { font-size: 13.5px; line-height: 1.6; color: var(--paper-70); }
+  .kit-principle .txt b { color: var(--paper); font-weight: 500; }
 </style>
 </head>
 <body class="pv pv-scan theme-dark" data-theme="dark">
@@ -159,6 +182,7 @@
       <button class="pv-nav-btn" data-page="home"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>Кадри<span class="pv-nav-count" id="nav-active">0</span></button>
       <button class="pv-nav-btn" data-page="archive"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/></svg></span>Архів<span class="pv-nav-count" id="nav-done">0</span></button>
       <button class="pv-nav-btn" data-page="order"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></span>Проявити</button>
+      <button class="pv-nav-btn" data-page="kit"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 2.2l6.5 3.3L9 8.8 2.5 5.5z"/><path d="M2.5 9L9 12.3 15.5 9"/></svg></span>Матеріали</button>
       <button class="pv-nav-btn" data-page="profile"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="6.5" r="2.8"/><path d="M3.5 15c0-2.8 2.5-4.3 5.5-4.3s5.5 1.5 5.5 4.3"/></svg></span>Профіль</button>
     </nav>
     <div class="pv-author">
@@ -439,6 +463,7 @@ function renderOrder(){
       <div class="pv-linkbox"><div class="pv-url" id="ref-url">${esc(ref)}</div><button class="pv-btn pv-btn--mono" onclick="copyText(document.getElementById('ref-url').textContent,this)">Копіювати</button></div>
       <div class="pv-cap" style="margin:16px 0 6px">Готовий рядок для галереї</div>
       <div class="pv-linkbox"><div class="pv-url" id="asset-line">${esc(asset)}</div><button class="pv-btn pv-btn--mono" onclick="copyText(document.getElementById('asset-line').textContent,this)">Копіювати</button></div>
+      <button class="pv-link" data-go="kit" style="display:block;margin-top:14px">Більше готових рядків і гайд «без відчуття продажу» → Матеріали</button>
     </div>
 
     <div class="pv-shead"><h2>Безкоштовний пробний відбиток</h2></div>
@@ -495,6 +520,72 @@ async function shareLink(){
   const text=`Вітаю! Ось персональне посилання для замовлення фото-набору Прояв:\n${lastLink}\n\nЗавантажте кадри — решту зробимо ми 🤍`;
   if(navigator.share){ try{ await navigator.share({title:'Прояв',text}); }catch(e){} return; }
   try{ await navigator.clipboard.writeText(text); toast('Скопійовано — вставте у Viber, WhatsApp чи Telegram'); }catch(e){ toast('Не вдалося скопіювати'); }
+}
+
+/* ════════ KIT (Матеріали) — партнерський кіт #12 + прев'ю клієнта #11 ════════ */
+function renderKit(){
+  const ref = `${SITE}/nabir?ph=${PH_DATA.id}`;
+  // Готові рядки — наш голос, без продажу (конституція Розд. 4/5/6). Усі ведуть на посилання.
+  const assets = [
+    { cap:'Рядок у футер галереї',                t:`Надрукувати ці кадри в оксамиті — ${ref}` },
+    { cap:'Підпис у профіль Instagram',           t:`Кадри з моїх зйомок можна проявити в оксамиті → ${ref}` },
+    { cap:'Текст для сторіс із готовою галереєю',  t:`Ваша галерея готова 🤍 Якщо хочете тримати ці кадри в руках, а не лише в телефоні — їх можна проявити в оксамиті: ${ref}` },
+    { cap:'Відповідь у директ: «а де це надрукувати?»', t:`Я віддаю свої зйомки в Прояв — друкують мій файл точно як є, в оксамиті, з гарантією передруку. Ось посилання, там оберете набір: ${ref}` },
+    { cap:'Короткий підпис під постом',            t:`Проявити кадри в оксамиті → ${ref}` },
+  ];
+  const assetsHTML = assets.map((a,i)=>`
+    <div class="kit-asset">
+      <div class="pv-cap" style="margin-bottom:7px">${esc(a.cap)}</div>
+      <div class="pv-linkbox"><div class="kit-snippet" id="kit-a${i}">${esc(a.t)}</div><button class="pv-btn pv-btn--mono" onclick="copyText(document.getElementById('kit-a${i}').textContent,this)">Копіювати</button></div>
+    </div>`).join('');
+
+  // Міні-гайд «без відчуття продажу» (#12) — рамка «завершуєте досвід, а не продаєте».
+  const principles = [
+    `<b>Один раз, спокійно.</b> Згадайте про друк у мить, коли віддаєте галерею — там це доречно й природно. Повторно не нагадуйте.`,
+    `<b>Про результат, не про покупку.</b> «Щоб ці кадри жили на стіні, а не лише в телефоні» звучить як турбота. «Замовте набір» — як продаж.`,
+    `<b>Ваше імʼя — поруч із кадром, а не з ціною.</b> Додайте підпис «Кадр: ваше імʼя» на картці. Клієнт згадає автора щоразу, коли візьме набір у руки.`,
+    `<b>Розмову беремо ми.</b> Питання чи щось не так із друком — клієнт спілкується з нами, не з вами. Ваше імʼя лишається з результатом, не з проблемою.`,
+    `<b>Тиша — теж відповідь.</b> Хтось не замовить — і це нормально. Ви запропонували гідне завершення; рішення за клієнтом.`,
+  ];
+  const principlesHTML = principles.map((p,i)=>`<div class="kit-principle"><span class="num">${i+1}</span><span class="txt">${p}</span></div>`).join('');
+
+  // Прев'ю клієнтського досвіду (#11) — реальний шлях, не мокап.
+  const journey = [
+    { name:'Бачить набори, не прайс',                at:'оксамитові конверти й коробка як обʼєкти' },
+    { name:'Завантажує кадри за 4 кроки',            at:'з автоперевіркою якості друку' },
+    { name:'Отримує сповіщення на кожній стадії',    at:'прийнято → у роботі → відправлено' },
+    { name:'Тримає набір у руках',                   at:'оксамит · картка з вашим підписом' },
+  ];
+  const journeyHTML = journey.map((s,i)=>{
+    const last=i===journey.length-1;
+    return `<div class="pv-route-step done"><div class="pv-route-rail"><span class="pv-route-node"></span>${last?'':`<span class="pv-route-conn done"></span>`}</div><div class="pv-route-body"><div class="pv-route-name">${esc(s.name)}</div><div class="pv-route-at">${esc(s.at)}</div></div></div>`;
+  }).join('');
+
+  return `
+    <div class="pv-phead">
+      <div><div class="pv-eyebrow"><span class="ln"></span>Партнерський кіт</div>
+        <h1 class="pv-ptitle">Усе, щоб <em>порадити</em></h1></div>
+    </div>
+
+    <div class="pv-shead"><h2>Готові рядки <span class="mono">скопіюй і встав</span></h2></div>
+    <div class="pv-card">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:18px">Уже написані нашим голосом — щоб ви не підбирали слова й не звучали як продавець. Усі ведуть на ваше посилання.</div>
+      ${assetsHTML}
+    </div>
+
+    <div class="pv-shead"><h2>Як згадати клієнту <span class="mono">без відчуття продажу</span></h2></div>
+    <div class="pv-card">
+      <div class="pv-note" style="margin-bottom:18px">Ви не продаєте. Ви завершуєте досвід — і захищаєте свою роботу від дешевого друку.</div>
+      <div class="kit-principles">${principlesHTML}</div>
+    </div>
+
+    <div class="pv-shead"><h2>Що бачить <span class="mono">ваш клієнт</span></h2></div>
+    <div class="pv-card">
+      <div style="font-size:13.5px;color:var(--paper-70);line-height:1.55;margin-bottom:18px">Шлях, який проходить людина після вашого посилання — щоб ви рекомендували, знаючи, що саме вона отримає.</div>
+      <div class="pv-route">${journeyHTML}</div>
+      <div class="pv-note" style="margin-top:18px">Гарантію передруку й розмову з клієнтом беремо ми. Ваш колір недоторканний.</div>
+      <a class="pv-btn pv-btn--ghost pv-btn--full" style="margin-top:16px" href="${esc(ref)}" target="_blank" rel="noopener">Відкрити як клієнт ↗</a>
+    </div>`;
 }
 
 /* ════════ PROFILE ════════ */
@@ -607,7 +698,7 @@ function renderDetail(id){
 }
 
 /* ════════ ROUTER ════════ */
-const PAGES = { home: renderHome, archive: renderArchive, order: renderOrder, profile: renderProfile };
+const PAGES = { home: renderHome, archive: renderArchive, order: renderOrder, kit: renderKit, profile: renderProfile };
 function mount(html){
   const main=document.getElementById('pv-main');
   main.innerHTML = `<div class="pv-page is-active is-entering">${html}</div>`;
