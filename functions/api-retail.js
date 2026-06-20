@@ -223,6 +223,8 @@ export async function onRequest(context) {
     saved_db:  !dbError,
     token,
     total_amount: finalTotal,
+    first_series: firstSeries,
+    discount_pct: firstSeries ? FIRST_SERIES.discountPct : 0,
     source:    finalSource,
     message:   dbError ? 'Заявку отримано (надіслано в Telegram).' : 'Заявку збережено.',
   });

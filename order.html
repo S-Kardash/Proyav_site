@@ -497,14 +497,21 @@
   .success-title { font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 1.1; color: var(--paper); margin-bottom: 10px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
   .success-title em { font-style: italic; color: var(--sepia); }
   .success-text { font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--paper-70); margin-bottom: 24px; }
+  .success-meta { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-bottom: 28px; }
   .success-order-id {
     display: inline-flex; flex-direction: column; gap: 4px;
     padding: 12px 18px;
     border: 1px solid var(--paper-30);
-    margin-bottom: 28px;
   }
   .success-order-id .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
   .success-order-id strong { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); letter-spacing: 0.15em; }
+  .success-total {
+    display: inline-flex; flex-direction: column; gap: 4px;
+    padding: 12px 18px; border: 1px solid var(--paper-30);
+  }
+  .success-total .lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--paper-50); }
+  .success-total strong { font-family: var(--font-display); font-style: italic; font-size: 22px; color: var(--paper); letter-spacing: 0.05em; }
+  .success-discount { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sepia); margin-top: 2px; }
   .track-order-btn {
     display: inline-flex; align-items: center; gap: 9px;
     margin: -10px 0 28px; padding: 12px 22px;
@@ -1038,9 +1045,16 @@
         <h1 class="success-title">Кадри прийняті <em>в роботу</em>.</h1>
         <p class="success-text">Ми відкриємо кожен кадр на каліброваному моніторі, проконтролюємо друк, щоб відбиток точно відповідав файлу, надрукуємо на Epson SureLab і запакуємо в оксамитовий конверт з тисненням. Готово за 48 годин від цієї хвилини.</p>
 
-        <div class="success-order-id">
-          <span class="lbl">НОМЕР ЗАМОВЛЕННЯ</span>
-          <strong id="success-order-num">ПРЯ-000000</strong>
+        <div class="success-meta">
+          <div class="success-order-id">
+            <span class="lbl">НОМЕР ЗАМОВЛЕННЯ</span>
+            <strong id="success-order-num">ПРЯ-000000</strong>
+          </div>
+          <div class="success-total" id="success-total" style="display:none">
+            <span class="lbl">СУМА ЗАМОВЛЕННЯ</span>
+            <strong id="success-total-val">— ₴</strong>
+            <span class="success-discount" id="success-discount" style="display:none"></span>
+          </div>
         </div>
 
         <a class="track-order-btn" id="track-order-btn" href="#" style="display:none">
@@ -3116,6 +3130,10 @@ async function submitOrder(e) {
   const t        = orderTotals();
   const tq       = t.qty;
   const totalAmt = t.price;
+  // Сума для екрана успіху (C2): за замовчуванням — клієнтська оцінка; якщо сервер
+  // відповів — беремо його авторитетне число (−15% «першої серії» вже враховано).
+  let successTotal = totalAmt;
+  let successFirstSeries = false;
 
   // Finalize magic link order in Supabase (non-blocking).
   // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
@@ -3128,6 +3146,8 @@ async function submitOrder(e) {
     try {
       const res = await saveRetailOrderToSupabase(orderId, tq, totalAmt);
       if (res && res.token) { CURRENT_ORDER_TOKEN = res.token; setStatusLink(res.token); }
+      if (res && typeof res.total_amount === 'number') successTotal = res.total_amount;
+      if (res && res.first_series) successFirstSeries = true;
     } catch (e) {
       console.warn('[submit] retail Supabase save failed:', e.message);
     }
@@ -3179,9 +3199,30 @@ async function submitOrder(e) {
   const peb = document.getElementById('post-email-block');
   if (peb) peb.style.display = S.email ? 'none' : '';
   window._lastOrderId = orderId;
+  renderSuccessTotal(successTotal, successFirstSeries);
   clearDraft();
   celebrate();
   goTo(5);
+}
+
+/* ─ Чесна сума на екрані успіху (C2): server-authoritative, з міткою «першої серії» ─ */
+function renderSuccessTotal(total, firstSeries) {
+  const wrap = document.getElementById('success-total');
+  if (!wrap) return;
+  const lblEl  = wrap.querySelector('.lbl');
+  const valEl  = document.getElementById('success-total-val');
+  const discEl = document.getElementById('success-discount');
+  if (!total || total <= 0) {
+    if (lblEl) lblEl.textContent = 'ПРОБНИЙ ВІДБИТОК';
+    valEl.textContent = 'Безкоштовно';
+    discEl.style.display = 'none';
+  } else {
+    if (lblEl) lblEl.textContent = 'СУМА ЗАМОВЛЕННЯ';
+    valEl.textContent = total + ' ₴';
+    if (firstSeries) { discEl.textContent = 'Перша серія · знижку 15% враховано'; discEl.style.display = ''; }
+    else discEl.style.display = 'none';
+  }
+  wrap.style.display = '';
 }
 
 /* ─ Post-order email capture (value-add, optional) ─ */

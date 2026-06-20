@@ -13,7 +13,7 @@
 - **B1** прибрано `limit:9999` в api-orders stats → дешевий `db.count()` (Content-Range) + виручка лише по оплачених. *(api-photographers/api-clients ще тягнуть усі orders для агрегації — оптимізувати при CRM-рефакторі через БД-агрегати/в'юхи.)*
 - **B2** Google Sheets синк через `context.waitUntil` (api-retail, api-finalize) — не блокує відповідь замовлення.
 - **C1** anchor-id у partnerstvo → латиниця. **C3** favicon.svg на всіх 10 сторінках. **C4** `.dev.vars.example` додано.
-- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** C2 (показ знижки на успіху), ~~C5 (OpenGraph)~~ ✅ 20.06, C6 (модалки в адмінці), C7 (Web Analytics), B1-хвіст (агрегати для photographers/clients), B5 (атомарний лічильник first-series).
+- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** ~~C2 (показ знижки на успіху)~~ ✅ 20.06, ~~C5 (OpenGraph)~~ ✅ 20.06, C6 (модалки в адмінці), C7 (Web Analytics), B1-хвіст (агрегати для photographers/clients), B5 (атомарний лічильник first-series).
 
 ---
 
@@ -72,7 +72,7 @@
 ## 🟢 P2 — ДЕФЕКТИ Й ПОЛІШ
 
 - **C1.** `partnerstvo.html` — змішані кирилично-латинські anchor-id (`#suть`, `#обовyazky`). Працює, але крихко → перейменувати на латиницю.
-- **C2.** `order.html` екран успіху показує ПОВНУ ціну, а сервер застосовує −15% «першої серії» → клієнт бачить інше число, ніж заплатить. Прийнятно (підтверджуємо особисто), але можна показувати знижену суму після збереження.
+- **C2.** ✅ (20.06.2026) Екран успіху `order.html` тепер показує **server-authoritative** суму (з відповіді `api-retail`, де −15% «першої серії» вже враховано) у блоці «СУМА ЗАМОВЛЕННЯ» + тиха сепія-мітка «Перша серія · знижку 15% враховано» (free-trial → «Безкоштовно»). `api-retail` повертає `first_series`/`discount_pct`; magic-link (`api-finalize`) знижки не має — там review==final. Огляд лишається «Орієнтовна вартість», успіх — підтверджена.
 - **C3.** Немає favicon на більшості сторінок → додати `/favicon.ico` + `<link rel=icon>` (бренд-монограма).
 - **C4.** Немає `.dev.vars.example` → додати приклад env-змінних (без значень) для онбордингу/документації.
 - **C5.** ✅ (20.06.2026) OpenGraph/мета додано (index/nabir/order/partner) + спільна OG-картка `assets/og/og-cover.jpg` → прев'ю при шерингу в месенджери (фотографи пересилають `nabir?ph=`). Домен `proyav.pages.dev` зашито абсолютно — за зміни find/replace.
