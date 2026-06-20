@@ -3137,7 +3137,7 @@ async function submitOrder(e) {
 
   // Finalize magic link order in Supabase (non-blocking).
   // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
-  finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
+  const finalizePromise = finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
 
   // Save retail order to Supabase FIRST and await it: its token links every
   // archived photo to the order (R2) and feeds the client status link.
@@ -3146,14 +3146,17 @@ async function submitOrder(e) {
     try {
       const res = await saveRetailOrderToSupabase(orderId, tq, totalAmt);
       if (res && res.token) { CURRENT_ORDER_TOKEN = res.token; setStatusLink(res.token); }
-      if (res && typeof res.total_amount === 'number') successTotal = res.total_amount;
-      if (res && res.first_series) successFirstSeries = true;
+      // Server-authoritative сума + мітка першої серії читаються разом (не розʼєднано),
+      // щоб бейдж ніколи не зʼявився поряд із незниженою клієнтською оцінкою.
+      if (res && typeof res.total_amount === 'number') { successTotal = res.total_amount; successFirstSeries = !!res.first_series; }
     } catch (e) {
       console.warn('[submit] retail Supabase save failed:', e.message);
     }
   } else {
     // Magic-link order: the token is already in the URL.
     setStatusLink(MAGIC_TOKEN);
+    // Беремо суму, яку api-finalize перерахував на сервері (C2), а не клієнтську оцінку.
+    try { const fr = await finalizePromise; if (fr && typeof fr.total_amount === 'number') successTotal = fr.total_amount; } catch {}
   }
 
   let tgOk = false;
@@ -3212,6 +3215,7 @@ function renderSuccessTotal(total, firstSeries) {
   const lblEl  = wrap.querySelector('.lbl');
   const valEl  = document.getElementById('success-total-val');
   const discEl = document.getElementById('success-discount');
+  if (!valEl || !discEl) return;
   if (!total || total <= 0) {
     if (lblEl) lblEl.textContent = 'ПРОБНИЙ ВІДБИТОК';
     valEl.textContent = 'Безкоштовно';
@@ -3219,7 +3223,9 @@ function renderSuccessTotal(total, firstSeries) {
   } else {
     if (lblEl) lblEl.textContent = 'СУМА ЗАМОВЛЕННЯ';
     valEl.textContent = total + ' ₴';
-    if (firstSeries) { discEl.textContent = 'Перша серія · знижку 15% враховано'; discEl.style.display = ''; }
+    // Преміум не кричить про дисконт (конституція Розд. 5): «цінність, не знижка» —
+    // подаємо як ціновий рівень, без слова «знижка» і без хардкоду відсотка.
+    if (firstSeries) { discEl.textContent = 'Застосовано ціну «першої серії»'; discEl.style.display = ''; }
     else discEl.style.display = 'none';
   }
   wrap.style.display = '';
@@ -3447,9 +3453,9 @@ async function validateMagicToken() {
 }
 
 async function finalizeWithToken(photoCount, qtyTotal, totalAmount, productType) {
-  if (!MAGIC_TOKEN) return; // no token = old flow, skip
+  if (!MAGIC_TOKEN) return null; // no token = old flow, skip
   try {
-    await fetchWithTimeout(FINAL_API, {
+    const r = await fetchWithTimeout(FINAL_API, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3460,9 +3466,11 @@ async function finalizeWithToken(photoCount, qtyTotal, totalAmount, productType)
         product_type: productType || null, // (auto-upgraded) набір; бекенд перерахує ціну від нього
       }),
     });
+    return await r.json().catch(() => null); // { total_amount, product_type } — для C2
   } catch (e) {
     console.error('[magic] finalize failed:', e.message);
     // Non-fatal — order still delivered via TG/email
+    return null;
   }
 }
 

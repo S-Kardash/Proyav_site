@@ -19,10 +19,11 @@ export async function onRequest(context) {
       order:  'created_at.desc',
     });
 
-    // Append order counts
+    // Append order counts — тягнемо ЛИШЕ атрибутовані рядки, не всю таблицю (AUDIT B1).
     const counts = await client.query('orders', {
-      select: 'photographer_id',
-      limit:  9999,
+      select:  'photographer_id',
+      filters: { photographer_id: 'not.is.null' },
+      limit:   9999,
     }).catch(() => []);
 
     const countMap = {};

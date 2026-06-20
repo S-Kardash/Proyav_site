@@ -116,7 +116,19 @@ export function db(env) {
     return Number.isFinite(total) ? total : 0;
   }
 
-  return { query, count, rest, H };
+  // Виклик Postgres-функції (RPC). Кидає, якщо функції немає (міграцію не застосовано).
+  async function rpc(fn, args = {}) {
+    const res = await fetch(`${rest}/rpc/${fn}`, {
+      method:  'POST',
+      headers: { ...H, 'Content-Type': 'application/json' },
+      body:    JSON.stringify(args),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((data && (data.message || data.hint)) || `rpc ${fn}: ${res.status}`);
+    return data;
+  }
+
+  return { query, count, rpc, rest, H };
 }
 
 // (helper used by admin endpoints)
@@ -327,12 +339,41 @@ export const RETAIL_ENABLED = false;
 // Поки enabled і слоти не вичерпані — кожне нове package-замовлення отримує −15%.
 export const FIRST_SERIES = { enabled: true, slots: 10, discountPct: 15 };
 
-// Скільки слотів «Першої серії» вже використано (рахуємо по мітці в orders).
+// Скільки слотів «Першої серії» вже використано. Єдине джерело — атомарний лічильник
+// settings.first_series_claimed (AUDIT B5); фолбек на підрахунок мітки в orders, якщо
+// міграцію з лічильником ще не застосовано.
 export async function firstSeriesUsed(client) {
+  try {
+    const rows = await client.query('settings', {
+      select: 'value', filters: { key: 'eq.first_series_claimed' },
+    });
+    if (rows && rows.length && rows[0].value != null) return parseInt(rows[0].value, 10) || 0;
+  } catch {}
   const rows = await client.query('orders', {
     select: 'id', filters: { first_series: 'is.true' }, limit: FIRST_SERIES.slots + 1,
   }).catch(() => []);
   return (rows || []).length;
+}
+
+// Атомарно «забронювати» слот «Першої серії» (AUDIT B5). RPC claim_first_series робить
+// один UPDATE…WHERE value<slots RETURNING — конкурентні заявки серіалізуються, тож
+// ліміт не перевищиться. Якщо RPC немає (міграцію не застосовано) — фолбек на (гонкий)
+// count-метод, щоб поведінка не зламалась до міграції.
+export async function claimFirstSeries(client) {
+  try {
+    const granted = await client.rpc('claim_first_series', { p_slots: FIRST_SERIES.slots });
+    return granted === true;
+  } catch {
+    const used = await firstSeriesUsed(client).catch(() => FIRST_SERIES.slots);
+    return used < FIRST_SERIES.slots;
+  }
+}
+
+// Повернути раніше заброньований слот, якщо замовлення так і не збереглося (AUDIT B5):
+// без цього невдала вставка назавжди «зʼїдала» слот промо й занижувала публічний
+// лічильник «лишилось». Best-effort: помилку ковтаємо (фолбек-режим без RPC — no-op).
+export async function releaseFirstSeries(client) {
+  try { await client.rpc('release_first_series', {}); } catch {}
 }
 
 const STD_CHAIN = ['small', 'medium', 'large'];

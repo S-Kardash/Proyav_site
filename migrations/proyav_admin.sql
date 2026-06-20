@@ -197,3 +197,48 @@ insert into inventory (name, unit, qty, min_qty, note) values
   ('Картки-вкладки з текстом',             'шт',    0, 20, ''),
   ('Калька',                               'аркуш', 0, 20, '')
 on conflict do nothing;
+
+-- ── 6. «Перша серія»: атомарний лічильник слотів (AUDIT B5) ─────────
+-- Гонка: api-retail рахував «використано» ПЕРЕД вставкою → при одночасних
+-- замовленнях ліміт міг перевищитись на 1–2. Лічильник у settings + claim-функція
+-- роблять видачу слота атомарною: один UPDATE…WHERE value<slots RETURNING
+-- серіалізує конкурентні заявки (друга бачить уже збільшене значення).
+-- Сід — із наявних позначених замовлень (одноразово; on conflict не перезатирає).
+-- Загорнуто в DO з обробкою винятку: якщо колонку orders.first_series ще не додано
+-- (секцію застосовують окремо), сідуємо нулем, а не валимо міграцію.
+do $$
+begin
+  insert into settings (key, value)
+    values ('first_series_claimed', (select count(*)::text from orders where first_series = true))
+    on conflict (key) do nothing;
+exception when undefined_column or undefined_table then
+  insert into settings (key, value) values ('first_series_claimed', '0')
+    on conflict (key) do nothing;
+end $$;
+
+create or replace function claim_first_series(p_slots int)
+returns boolean
+language plpgsql
+as $$
+declare newval int;
+begin
+  update settings
+     set value = (coalesce(value, '0')::int + 1)::text
+   where key = 'first_series_claimed'
+     and coalesce(value, '0')::int < p_slots
+   returning value::int into newval;
+  return newval is not null;   -- true → слот заброньовано; null → ліміт вичерпано
+end;
+$$;
+
+-- Повернути слот (компенсація невдалої вставки замовлення). Не опускається нижче 0.
+create or replace function release_first_series()
+returns void
+language plpgsql
+as $$
+begin
+  update settings
+     set value = greatest(0, coalesce(value, '0')::int - 1)::text
+   where key = 'first_series_claimed';
+end;
+$$;

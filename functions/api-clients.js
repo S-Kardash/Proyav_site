@@ -68,10 +68,10 @@ export async function onRequest({ request, env }) {
     order: 'created_at.desc', limit: 1000,
   }).catch(() => []);
 
-  const orders = await client.query('orders', { select: 'client_id,status,total_amount', limit: 9999 }).catch(() => []);
+  // Тягнемо ЛИШЕ замовлення, привʼязані до акаунтів, а не всю таблицю (AUDIT B1).
+  const orders = await client.query('orders', { select: 'client_id,status,total_amount', filters: { client_id: 'not.is.null' }, limit: 9999 }).catch(() => []);
   const agg = {};
   (orders || []).forEach(o => {
-    if (!o.client_id) return;
     const a = agg[o.client_id] || (agg[o.client_id] = { count: 0, spent: 0 });
     a.count++; if (o.status === 'paid') a.spent += o.total_amount || 0;
   });

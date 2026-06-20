@@ -526,7 +526,7 @@ function toggleSelAll(el){const vis=visibleOrders();if(el.checked)vis.forEach(o=
 function visibleOrders(){const s=(document.getElementById('osearch')?.value||'').toLowerCase();let list=S.orders;if(curFilter!=='all')list=list.filter(o=>o.status===curFilter);if(s)list=list.filter(o=>(o.client_name||'').toLowerCase().includes(s)||(o.client_phone||'').includes(s)||(o.token||'').toLowerCase().includes(s));return list;}
 async function bulkAdvance(){
   const ids=[...selOrders];if(!ids.length)return;
-  if(!confirm(`Просунути ${ids.length} замовлень на наступний статус?`))return;
+  if(!await confirmModal(`Просунути ${ids.length} замовлень на наступний статус?`,{title:'Масове просування',confirmLabel:'Просунути',danger:false}))return;
   let done=0;
   for(const id of ids){const o=S.orders.find(x=>String(x.id)===id);if(!o)continue;const ni=FLOW.indexOf(o.status)+1;if(ni>=FLOW.length)continue;try{await advance(o.id,FLOW[ni]);done++;}catch{}}
   selOrders.clear();renderOrdersTable();toast(`Просунуто ${done}`);
@@ -746,7 +746,7 @@ function PAGE_expenses(){
 }
 function expRows(){if(!S.expenses.length)return`<tr><td colspan="6"><div class="empty">Витрат ще немає</div></td></tr>`;return S.expenses.map(e=>`<tr><td class="date">${fmtD(e.date)}</td><td>${esc(e.category)}</td><td class="hide-sm">${esc(e.descr||'—')}</td><td class="hide-sm tsub">${esc(e.payment||'—')}</td><td class="price">${money(e.amount)} ₴</td><td><button class="action danger sm" onclick="delExpense(${e.id})">✕</button></td></tr>`).join('');}
 async function addExpense(){const amount=Number(document.getElementById('e-amount').value);if(!amount||amount<0)return toast('Введіть суму','err');try{const r=await apiFetch(`${API}/api-expenses`,{method:'POST',body:JSON.stringify({date:document.getElementById('e-date').value,amount,category:document.getElementById('e-cat').value,payment:document.getElementById('e-pay').value,descr:document.getElementById('e-descr').value.trim()})});S.expenses.unshift(r.expense);document.getElementById('e-amount').value='';document.getElementById('e-descr').value='';document.getElementById('etbody').innerHTML=expRows();toast('Витрату додано');}catch(e){toast(e.message,'err');}}
-async function delExpense(id){if(!confirm('Видалити витрату?'))return;try{await apiFetch(`${API}/api-expenses?id=${id}`,{method:'DELETE'});S.expenses=S.expenses.filter(e=>e.id!==id);document.getElementById('etbody').innerHTML=expRows();toast('Видалено');}catch(e){toast(e.message,'err');}}
+async function delExpense(id){if(!await confirmModal('Видалити цю витрату?',{title:'Видалити витрату',confirmLabel:'Видалити'}))return;try{await apiFetch(`${API}/api-expenses?id=${id}`,{method:'DELETE'});S.expenses=S.expenses.filter(e=>e.id!==id);document.getElementById('etbody').innerHTML=expRows();toast('Видалено');}catch(e){toast(e.message,'err');}}
 
 // ════ INVENTORY ════
 function PAGE_inventory(){
@@ -756,14 +756,14 @@ function PAGE_inventory(){
 }
 function invRows(){if(!S.inventory.length)return`<tr><td colspan="5"><div class="empty">Склад порожній</div></td></tr>`;return S.inventory.map(i=>`<tr><td class="client">${esc(i.name)}${i.low?' <span class="badge badge-uploaded" style="margin-left:6px">замовити</span>':''}${i.note?`<div class="tsub">${esc(i.note)}</div>`:''}</td><td><span class="price">${i.qty}</span> <span class="tsub">${esc(i.unit||'шт')}</span></td><td class="hide-sm tsub">${i.min_qty}</td><td><button class="action ghost sm" onclick="adjustStock(${i.id},1)">+</button> <button class="action ghost sm" onclick="adjustStock(${i.id},-1)">−</button> <button class="action ghost sm" onclick="adjustStockN(${i.id})">±N</button></td><td><button class="action danger sm" onclick="delStock(${i.id})">✕</button></td></tr>`).join('');}
 async function adjustStock(id,delta){try{const r=await apiFetch(`${API}/api-inventory`,{method:'POST',body:JSON.stringify({action:'adjust',item_id:id,delta})});const it=S.inventory.find(i=>i.id===id);if(it){it.qty=r.qty;it.low=Number(it.qty)<=Number(it.min_qty);}S.lowCount=S.inventory.filter(i=>i.low).length;document.getElementById('itbody').innerHTML=invRows();renderNav('inventory');}catch(e){toast(e.message,'err');}}
-function adjustStockN(id){const v=prompt('Зміна залишку (напр. 20 або -5):');if(v===null)return;const n=Number(v);if(!n)return;adjustStock(id,n);}
+async function adjustStockN(id){const v=await promptModal({title:'Зміна залишку',label:'Наскільки змінити (напр. 20 або −5)',placeholder:'20',type:'number',confirmLabel:'Застосувати'});if(v===null)return;const n=Number(v);if(!n)return;adjustStock(id,n);}
 function openStockItem(){modal(`<div class="modal-head"><div class="modal-title">Нова позиція</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" onclick="closeModal()">✕</button></div>
   <div class="frow"><label class="lbl">Назва *</label><input class="input" id="s-name" placeholder="Оксамитові конверти latte"></div>
   <div class="frow2"><div class="frow"><label class="lbl">Одиниця</label><input class="input" id="s-unit" value="шт"></div><div class="frow"><label class="lbl">Залишок</label><input class="input" id="s-qty" type="number" value="0"></div></div>
   <div class="frow2"><div class="frow"><label class="lbl">Поріг «замовити»</label><input class="input" id="s-min" type="number" value="5"></div><div class="frow"><label class="lbl">Нотатка</label><input class="input" id="s-note"></div></div>
   <div style="display:flex;gap:10px;margin-top:18px"><button class="action ghost" style="flex:1" onclick="closeModal()">Закрити</button><button class="action" style="flex:1" onclick="saveStockItem()">Додати</button></div>`);}
 async function saveStockItem(){const name=document.getElementById('s-name').value.trim();if(!name)return toast('Введіть назву','err');try{const r=await apiFetch(`${API}/api-inventory`,{method:'POST',body:JSON.stringify({name,unit:document.getElementById('s-unit').value.trim()||'шт',qty:Number(document.getElementById('s-qty').value)||0,min_qty:Number(document.getElementById('s-min').value)||0,note:document.getElementById('s-note').value.trim()})});S.inventory.push({...r.item,low:Number(r.item.qty)<=Number(r.item.min_qty)});S.inventory.sort((a,b)=>a.name.localeCompare(b.name));S.lowCount=S.inventory.filter(i=>i.low).length;closeModal();go('inventory');toast('Додано');}catch(e){toast(e.message,'err');}}
-async function delStock(id){if(!confirm('Видалити позицію?'))return;try{await apiFetch(`${API}/api-inventory?id=${id}`,{method:'DELETE'});S.inventory=S.inventory.filter(i=>i.id!==id);S.lowCount=S.inventory.filter(i=>i.low).length;document.getElementById('itbody').innerHTML=invRows();renderNav('inventory');}catch(e){toast(e.message,'err');}}
+async function delStock(id){if(!await confirmModal('Видалити цю позицію складу?',{title:'Видалити позицію',confirmLabel:'Видалити'}))return;try{await apiFetch(`${API}/api-inventory?id=${id}`,{method:'DELETE'});S.inventory=S.inventory.filter(i=>i.id!==id);S.lowCount=S.inventory.filter(i=>i.low).length;document.getElementById('itbody').innerHTML=invRows();renderNav('inventory');}catch(e){toast(e.message,'err');}}
 
 // ════ CASH ════
 function PAGE_cash(){
@@ -810,7 +810,7 @@ function PAGE_photographers(){
 async function payout(id){
   const p=S.photographers.find(x=>x.id===id);if(!p)return;
   const c=phCommission(p);
-  const v=prompt(`Виплата комісії партнеру «${p.name}».\nНараховано за оплаченими: ${money(c.owed)} ₴.\nВведіть суму виплати:`, String(c.owed));
+  const v=await promptModal({title:`Виплата · ${p.name}`,message:`Нараховано за оплаченими: ${money(c.owed)} ₴. Запис піде у витрати («Комісія фотографу»).`,label:'Сума виплати, ₴',value:String(c.owed),type:'number',confirmLabel:'Виплатити'});
   if(v===null)return;const amount=Number(v);if(!amount||amount<=0)return;
   try{
     await apiFetch(`${API}/api-expenses`,{method:'POST',body:JSON.stringify({date:new Date().toISOString().slice(0,10),amount,category:'Комісія фотографу',payment:'Картка',descr:`Виплата: ${p.name}`})});
@@ -826,7 +826,7 @@ function openPh(id){editPhId=id||null;const p=id?S.photographers.find(x=>x.id===
   <div class="linkbox" id="p-creds" style="display:none"><div class="lbl" style="margin-bottom:6px">Тимчасовий пароль (збережіть!)</div><div class="linkurl" id="p-pwd" style="font-size:15px;color:var(--paper)"></div><button class="action ghost sm" id="p-copy">Скопіювати доступ</button></div>
   <div style="display:flex;gap:10px;margin-top:18px"><button class="action ghost" style="flex:1" onclick="closeModal()">Закрити</button><button class="action" style="flex:1" id="p-save" onclick="savePh()">${id?'Зберегти':'Додати'}</button></div>`);}
 async function savePh(){const name=document.getElementById('p-name').value.trim();if(!name)return toast('Введіть ім\'я','err');try{if(editPhId){const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id:editPhId,name,phone:document.getElementById('p-phone').value.trim(),city:document.getElementById('p-city').value.trim(),commission_pct:parseInt(document.getElementById('p-comm').value)||12})});const i=S.photographers.findIndex(p=>p.id===editPhId);if(i>=0)S.photographers[i]={...S.photographers[i],...r.photographer};closeModal();go('photographers');toast('Збережено');}else{const email=document.getElementById('p-email').value.trim();if(!email)return toast('Введіть email','err');const r=await apiFetch(`${API}/api-photographers`,{method:'POST',body:JSON.stringify({name,email,phone:document.getElementById('p-phone').value.trim(),city:document.getElementById('p-city').value.trim(),commission_pct:parseInt(document.getElementById('p-comm').value)||12})});S.photographers.unshift({...r.photographer,order_count:0});document.getElementById('p-pwd').textContent=r.temp_password;document.getElementById('p-creds').style.display='block';document.getElementById('p-copy').onclick=()=>copyTxt(`Email: ${email}\nПароль: ${r.temp_password}\nКабінет: ${SITE}/partner`,document.getElementById('p-copy'));document.getElementById('p-save').textContent='Готово';document.getElementById('p-save').onclick=()=>{closeModal();go('photographers');};toast('Партнера додано');}}catch(e){toast(e.message,'err');}}
-async function resetPh(id){if(!confirm('Скинути пароль?'))return;try{const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,reset_password:true})});credModal('Новий пароль партнера',r.temp_password,'Збережіть і надішліть партнеру (email — логін).');}catch(e){toast(e.message,'err');}}
+async function resetPh(id){if(!await confirmModal('Скинути пароль партнеру? Він отримає новий тимчасовий.',{title:'Скинути пароль',confirmLabel:'Скинути'}))return;try{const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,reset_password:true})});credModal('Новий пароль партнера',r.temp_password,'Збережіть і надішліть партнеру (email — логін).');}catch(e){toast(e.message,'err');}}
 async function togglePh(id,active){try{await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,active})});const p=S.photographers.find(x=>x.id===id);if(p)p.active=active;go('photographers');}catch(e){toast(e.message,'err');}}
 
 // ════ CLIENTS ════
@@ -891,7 +891,7 @@ async function sendNotif(id){
   }catch(e){toast(e.message,'err');}
 }
 async function resetClientPw(id){
-  if(!confirm('Скинути пароль клієнту? Він отримає тимчасовий.'))return;
+  if(!await confirmModal('Скинути пароль клієнту? Він отримає новий тимчасовий.',{title:'Скинути пароль',confirmLabel:'Скинути'}))return;
   try{const r=await apiFetch(`${API}/api-client-auth`,{method:'POST',body:JSON.stringify({action:'admin_reset',client_id:id})});
     credModal('Новий пароль клієнта',r.temp_password,'Надішліть клієнту (телефон — логін).');
   }catch(e){toast(e.message,'err');}
@@ -919,7 +919,7 @@ async function addTask(){
   try{const r=await apiFetch(`${API}/api-tasks`,{method:'POST',body:JSON.stringify({title,due:document.getElementById('tk-due').value||null,priority:document.getElementById('tk-prio').value})});S.tasks.unshift(r.task);toast('Додано');renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}
 }
 async function toggleTask(id,done){try{await apiFetch(`${API}/api-tasks`,{method:'PUT',body:JSON.stringify({id,done})});const t=S.tasks.find(x=>x.id===id);if(t)t.done=done;renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}}
-async function delTask(id){if(!confirm('Видалити завдання?'))return;try{await apiFetch(`${API}/api-tasks?id=${id}`,{method:'DELETE'});S.tasks=S.tasks.filter(x=>x.id!==id);renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}}
+async function delTask(id){if(!await confirmModal('Видалити це завдання?',{title:'Видалити завдання',confirmLabel:'Видалити'}))return;try{await apiFetch(`${API}/api-tasks?id=${id}`,{method:'DELETE'});S.tasks=S.tasks.filter(x=>x.id!==id);renderNav('tasks');go('tasks');}catch(e){toast(e.message,'err');}}
 
 // ════ AUDIT (журнал дій) ════
 let auditFilter='all';
@@ -958,9 +958,35 @@ function head(eyebrow,title,meta,action){return `<div class="page-h"><div><div c
 const PAGES={dashboard:PAGE_dashboard,analytics:PAGE_analytics,orders:PAGE_orders,expenses:PAGE_expenses,inventory:PAGE_inventory,cash:PAGE_cash,photographers:PAGE_photographers,clients:PAGE_clients,tasks:PAGE_tasks,audit:PAGE_audit,settings:PAGE_settings};
 
 // ── modal / lightbox / toast ──
-function modal(html){document.getElementById('modal-inner').innerHTML=html;document.getElementById('modal').classList.add('open');}
+let _modalDismiss=null; // pending confirm/prompt resolver; closeModal()/modal() резолвлять його як «скасовано»
+function modal(html){if(_modalDismiss){const d=_modalDismiss;_modalDismiss=null;d();}document.getElementById('modal-inner').innerHTML=html;document.getElementById('modal').classList.add('open');}
 function credModal(title,value,hint){modal(`<div class="modal-head"><div class="modal-title">${title}</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" onclick="closeModal()">✕</button></div><div class="linkbox" style="text-align:center"><div class="linkurl" style="font-size:22px;letter-spacing:.1em;color:var(--paper);word-break:normal">${esc(value)}</div><button class="action" id="cred-copy">Скопіювати</button></div>${hint?`<div class="hint" style="margin-top:12px">${esc(hint)}</div>`:''}`);const b=document.getElementById('cred-copy');if(b)b.onclick=()=>copyTxt(value,b);}
-function closeModal(){document.getElementById('modal').classList.remove('open');editPhId=null;}
+// Promise-based confirm/prompt — замінюють нативні confirm()/prompt() у стилі панелі.
+function confirmModal(message,opts={}){
+  return new Promise(res=>{
+    const danger=opts.danger!==false;
+    modal(`<div class="modal-head"><div class="modal-title">${esc(opts.title||'Підтвердження')}</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" id="cm-x">✕</button></div><div style="font-size:14px;line-height:1.6;color:var(--paper-70);margin-bottom:22px">${esc(message)}</div><div style="display:flex;gap:10px;justify-content:flex-end"><button class="action ghost" id="cm-no">Скасувати</button><button class="action${danger?' danger':''}" id="cm-yes">${esc(opts.confirmLabel||'Підтвердити')}</button></div>`);
+    _modalDismiss=()=>res(false);
+    const finish=v=>{_modalDismiss=null;closeModal();res(v);};
+    document.getElementById('cm-yes').onclick=()=>finish(true);
+    document.getElementById('cm-no').onclick=()=>finish(false);
+    document.getElementById('cm-x').onclick=()=>finish(false);
+  });
+}
+function promptModal(opts={}){
+  return new Promise(res=>{
+    modal(`<div class="modal-head"><div class="modal-title">${esc(opts.title||'Введіть значення')}</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" id="pm-x">✕</button></div>${opts.message?`<div style="font-size:13.5px;line-height:1.6;color:var(--paper-70);margin-bottom:14px">${esc(opts.message)}</div>`:''}${opts.label?`<label class="lbl" style="display:block;margin-bottom:6px">${esc(opts.label)}</label>`:''}<input class="input" id="pm-in" type="${opts.type||'text'}" placeholder="${esc(opts.placeholder||'')}" value="${esc(opts.value!=null?String(opts.value):'')}"><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px"><button class="action ghost" id="pm-no">Скасувати</button><button class="action" id="pm-yes">${esc(opts.confirmLabel||'OK')}</button></div>`);
+    const inp=document.getElementById('pm-in');
+    _modalDismiss=()=>res(null);
+    const finish=v=>{_modalDismiss=null;closeModal();res(v);};
+    document.getElementById('pm-yes').onclick=()=>finish(inp.value);
+    document.getElementById('pm-no').onclick=()=>finish(null);
+    document.getElementById('pm-x').onclick=()=>finish(null);
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')finish(inp.value);});
+    setTimeout(()=>{inp.focus();inp.select();},50);
+  });
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');editPhId=null;if(_modalDismiss){const d=_modalDismiss;_modalDismiss=null;d();}}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function openLb(src){document.getElementById('lb-img').src=src;document.getElementById('lb').classList.add('open');}
 function closeLb(){document.getElementById('lb').classList.remove('open');}
