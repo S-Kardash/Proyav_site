@@ -180,6 +180,11 @@ export async function verifyJWT(token, secret) {
   return payload;
 }
 
+// Ролі персоналу: 'admin' = власник (повний доступ), 'manager' = менеджер/оператор
+// (замовлення/клієнти/склад/завдання, без грошей і налаштувань).
+export function isStaff(c) { return !!c && (c.role === 'admin' || c.role === 'manager'); }
+export function isOwner(c) { return !!c && c.role === 'admin'; }
+
 export async function authRequest(request, env) {
   const h = request.headers.get('Authorization') || '';
   if (!h.startsWith('Bearer ')) throw new Error('Unauthorized');

@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db, logAudit } from './_utils.js';
 
 /**
  * api-notifications.js — сповіщення клієнтам (показуються в кабінеті account.html).
@@ -18,7 +18,7 @@ export async function onRequest({ request, env }) {
 
   // ── Адмін: створити сповіщення для клієнта ──
   if (request.method === 'POST') {
-    if (claims.role !== 'admin') return fail('Forbidden', 403);
+    if (!isStaff(claims)) return fail('Forbidden', 403);
     let b; try { b = await request.json(); } catch { return fail('Invalid JSON'); }
     if (!b.client_id) return fail('client_id обов\'язковий');
     if (!b.title && !b.body) return fail('Порожнє сповіщення');

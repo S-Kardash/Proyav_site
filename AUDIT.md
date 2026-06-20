@@ -3,6 +3,9 @@
 > Самодостатній файл для роботи після `/clear`. Пріоритети: 🔴 P0 (безпека/критично перед потоком клієнтів) · 🟡 P1 (масштаб/надійність) · 🟢 P2 (поліш/дефекти).
 > Кожна знахідка — з доказом (файл:рядок) і конкретним фіксом. Стек: статичні HTML + Cloudflare Pages Functions → Supabase + R2 + Telegram + Nova Poshta + Google Sheets.
 
+## ✅ ВИПРАВЛЕНО В КОДІ (2026-06-20)
+- **A5 (НОВЕ, P0 авторизація)** Закрито діру доступу: staff-ендпоінти (`api-orders`, `api-admin-photos`, `api-clients`, `api-tasks`, `api-notifications POST`, `api-inventory`, `api-upload`) перевіряли лише `authRequest` — **будь-який** валідний JWT, включно з клієнтським (`role:'client'`), проходив. Додано `isStaff(c)` (admin|manager) / `isOwner(c)` (admin) у `_utils.js`; staff-ендпоінти → `isStaff`, гроші/налаштування/партнери/дебаг/аналітика/журнал → `isOwner`. Клієнтський токен тепер відхиляється (перевірено). Побічно введено ролі **owner/manager** (`MANAGER_PASSWORD` → `role:'manager'`; admin.html ховає від менеджера гроші/аналітику/партнерів/журнал/налаштування).
+
 ## ✅ ВИПРАВЛЕНО В КОДІ (2026-06-12)
 - **A1/A2/A4** rate-limiting: `rateLimited()`/`tooMany()` у `_utils.js` + застосовано на api-admin-login (8/хв), api-partner-login (10), api-client-auth (10), api-retail (12); інлайн-лімітери в api-novaposhta (60) і send-order (80). *Per-isolate best-effort — промислове доповнення = Cloudflare WAF (дія власника).*
 - **A3** tg-webhook secret тепер ОБОВ'ЯЗКОВИЙ (немає секрета → 403).

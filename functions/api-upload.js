@@ -35,7 +35,7 @@ export async function onRequest({ request, env }) {
   let isAdmin = false;
   const authH = request.headers.get('Authorization') || '';
   if (authH.startsWith('Bearer ') && env.JWT_SECRET) {
-    try { const c = await verifyJWT(authH.slice(7), env.JWT_SECRET); isAdmin = c.role === 'admin'; } catch {}
+    try { const c = await verifyJWT(authH.slice(7), env.JWT_SECRET); isAdmin = (c.role === 'admin' || c.role === 'manager'); } catch {}
   }
   if (!isAdmin) {
     const order = await client.query('orders', {
