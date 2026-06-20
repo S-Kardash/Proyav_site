@@ -284,6 +284,9 @@ select.input{background:rgba(243,238,230,.04);cursor:pointer}select.input option
 'use strict';
 const API='', SITE=location.origin;
 let TOKEN=sessionStorage.getItem('admin_token');
+let ROLE=sessionStorage.getItem('admin_role')||'admin';
+const MANAGER_PAGES=['orders','clients','tasks','inventory'];
+function allowed(p){return ROLE==='admin'||MANAGER_PAGES.includes(p);}
 const S={orders:[],photographers:[],clients:[],expenses:[],expCats:[],inventory:[],lowCount:0,settings:{},loaded:{}};
 let curFilter='all',curOrder=null,searchTimer,editPhId=null,dashPeriod='month',anRange='7d';
 
@@ -309,7 +312,7 @@ const NAV=[
   ['settings','Налаштування','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>'],
 ];
 function renderNav(active){
-  document.getElementById('nav').innerHTML=NAV.map(([id,label,icon])=>{
+  document.getElementById('nav').innerHTML=NAV.filter(([id])=>allowed(id)).map(([id,label,icon])=>{
     let badge='';
     if(id==='orders'){const n=S.orders.filter(o=>o.status==='new'||o.status==='uploaded').length;if(n)badge=`<span class="count">${n}</span>`;}
     if(id==='inventory'&&S.lowCount)badge=`<span class="count warn">${S.lowCount}</span>`;
@@ -341,22 +344,27 @@ async function doLogin(){
   try{
     const r=await fetch(`${API}/api-admin-login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
     const d=await r.json();if(!r.ok)throw new Error(d.error||'Невірний пароль');
-    TOKEN=d.token;sessionStorage.setItem('admin_token',TOKEN);boot();
+    TOKEN=d.token;ROLE=d.role||'admin';sessionStorage.setItem('admin_token',TOKEN);sessionStorage.setItem('admin_role',ROLE);boot();
   }catch(e){document.getElementById('login-err').textContent=e.message;}
 }
-function doLogout(){sessionStorage.removeItem('admin_token');location.reload();}
+function doLogout(){sessionStorage.removeItem('admin_token');sessionStorage.removeItem('admin_role');location.reload();}
 async function boot(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').classList.add('show');
+  // Підпис ролі під брендом
+  const meta=document.querySelector('.side-brand-meta');if(meta)meta.textContent=ROLE==='manager'?'МЕНЕДЖЕР':'ВЛАСНИК';
+  const land=ROLE==='admin'?'dashboard':'orders';
   try{await loadOrders();}catch(e){toast(e.message,'err');}
-  loadInventory().catch(()=>{});loadSettings().catch(()=>{});
-  loadTasks().then(()=>renderNav('dashboard')).catch(()=>{});
-  go('dashboard');
+  loadInventory().catch(()=>{});
+  if(ROLE==='admin')loadSettings().catch(()=>{});
+  loadTasks().then(()=>renderNav(land)).catch(()=>{});
+  go(land);
 }
 if(TOKEN)boot();
 
 // ── router ──
 function go(page){
+  if(!allowed(page))page=ROLE==='admin'?'dashboard':'orders';
   renderNav(page);
   document.getElementById('main').innerHTML=`<div class="page active">${(PAGES[page]||PAGES.dashboard)()}</div>`;
   window.scrollTo(0,0);
@@ -566,17 +574,25 @@ function openOrder(id){
   const o=curOrder,ph=o.photographers,ai=FLOW.indexOf(o.status),ck=chKey(o);
   const tline=FLOW.map((k,i)=>`<div class="dstep ${i<ai?'done':''} ${i===ai?'active':''}"><span class="dbar"></span><span class="ddot"></span><span class="dstep-l">${STATUS[k].short}</span></div>`).join('');
   const comm=(o.source==='photographer'&&o.total_amount)?Math.round(o.total_amount*((ph&&ph.commission_pct)||12)/100):0;
+  const phoneClean=(o.client_phone||'').replace(/[^\d+]/g,'');
+  const delivM=(o.notes||'').match(/Доставка:\s*([^.]+)/i);const delivStr=delivM?delivM[1].trim():'';
   document.getElementById('drawer').innerHTML=`
     <div class="drawer-h"><div><div class="num">${oid(o)} · ${CH[ck].label}</div><div class="title">${esc(o.client_name||'Замовлення')}</div></div>
       <button class="close" onclick="closeDrawer()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/></svg></button></div>
     <div class="drawer-body">
       <div class="dsec"><div class="dsec-h">Стадія проявлення</div><div class="dtimeline">${tline}</div>
         <select class="input" id="d-status" style="margin-top:6px">${FLOW.map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${STATUS[k].label}</option>`).join('')}</select></div>
-      <div class="dsec"><div class="dsec-h">Клієнт</div><div class="dgrid">
+      <div class="dsec"><div class="dsec-h">Клієнт ${o.client_id?`<button class="action ghost sm" onclick="closeDrawer();go('clients');setTimeout(()=>openClient('${o.client_id}'),60)">Картка →</button>`:''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          ${phoneClean?`<a class="action sm" href="tel:${phoneClean}" style="text-decoration:none">☏ Подзвонити</a><button class="action ghost sm" onclick="copyTxt('${esc(o.client_phone)}',this)">Копі номер</button>`:''}
+          ${o.client_instagram?`<a class="action ghost sm" href="https://instagram.com/${esc(o.client_instagram)}" target="_blank" rel="noopener" style="text-decoration:none">↗ Instagram</a>`:''}
+        </div>
+        <div class="dgrid">
         <div class="dfield"><span class="k">Телефон</span><span class="v">${esc(o.client_phone||'—')}</span></div>
         <div class="dfield"><span class="k">Instagram</span><span class="v">${o.client_instagram?'@'+esc(o.client_instagram):'—'}</span></div>
         <div class="dfield"><span class="k">Канал</span><span class="v"><em>${ph?esc(ph.name+(ph.city?' · '+ph.city:'')):CH[ck].label}</em></span></div>
         <div class="dfield"><span class="k">Фото / відбитків</span><span class="v">${esc(o.photo_count||'—')} / ${esc(o.qty_total||'—')}</span></div>
+        ${delivStr?`<div class="dfield full"><span class="k">Доставка</span><span class="v">${esc(delivStr)}</span></div>`:''}
       </div></div>
       <div class="dsec"><div class="dsec-h">Кадри <span id="pcount"></span>
         <span style="display:flex;gap:6px">
@@ -584,11 +600,11 @@ function openOrder(id){
           <button class="action ghost sm" id="dl-all" onclick="zipAllPhotos()" style="display:none">↓ ZIP усіх</button>
         </span></div>
         <input type="file" id="adm-upload" accept="image/*" multiple style="display:none" onchange="adminUploadPhotos(this)">
-        <div class="dphotos" id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
+        <div id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
       <div class="dsec"><div class="dsec-h">Доставка та сума</div><div class="dgrid">
         <div class="dfield full"><span class="k">ТТН Нової Пошти</span><input class="input" id="d-ttn" value="${esc(o.ttn||'')}" placeholder="59 …"></div>
         <div class="dfield"><span class="k">Сума замовлення</span><input class="input" id="d-amount" type="number" value="${o.total_amount||''}"></div>
-        ${comm?`<div class="dfield"><span class="k" style="color:var(--sepia)">Комісія партнеру</span><span class="v big" style="color:var(--sepia)">${money(comm)} ₴</span></div>`:''}
+        ${comm&&ROLE==='admin'?`<div class="dfield"><span class="k" style="color:var(--sepia)">Комісія партнеру</span><span class="v big" style="color:var(--sepia)">${money(comm)} ₴</span></div>`:''}
         ${o.paid_at?`<div class="dfield"><span class="k">Оплачено</span><span class="v">${fmtDT(o.paid_at)}</span></div>`:''}
         ${o.shipped_at?`<div class="dfield"><span class="k">Відправлено</span><span class="v">${fmtDT(o.shipped_at)}</span></div>`:''}
       </div></div>
@@ -615,7 +631,13 @@ async function loadOrderPhotos(token){
   const dlAll=document.getElementById('dl-all');if(dlAll)dlAll.style.display=photos.length?'':'none';
   const pc=document.getElementById('pcount');if(pc)pc.textContent=photos.length?'· '+photos.length+' шт':'';
   if(!photos.length){box.innerHTML=`<span class="hint">Кадрів ще немає. Завантажте з кнопки «↑ Завантажити» або зачекайте, поки клієнт надішле.</span>`;return;}
-  box.innerHTML=photos.map((p,i)=>`<div class="dphoto"><img src="${p.url}" alt="Кадр" loading="lazy" onclick="openLb('${p.url}')"><a href="${p.url}" download="kadr-${i+1}.jpg" onclick="event.stopPropagation()" title="Завантажити" style="position:absolute;bottom:3px;right:3px;width:20px;height:20px;border-radius:3px;background:rgba(0,0,0,.6);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none">↓</a></div>`).join('');
+  // Зведення для друку (оператору): скільки чого друкувати.
+  const COL={color:'Кол',bw:'Ч/Б',sepia:'Сеп'},PAP={mat:'Мат',matte:'Мат',glossy:'Глянець',gloss:'Глянець',cotton:'Cotton'};
+  const colL=c=>COL[c]||c||'Кол',papL=p=>PAP[p]||p||'Мат';
+  const agg={};let totalQ=0;photos.forEach(p=>{const k=colL(p.color)+'·'+papL(p.paper);const q=Number(p.qty)||1;agg[k]=(agg[k]||0)+q;totalQ+=q;});
+  const summary=Object.entries(agg).map(([k,q])=>`<b>${q}×</b> ${k}`).join(' · ');
+  box.innerHTML=`<div class="linkbox" style="margin-bottom:8px;border-style:solid;border-color:var(--paper-15)"><span class="card-k" style="display:block;margin-bottom:4px">Друкувати</span><span style="font-size:13px;color:var(--paper)">${summary} <span class="tsub">· разом ${totalQ} відбитків</span></span></div>
+  <div class="dphotos">${photos.map((p,i)=>`<div class="dphoto"><img src="${p.url}" alt="Кадр" loading="lazy" onclick="openLb('${p.url}')"><span style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.65);color:var(--paper);font-size:8px;letter-spacing:.04em;padding:1px 4px;border-radius:2px">${colL(p.color)}·${papL(p.paper)}${(Number(p.qty)||1)>1?' ×'+p.qty:''}</span><a href="${p.url}" download="kadr-${i+1}.jpg" onclick="event.stopPropagation()" title="Завантажити" style="position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:3px;background:rgba(0,0,0,.6);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none">↓</a></div>`).join('')}</div>`;
 }
 function downloadAllPhotos(){
   if(!_drawerPhotos.length)return;
@@ -684,7 +706,7 @@ async function saveOrder(){
 
 // create order (modal)
 function openCreate(){
-  if(!S.loaded.photographers)loadPhotographers().then(()=>openCreate());
+  if(!S.loaded.photographers)loadPhotographers().then(()=>openCreate()).catch(()=>{S.loaded.photographers=true;});
   const opts=S.photographers.filter(p=>p.active).map(p=>`<option value="${p.id}">${esc(p.name)} (${esc(p.city||'—')})</option>`).join('');
   modal(`<div class="modal-head"><div class="modal-title">Нове замовлення</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" onclick="closeModal()">✕</button></div>
   <div class="frow2"><div class="frow"><label class="lbl">Ім'я клієнта *</label><input class="input" id="c-name"></div><div class="frow"><label class="lbl">Телефон *</label><input class="input" id="c-phone" placeholder="+380"></div></div>
@@ -804,7 +826,7 @@ function openPh(id){editPhId=id||null;const p=id?S.photographers.find(x=>x.id===
   <div class="linkbox" id="p-creds" style="display:none"><div class="lbl" style="margin-bottom:6px">Тимчасовий пароль (збережіть!)</div><div class="linkurl" id="p-pwd" style="font-size:15px;color:var(--paper)"></div><button class="action ghost sm" id="p-copy">Скопіювати доступ</button></div>
   <div style="display:flex;gap:10px;margin-top:18px"><button class="action ghost" style="flex:1" onclick="closeModal()">Закрити</button><button class="action" style="flex:1" id="p-save" onclick="savePh()">${id?'Зберегти':'Додати'}</button></div>`);}
 async function savePh(){const name=document.getElementById('p-name').value.trim();if(!name)return toast('Введіть ім\'я','err');try{if(editPhId){const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id:editPhId,name,phone:document.getElementById('p-phone').value.trim(),city:document.getElementById('p-city').value.trim(),commission_pct:parseInt(document.getElementById('p-comm').value)||12})});const i=S.photographers.findIndex(p=>p.id===editPhId);if(i>=0)S.photographers[i]={...S.photographers[i],...r.photographer};closeModal();go('photographers');toast('Збережено');}else{const email=document.getElementById('p-email').value.trim();if(!email)return toast('Введіть email','err');const r=await apiFetch(`${API}/api-photographers`,{method:'POST',body:JSON.stringify({name,email,phone:document.getElementById('p-phone').value.trim(),city:document.getElementById('p-city').value.trim(),commission_pct:parseInt(document.getElementById('p-comm').value)||12})});S.photographers.unshift({...r.photographer,order_count:0});document.getElementById('p-pwd').textContent=r.temp_password;document.getElementById('p-creds').style.display='block';document.getElementById('p-copy').onclick=()=>copyTxt(`Email: ${email}\nПароль: ${r.temp_password}\nКабінет: ${SITE}/partner`,document.getElementById('p-copy'));document.getElementById('p-save').textContent='Готово';document.getElementById('p-save').onclick=()=>{closeModal();go('photographers');};toast('Партнера додано');}}catch(e){toast(e.message,'err');}}
-async function resetPh(id){if(!confirm('Скинути пароль?'))return;try{const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,reset_password:true})});alert(`Новий тимчасовий пароль:\n\n${r.temp_password}\n\nЗбережіть і надішліть партнеру.`);}catch(e){toast(e.message,'err');}}
+async function resetPh(id){if(!confirm('Скинути пароль?'))return;try{const r=await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,reset_password:true})});credModal('Новий пароль партнера',r.temp_password,'Збережіть і надішліть партнеру (email — логін).');}catch(e){toast(e.message,'err');}}
 async function togglePh(id,active){try{await apiFetch(`${API}/api-photographers`,{method:'PUT',body:JSON.stringify({id,active})});const p=S.photographers.find(x=>x.id===id);if(p)p.active=active;go('photographers');}catch(e){toast(e.message,'err');}}
 
 // ════ CLIENTS ════
@@ -871,7 +893,7 @@ async function sendNotif(id){
 async function resetClientPw(id){
   if(!confirm('Скинути пароль клієнту? Він отримає тимчасовий.'))return;
   try{const r=await apiFetch(`${API}/api-client-auth`,{method:'POST',body:JSON.stringify({action:'admin_reset',client_id:id})});
-    alert(`Новий тимчасовий пароль клієнта:\n\n${r.temp_password}\n\nНадішліть йому (телефон — логін).`);
+    credModal('Новий пароль клієнта',r.temp_password,'Надішліть клієнту (телефон — логін).');
   }catch(e){toast(e.message,'err');}
 }
 
@@ -937,6 +959,7 @@ const PAGES={dashboard:PAGE_dashboard,analytics:PAGE_analytics,orders:PAGE_order
 
 // ── modal / lightbox / toast ──
 function modal(html){document.getElementById('modal-inner').innerHTML=html;document.getElementById('modal').classList.add('open');}
+function credModal(title,value,hint){modal(`<div class="modal-head"><div class="modal-title">${title}</div><button class="close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--paper-30);background:none;color:var(--paper);cursor:pointer" onclick="closeModal()">✕</button></div><div class="linkbox" style="text-align:center"><div class="linkurl" style="font-size:22px;letter-spacing:.1em;color:var(--paper);word-break:normal">${esc(value)}</div><button class="action" id="cred-copy">Скопіювати</button></div>${hint?`<div class="hint" style="margin-top:12px">${esc(hint)}</div>`:''}`);const b=document.getElementById('cred-copy');if(b)b.onclick=()=>copyTxt(value,b);}
 function closeModal(){document.getElementById('modal').classList.remove('open');editPhId=null;}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 function openLb(src){document.getElementById('lb-img').src=src;document.getElementById('lb').classList.add('open');}

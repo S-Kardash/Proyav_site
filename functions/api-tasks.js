@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db } from './_utils.js';
 
 /**
  * api-tasks.js — завдання/нагадування для адмінки (CRM).
@@ -11,7 +11,7 @@ export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return preflight();
   let claims;
   try { claims = await authRequest(request, env); } catch (e) { return fail(e.message, 401); }
-  if (claims.role !== 'admin') return fail('Forbidden', 403);
+  if (!isStaff(claims)) return fail('Forbidden', 403);
 
   const client = db(env);
 

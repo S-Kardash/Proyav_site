@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, hashPassword, randomToken, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isOwner, db, hashPassword, randomToken, logAudit } from './_utils.js';
 
 function randomPassword() {
   return randomToken(8).toUpperCase();
@@ -7,7 +7,8 @@ function randomPassword() {
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isOwner(claims)) return fail('Лише власник', 403);
 
   const client = db(env);
 

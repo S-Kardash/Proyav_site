@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isOwner, db, logAudit } from './_utils.js';
 
 const CATEGORIES = [
   'Матеріали', 'Доставка', 'Оренда', 'Маркетинг',
@@ -9,7 +9,8 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
 
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isOwner(claims)) return fail('Лише власник', 403);
 
   const client = db(env);
 

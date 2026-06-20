@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, isOwner, db } from './_utils.js';
 
 /**
  * api-debug.js — configuration health check.
@@ -9,8 +9,9 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
 
-  // Gate behind admin auth — this endpoint discloses configuration state.
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  // Gate behind owner auth — this endpoint discloses configuration state.
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isOwner(claims)) return fail('Лише власник', 403);
 
   const url = (env.SUPABASE_URL || '').trim();
   const key = (env.SUPABASE_SERVICE_KEY || '').trim();

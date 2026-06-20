@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db } from './_utils.js';
 
 /**
  * api-admin-photos.js — перегляд архіву кадрів замовлення в адмінці.
@@ -26,7 +26,8 @@ export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'GET') return fail('Method not allowed', 405);
 
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isStaff(claims)) return fail('Forbidden', 403);
 
   const orderToken = new URL(request.url).searchParams.get('t') || '';
   if (!/^[a-z0-9]{4,64}$/i.test(orderToken)) return fail('Невірний токен замовлення');

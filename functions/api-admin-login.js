@@ -11,11 +11,16 @@ export async function onRequest(context) {
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }
 
-  if (!body.password || body.password !== env.ADMIN_PASSWORD) {
-    return fail('Невірний пароль', 401);
-  }
   if (!env.JWT_SECRET) return fail('JWT_SECRET не налаштовано', 500);
 
-  const token = await signJWT({ role: 'admin' }, env.JWT_SECRET, 43200); // 12h
-  return ok({ token });
+  // Дві ролі: ADMIN_PASSWORD → 'admin' (власник, повний доступ);
+  // MANAGER_PASSWORD (опційно) → 'manager' (замовлення/клієнти/склад/завдання,
+  // без грошей, аналітики, налаштувань і партнерів).
+  let role = null;
+  if (body.password && body.password === env.ADMIN_PASSWORD) role = 'admin';
+  else if (body.password && env.MANAGER_PASSWORD && body.password === env.MANAGER_PASSWORD) role = 'manager';
+  if (!role) return fail('Невірний пароль', 401);
+
+  const token = await signJWT({ role }, env.JWT_SECRET, 43200); // 12h
+  return ok({ token, role });
 }

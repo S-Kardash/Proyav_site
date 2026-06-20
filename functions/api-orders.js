@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, randomToken, commissionFor, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db, randomToken, commissionFor, logAudit } from './_utils.js';
 
 // Пінг фотографу в Telegram при оплаті його замовлення (8.4).
 // Комісія — за тим самим тарифом, що й у кабінеті (commissionFor за к-стю замовлень).
@@ -32,7 +32,8 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
 
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isStaff(claims)) return fail('Forbidden', 403);
 
   const client = db(env);
   const url    = new URL(request.url);

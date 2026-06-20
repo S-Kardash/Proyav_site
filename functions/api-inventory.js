@@ -1,10 +1,11 @@
-import { ok, fail, preflight, authRequest, db } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
 
-  try { await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  let claims; try { claims = await authRequest(request, env); } catch { return fail('Unauthorized', 401); }
+  if (!isStaff(claims)) return fail('Forbidden', 403);
 
   const client = db(env);
 
