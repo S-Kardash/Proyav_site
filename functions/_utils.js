@@ -376,6 +376,15 @@ export async function releaseFirstSeries(client) {
   try { await client.rpc('release_first_series', {}); } catch {}
 }
 
+// Канонічний origin сайту для посилань, що йдуть КЛІЄНТУ (магічні/статус-лінки).
+// Бажано env.SITE_URL; фолбек — origin самого запиту, щоб посилання ніколи не вийшло
+// відносним «/order?t=…» (воно зламане при пересиланні). Працює й на кастомному домені.
+export function siteOrigin(env, request) {
+  const fromEnv = (env.SITE_URL || '').replace(/\/$/, '');
+  if (fromEnv) return fromEnv;
+  try { return new URL(request.url).origin; } catch { return ''; }
+}
+
 const STD_CHAIN = ['small', 'medium', 'large'];
 
 // Resolve the package after auto-upgrade by photo count, then its price.

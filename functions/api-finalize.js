@@ -1,9 +1,10 @@
-import { ok, fail, preflight, db, sheetsAppend, PRODUCT_NAMES, packagePrice } from './_utils.js';
+import { ok, fail, preflight, db, sheetsAppend, PRODUCT_NAMES, packagePrice, rateLimited, tooMany } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
   if (request.method !== 'POST') return fail('Method not allowed', 405);
+  if (rateLimited(request, { key: 'finalize', limit: 30, windowMs: 60000 })) return tooMany();
 
   let body;
   try { body = await request.json(); } catch { return fail('Invalid JSON'); }

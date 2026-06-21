@@ -10,6 +10,8 @@
  *   → { items: [{ ref, name, number }] }
  */
 
+import { rateLimited } from './_utils.js';
+
 const CORS = {
   'Content-Type':                 'application/json',
   'Access-Control-Allow-Origin':  '*',
@@ -17,21 +19,13 @@ const CORS = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
-const ok   = (b) => new Response(JSON.stringify(b), { status: 200, headers: CORS });
+// cacheSec>0 → дозволяємо Cloudflare/браузеру кешувати (міста/відділення стабільні),
+// щоб автокомпліт не бив по квоті ключа НП на кожне натискання.
+const ok   = (b, cacheSec = 0) => new Response(JSON.stringify(b), {
+  status: 200,
+  headers: cacheSec ? { ...CORS, 'Cache-Control': `public, max-age=${cacheSec}` } : CORS,
+});
 const fail = (m, s = 400) => new Response(JSON.stringify({ error: m }), { status: s, headers: CORS });
-
-// Best-effort анти-абʼюз проксі НП (захищає квоту ключа). Промислове — Cloudflare WAF.
-const _npRl = new Map();
-function npLimited(request, limit = 60, windowMs = 60000) {
-  try {
-    const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'x';
-    const now = Date.now(); let b = _npRl.get(ip);
-    if (!b || now > b.reset) { b = { count: 0, reset: now + windowMs }; _npRl.set(ip, b); }
-    b.count++;
-    if (_npRl.size > 5000) for (const [k, v] of _npRl) if (now > v.reset) _npRl.delete(k);
-    return b.count > limit;
-  } catch { return false; }
-}
 
 const NP_URL = 'https://api.novaposhta.ua/v2.0/json/';
 
@@ -53,7 +47,7 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return new Response('', { status: 200, headers: CORS });
   if (request.method !== 'GET')     return fail('Method not allowed', 405);
-  if (npLimited(request)) return fail('Забагато запитів. Спробуйте за хвилину.', 429);
+  if (rateLimited(request, { key: 'novaposhta', limit: 60, windowMs: 60000 })) return fail('Забагато запитів. Спробуйте за хвилину.', 429);
 
   const key = (env.NOVA_POSHTA_KEY || '').trim();
   if (!key) return fail('NOVA_POSHTA_KEY не налаштовано', 500);
@@ -81,7 +75,7 @@ export async function onRequest(context) {
         region: a.Region || '',
         present: a.Present || a.MainDescription,
       }));
-      return ok({ items });
+      return ok({ items }, 3600); // міста стабільні → кеш 1 год
     }
 
     // ── Warehouses (відділення / поштомати) for a settlement ───────────
@@ -106,7 +100,7 @@ export async function onRequest(context) {
         type:   w.CategoryOfWarehouse || '',
         maxWeight: w.PlaceMaxWeightAllowed || '',
       }));
-      return ok({ items });
+      return ok({ items }, 3600); // відділення стабільні → кеш 1 год
     }
 
     return fail('Невідома дія (action)');

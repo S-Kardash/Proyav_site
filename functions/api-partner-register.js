@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, hashPassword, signJWT } from './_utils.js';
+import { ok, fail, preflight, db, hashPassword, signJWT, siteOrigin } from './_utils.js';
 
 /**
  * api-partner-register.js — self-serve photographer onboarding (MARKETING_CONTEXT 8.3).
@@ -65,7 +65,7 @@ export async function onRequest(context) {
     }).catch(e => console.error('[partner-register] TG:', e.message));
   }
 
-  const siteUrl = (env.SITE_URL || '').replace(/\/$/, '');
+  const siteUrl = siteOrigin(env, request);
   return ok({
     token,
     photographer: { id: ph.id, name: ph.name, city: ph.city, commission_pct: ph.commission_pct },

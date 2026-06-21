@@ -3171,8 +3171,15 @@ async function submitOrder(e) {
       const ph  = S.photos[i];
       const pct = Math.round(((i + 1) / S.photos.length) * 100);
       btn.innerHTML = '<div class="btn-spinner"></div> Кадр ' + (i + 1) + '/' + S.photos.length + ' (' + pct + '%)...';
-      try { await uploadPhotoToR2(ph, CURRENT_ORDER_TOKEN); r2Ok++; }
-      catch (err) { r2Fail++; console.warn('[submit] R2 upload', i + 1, 'failed:', err.message); }
+      // Один ретрай при збої (мережеві обриви) — кадри це головний результат, не губимо.
+      let uploaded = false;
+      for (let attempt = 0; attempt < 2 && !uploaded; attempt++) {
+        try { await uploadPhotoToR2(ph, CURRENT_ORDER_TOKEN); r2Ok++; uploaded = true; }
+        catch (err) {
+          if (attempt === 0) { await new Promise(r => setTimeout(r, 800)); }
+          else { r2Fail++; console.warn('[submit] R2 upload', i + 1, 'failed:', err.message); }
+        }
+      }
     }
   }
 
@@ -3270,6 +3277,11 @@ async function submitPostEmail() {
   try {
     await tgSendText('📧 <b>[ПРОЯВ] Клієнт лишив пошту</b>\nЗамовлення: ' + (window._lastOrderId || '—') + '\nEmail: ' + v + '\nІм\'я: ' + (S.name || '—'));
   } catch (e) { /* non-fatal */ }
+
+  // Зберегти email у замовлення (щоб не загубити; token = capability) — 2B-6.
+  if (CURRENT_ORDER_TOKEN) {
+    try { await fetchWithTimeout('/api-order-contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: CURRENT_ORDER_TOKEN, email: v }) }); } catch (e) { /* non-fatal */ }
+  }
 
   // Replace the form with a thank-you
   const block = document.getElementById('post-email-block');

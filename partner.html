@@ -368,7 +368,7 @@ function orderCardHTML(o){
     ${stepperHTML(o.status)}
     <div class="pv-order-foot">
       <div><span class="pv-cap" style="display:block;margin-bottom:3px">${esc(pkgShort(o.product_type))}</span><span class="pv-order-eta">${o.total_amount?o.total_amount+' ₴':'—'}</span></div>
-      <span class="pv-link">${comm?'+'+comm+'₴ · ':''}Деталі →</span>
+      <span class="pv-link">${o.status==='paid'&&comm?'+'+comm+'₴ · ':''}Деталі →</span>
     </div>
   </div>`;
 }
@@ -403,19 +403,21 @@ function renderHome(){
 function levelCardHTML(){
   const s = DATA.stats;
   const tier = s.tier || { name:'Партнер', pct: curPct, next:null };
+  const rate = s.commission_pct || tier.pct || curPct;   // реальний тариф (що платить адмінка)
+  const paidN = s.paid || 0;                              // рівень росте з ОПЛАЧЕНИХ
   let bar=100, nextTxt='Максимальний рівень — дякуємо, що з нами';
   if(tier.next){
-    const span=((s.total||0)+tier.next.ordersLeft)||1;
-    bar=Math.min(100,Math.round((s.total||0)/span*100));
-    nextTxt=`Ще ${tier.next.ordersLeft} ${plural(tier.next.ordersLeft,'замовлення','замовлення','замовлень')} до «${tier.next.name}» — ${tier.next.pct}% комісії`;
+    const span=(paidN+tier.next.ordersLeft)||1;
+    bar=Math.min(100,Math.round(paidN/span*100));
+    nextTxt=`Ще ${tier.next.ordersLeft} ${plural(tier.next.ordersLeft,'оплачене замовлення','оплачені замовлення','оплачених замовлень')} до «${tier.next.name}» — ${tier.next.pct}% комісії`;
   }
   return `<div class="pv-level">
-    <div class="pv-level-top"><span class="pv-level-name">Рівень <em>${esc(tier.name)}</em></span><span class="pv-level-pct">${tier.pct}%</span></div>
+    <div class="pv-level-top"><span class="pv-level-name">Рівень <em>${esc(tier.name)}</em></span><span class="pv-level-pct">${rate}%</span></div>
     <div class="pv-level-bar"><i style="width:${bar}%"></i></div>
     <div class="pv-level-next">${esc(nextTxt)}</div>
     <div class="pv-stats" style="margin-top:16px;border:none;grid-template-columns:repeat(2,1fr)">
-      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Цього місяця</div><div class="pv-stat-val" style="font-size:24px">${s.this_month||0}</div></div>
-      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Комісія / міс</div><div class="pv-stat-val" style="font-size:24px;color:var(--acc)">${s.month_commission||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">Зароблено / міс</div><div class="pv-stat-val" style="font-size:24px;color:var(--acc)">${s.month_commission||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat" style="padding:12px 14px"><div class="pv-stat-key">До виплати</div><div class="pv-stat-val" style="font-size:24px">${s.balance||0}<span class="u">₴</span></div></div>
     </div>
   </div>`;
 }
@@ -434,10 +436,10 @@ function renderArchive(){
       <div class="pv-pmeta"><span><strong>${done.length}</strong> завершено</span></div>
     </div>
     <div class="pv-stats" style="margin-bottom:28px">
-      <div class="pv-stat"><div class="pv-stat-key">Усього замовлень</div><div class="pv-stat-val">${s.total||0}</div></div>
-      <div class="pv-stat"><div class="pv-stat-key">Цього місяця</div><div class="pv-stat-val">${s.this_month||0}</div></div>
-      <div class="pv-stat"><div class="pv-stat-key">Комісія / міс</div><div class="pv-stat-val">${s.month_commission||0}<span class="u">₴</span></div></div>
-      <div class="pv-stat"><div class="pv-stat-key">Комісія всього</div><div class="pv-stat-val" style="color:var(--acc)">${s.alltime_commission||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Зароблено всього</div><div class="pv-stat-val" style="color:var(--acc)">${s.alltime_commission||0}<span class="u">₴</span></div><div class="pv-stat-sub" style="font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper-50);margin-top:4px">з оплачених</div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Очікує оплати</div><div class="pv-stat-val">${s.pending_commission||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat"><div class="pv-stat-key">Виплачено</div><div class="pv-stat-val">${s.paid_out||0}<span class="u">₴</span></div></div>
+      <div class="pv-stat"><div class="pv-stat-key">До виплати</div><div class="pv-stat-val" style="color:var(--acc)">${s.balance||0}<span class="u">₴</span></div></div>
     </div>
     ${list}`;
 }

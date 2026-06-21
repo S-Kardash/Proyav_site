@@ -1,18 +1,13 @@
-import { ok, fail, preflight, authRequest, isStaff, db, randomToken, commissionFor, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db, randomToken, commissionFor, logAudit, siteOrigin } from './_utils.js';
 
 // Пінг фотографу в Telegram при оплаті його замовлення (8.4).
-// Комісія — за тим самим тарифом, що й у кабінеті (commissionFor за к-стю замовлень).
-async function notifyPhotographerPaid(env, client, order) {
+// Тариф — збережений commission_pct фотографа (саме його платить адмінка → один рахунок).
+async function notifyPhotographerPaid(env, order, pct) {
   try {
     const ph = order.photographers;
     const chatId = ph && ph.tg_chat_id;
     if (!chatId) return; // фотограф не підключив Telegram — тихо пропускаємо
-    const phId = order.photographer_id;
-    let pct = 12;
-    if (phId) {
-      const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${phId}` } }).catch(() => []);
-      pct = commissionFor((cnt || []).length).pct;
-    }
+    pct = Number(pct) || 12;
     const amount = order.total_amount ? Math.round(order.total_amount * pct / 100) : 0;
     const who = order.client_name || 'Ваш клієнт';
     const text =
@@ -105,7 +100,7 @@ export async function onRequest(context) {
       },
     });
 
-    const siteUrl = (env.SITE_URL || '').replace(/\/$/, '');
+    const siteUrl = siteOrigin(env, request);
     return ok({ order: data, link: `${siteUrl}/order?t=${token}` }, 201);
   }
 
@@ -116,13 +111,24 @@ export async function onRequest(context) {
 
     const { id, status, ttn, notes, total_amount } = body;
     if (!id) return fail('id обов\'язковий');
+    const ALLOWED_STATUS = ['new', 'uploaded', 'in_progress', 'sent', 'paid'];
+    if (status !== undefined && !ALLOWED_STATUS.includes(status)) return fail('Невідомий статус', 400);
+
+    // Поточний статус ДО оновлення — щоб нотифікувати/штампувати лише при РЕАЛЬНІЙ зміні
+    // (інакше пересейв уже-оплаченого замовлення дублює сповіщення й зсуває paid_at). 2B-4.
+    let prevStatus = null;
+    if (status !== undefined) {
+      const cur = await client.query('orders', { select: 'status', filters: { id: `eq.${id}` }, single: true }).catch(() => null);
+      prevStatus = cur && cur.status;
+    }
+    const statusChanged = status !== undefined && status !== prevStatus;
 
     const updates = {};
     if (status !== undefined) {
       updates.status = status;
-      // Stamp funnel timestamps for analytics (revenue/lead-time reporting).
-      if (status === 'paid') updates.paid_at    = new Date().toISOString();
-      if (status === 'sent') updates.shipped_at = new Date().toISOString();
+      // Штампи воронки — лише при реальній зміні.
+      if (statusChanged && status === 'paid') updates.paid_at    = new Date().toISOString();
+      if (statusChanged && status === 'sent') updates.shipped_at = new Date().toISOString();
     }
     if (ttn          !== undefined) updates.ttn          = ttn;
     if (notes        !== undefined) updates.notes        = notes;
@@ -131,14 +137,27 @@ export async function onRequest(context) {
     const data = await client.query('orders', {
       method:  'PATCH',
       filters: { id: `eq.${id}` },
-      select:  '*,photographers(name,city,tg_chat_id)',
+      select:  '*,photographers(name,city,tg_chat_id,commission_pct)',
       single:  true,
       body:    updates,
     });
 
-    // Newly marked paid → ping the photographer (non-blocking, non-fatal).
-    if (updates.status === 'paid' && env.TG_TOKEN) {
-      await notifyPhotographerPaid(env, client, data);
+    // Оплата (реальна зміна): авто-зростання тарифу партнера за ВИКОНАНИМИ (оплаченими)
+    // замовленнями — реалізує намір конституції й тримає ОДИН тариф (commission_pct), що
+    // ним же платить адмінка. Потім — пінг із цим тарифом.
+    if (statusChanged && status === 'paid') {
+      let pct = Number(data.photographers && data.photographers.commission_pct) || 12;
+      if (data.photographer_id) {
+        try {
+          const paidCnt = await client.count('orders', { photographer_id: `eq.${data.photographer_id}`, status: 'eq.paid' });
+          const tierPct = commissionFor(paidCnt).pct;
+          if (tierPct > pct) {
+            pct = tierPct;
+            await client.query('photographers', { method: 'PATCH', filters: { id: `eq.${data.photographer_id}` }, body: { commission_pct: pct } });
+          }
+        } catch (e) { console.error('[api-orders] tier bump:', e.message); }
+      }
+      if (env.TG_TOKEN) await notifyPhotographerPaid(env, data, pct);
     }
 
     // Журнал дій (CRM).
@@ -151,8 +170,8 @@ export async function onRequest(context) {
     await logAudit(env, updates.status !== undefined ? 'order_status' : 'order_edit',
       'order:' + oidStr, `${data.client_name || ''}: ${what.join(', ')}`);
 
-    // Авто-сповіщення клієнту в кабінет при зміні статусу (CRM, non-fatal).
-    if (updates.status && data.client_id) {
+    // Авто-сповіщення клієнту в кабінет — лише при РЕАЛЬНІЙ зміні статусу (CRM, non-fatal).
+    if (statusChanged && data.client_id) {
       const MSG = {
         uploaded:    { title: 'Кадри отримано', body: 'Ми прийняли ваші кадри й беремося до роботи.' },
         in_progress: { title: 'Проявляємо',     body: 'Ваше замовлення в роботі — контролюємо друк.' },

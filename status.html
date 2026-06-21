@@ -6,6 +6,7 @@
 <title>ПРОЯВ — Статус замовлення</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
+<script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -100,6 +101,11 @@
         </a>
       </div>
 
+      <div class="ttn-card hide" id="pay-card">
+        <div class="ttn-lbl">Як оплатити</div>
+        <div id="pay-text" style="font-size:13.5px;line-height:1.6;color:var(--paper-70)"></div>
+      </div>
+
       <p class="footer-note">Питання щодо замовлення? <a href="https://t.me/copylounge" target="_blank" rel="noopener">Напишіть нам у Telegram</a> — підкажемо.</p>
       <p class="footer-note" style="margin-top:12px"><a href="/privacy">Конфіденційність</a> · <a href="/oferta">Оферта</a></p>
     </div>
@@ -174,6 +180,17 @@ function render(d){
     show('ttn-card');
   } else {
     hide('ttn-card');
+  }
+
+  // Як оплатити — лише для НЕоплачених замовлень (2B-5)
+  if (d.status !== 'paid' && d.total_amount) {
+    const pay = (window.PROYAV && PROYAV.payment) || {};
+    document.getElementById('pay-text').innerHTML = pay.card
+      ? `Сума: <strong style="color:var(--paper)">${d.total_amount} ₴</strong> · переказ на картку <strong style="color:var(--paper)">${pay.card}</strong>${pay.holder ? ` (${pay.holder})` : ''}${pay.cod ? ' або накладений платіж при отриманні' : ''}. У призначенні вкажіть номер замовлення.`
+      : `Оплата при отриманні (накладений платіж Нової Пошти) або переказ на картку — реквізити надішлемо особисто.`;
+    show('pay-card');
+  } else {
+    hide('pay-card');
   }
 }
 
