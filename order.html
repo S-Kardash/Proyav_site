@@ -825,7 +825,7 @@
 
       <div class="direct-note" id="direct-note">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
-        <span>Замовляєте напряму, без фотографа? Усе правильно — це поле лише щоб знайти ваше замовлення.</span>
+        <span>Без фотографа, напряму? Усе правильно — впишіть свій Instagram для зв'язку, а решту заповните на наступних кроках.</span>
       </div>
 
       <div class="direct-note" style="margin-top:8px">
@@ -1104,7 +1104,7 @@
 
         <div class="direct-note" style="margin-bottom:8px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>
-          <span>Оплата — при отриманні (накладений платіж Нової Пошти) або переказ на картку після підтвердження. Реквізити надішлемо особисто.</span>
+          <span id="pay-info">Оплата — при отриманні (накладений платіж Нової Пошти) або переказ на картку після підтвердження. Реквізити надішлемо особисто.</span>
         </div>
 
         <div class="post-email" id="post-email-block" style="display:none">
@@ -1434,7 +1434,9 @@ function showPackageBanner(pkgKey) {
   document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
   banner.classList.add('show');
   bannerKind = 'package';
-  document.getElementById('direct-note')?.classList.add('hidden');
+  // Прямий клієнт (без фотографа) має бачити явну нотатку «замовляєте напряму» (8.7);
+  // ховаємо її ЛИШЕ коли замовлення прив'язане до фотографа — там вона недоречна.
+  document.getElementById('direct-note')?.classList.toggle('hidden', !!S.photographerId);
 }
 
 // Безкоштовний пробний відбиток (фотограф тестує якість руками)
@@ -3203,6 +3205,7 @@ async function submitOrder(e) {
   if (peb) peb.style.display = S.email ? 'none' : '';
   window._lastOrderId = orderId;
   renderSuccessTotal(successTotal, successFirstSeries);
+  renderPaymentInfo(successTotal);
   clearDraft();
   celebrate();
   goTo(5);
@@ -3229,6 +3232,25 @@ function renderSuccessTotal(total, firstSeries) {
     else discEl.style.display = 'none';
   }
   wrap.style.display = '';
+}
+
+/* ─ Платіжні реквізити на екрані успіху (Ітерація 2): конкретна сума + картка, якщо ─
+   ─ власник заповнив config.payment; інакше лишається дефолтний текст. ─ */
+function renderPaymentInfo(total) {
+  const el = document.getElementById('pay-info');
+  if (!el) return;
+  const pay = (window.PROYAV && PROYAV.payment) || {};
+  if (!total || total <= 0) {
+    el.textContent = 'Це безкоштовний пробний відбиток — оплати немає, ми надішлемо його вам.';
+    return;
+  }
+  if (pay.card) {
+    const holder = pay.holder ? ' (' + pay.holder + ')' : '';
+    const cod = pay.cod ? ' Або накладений платіж при отриманні.' : '';
+    // card/holder — з config.js (довірені, не користувацький ввід) → без esc.
+    el.innerHTML = `Сума до сплати: <strong style="color:var(--paper)">${total} ₴</strong>. Переказ на картку <strong style="color:var(--paper)">${pay.card}</strong>${holder} — у призначенні вкажіть номер замовлення.${cod}`;
+  }
+  // else: лишаємо дефолтний текст «реквізити надішлемо особисто»
 }
 
 /* ─ Post-order email capture (value-add, optional) ─ */

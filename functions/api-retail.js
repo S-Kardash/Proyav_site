@@ -141,6 +141,15 @@ export async function onRequest(context) {
   // повертаємо слот, щоб лічильник промо не «зʼїдався» фантомним замовленням (AUDIT B5).
   if (firstSeries && !order) { await releaseFirstSeries(client); }
 
+  // Операційна страховка (B8): замовлення не записалось у orders → кладемо сирий payload
+  // у failed_orders, щоб власник нічого не загубив, навіть якщо проґавить Telegram-пінг.
+  if (!order && dbError) {
+    await client.query('failed_orders', {
+      method: 'POST',
+      body: { payload: insertBody, error: String(dbError).slice(0, 500), ref: order_ref || null },
+    }).catch(e => console.error('[retail] failed_orders capture:', e.message));
+  }
+
   const productLabel = finalType ? (PRODUCT_NAMES[finalType] || finalType) : 'Роздрібний друк';
 
   // ── Telegram notification to admin ──────────────────────────────────

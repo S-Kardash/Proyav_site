@@ -121,6 +121,16 @@
     updated:   '12 червня 2026',
   };
 
+  // ── Платіжні реквізити (для конкретної суми «як оплатити» на екрані успіху/статусі) ──
+  // ⚠️ ВЛАСНИКУ: заповни `card` (+ `holder`), щоб клієнт одразу бачив суму й картку для
+  // переказу — без ручного «надішлемо особисто». Порожня `card` → лишається поточний
+  // текст (нічого не ламається). Це картка-ОТРИМУВАЧ, її показ клієнту — нормально.
+  var payment = {
+    card:    '',        // напр. '0000 0000 0000 0000' (Mono/банк отримувача)
+    holder:  '',        // напр. 'Олександр К.' — для звірки переказу
+    cod:     true,      // накладений платіж Нової Пошти доступний
+  };
+
   window.PROYAV = {
     packages: packages,
     printPrice: printPrice,
@@ -128,6 +138,7 @@
     sla: sla,
     firstSeries: firstSeries,
     legal: legal,
+    payment: payment,
     stdChain: stdChain,
     order: ['small', 'medium', 'large', 'baby'],
     commissionTiers: commissionTiers,
