@@ -10,10 +10,11 @@
 ## ✅ ВИПРАВЛЕНО В КОДІ (2026-06-12)
 - **A1/A2/A4** rate-limiting: `rateLimited()`/`tooMany()` у `_utils.js` + застосовано на api-admin-login (8/хв), api-partner-login (10), api-client-auth (10), api-retail (12); інлайн-лімітери в api-novaposhta (60) і send-order (80). *Per-isolate best-effort — промислове доповнення = Cloudflare WAF (дія власника).*
 - **A3** tg-webhook secret тепер ОБОВ'ЯЗКОВИЙ (немає секрета → 403).
-- **B1** прибрано `limit:9999` в api-orders stats → дешевий `db.count()` (Content-Range) + виручка лише по оплачених. *(api-photographers/api-clients ще тягнуть усі orders для агрегації — оптимізувати при CRM-рефакторі через БД-агрегати/в'юхи.)*
+- **B1** прибрано `limit:9999` в api-orders stats → дешевий `db.count()` (Content-Range) + виручка лише по оплачених. **Хвіст ✅ (20.06):** api-photographers/api-clients тепер агрегують ЛИШЕ атрибутовані замовлення (`filters: photographer_id/client_id not.is.null`) — не вся таблиця у воркер; результат ідентичний (нерелевантні рядки й так пропускались).
+- **B5** ✅ (20.06) атомарний лічильник «Першої серії»: міграція секція 6 (`settings.first_series_claimed` + RPC `claim_first_series` — один `UPDATE…WHERE value<slots RETURNING`); `db.rpc()` у _utils; `claimFirstSeries()` замінив count-перед-вставкою в api-retail (фолбек на старий метод, якщо RPC немає); `firstSeriesUsed`/api-first-series тепер читають той самий лічильник. **Власнику: застосувати секцію 6 міграції** (до того — старий, гонкий, але робочий метод).
 - **B2** Google Sheets синк через `context.waitUntil` (api-retail, api-finalize) — не блокує відповідь замовлення.
 - **C1** anchor-id у partnerstvo → латиниця. **C3** favicon.svg на всіх 10 сторінках. **C4** `.dev.vars.example` додано.
-- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** ~~C2 (показ знижки на успіху)~~ ✅ 20.06, ~~C5 (OpenGraph)~~ ✅ 20.06, C6 (модалки в адмінці), C7 (Web Analytics), B1-хвіст (агрегати для photographers/clients), B5 (атомарний лічильник first-series).
+- **Лишилось (інфраструктура власника):** Cloudflare WAF rate-limit, повна міграція Supabase, TG_WEBHOOK_SECRET, сильний ADMIN_PASSWORD, деактивація EmailJS, config.legal, індекси orders. **Код P2 на потім:** ~~C2~~ ✅ 20.06, ~~C5 (OpenGraph)~~ ✅ 20.06, ~~C6 (модалки в адмінці)~~ ✅ 20.06, ~~B1-хвіст (агрегати photographers/clients)~~ ✅ 20.06, ~~B5 (атомарний лічильник first-series)~~ ✅ 20.06. Лишилось: C7 (Web Analytics — фактично зайве, є власна first-party). **Весь код-беклог аудиту закрито.**
 
 ---
 
@@ -44,7 +45,8 @@
 
 ## 🟡 P1 — МАСШТАБ І НАДІЙНІСТЬ (під «великі потоки»)
 
-### B1. limit:9999 — повне завантаження таблиць у воркер
+### B1. limit:9999 — повне завантаження таблиць у воркер ✅ (20.06.2026)
+> Закрито: api-orders → `db.count()` (раніше); api-photographers/api-clients → агрегують лише атрибутовані рядки (`not.is.null`). Для нескінченного масштабу наступний крок — SQL-в'юха з GROUP BY, але «тягнути всю таблицю» усунено.
 **Доказ:** `api-orders.js:66` (`orders` усі для статистики), `api-photographers.js:24` (усі orders для підрахунку), `api-clients.js:26` (усі orders для агрегації).
 **Проблема:** O(N) памʼять+трафік у Worker; при тисячах замовлень — повільно/таймаут/ліміт памʼяті.
 **Фікс:** рахувати на боці БД — PostgREST агрегати (`select=count`, `Prefer: count=exact`) або SQL-в'юхи/RPC (Supabase functions) для статистики й лічильників. Не тягнути рядки у воркер.
@@ -63,7 +65,8 @@
 **Проблема:** великі фото → ліміти CPU/памʼяті Worker; послідовна відправка повільна; Telegram стискає якість.
 **Фікс:** перенести транспорт файлів на R2 (вже інтегровано для архіву); Telegram лишити лише як сповіщення. Деталі — у задачі нижче.
 
-### B5. firstSeriesUsed — гонка лічильника
+### B5. firstSeriesUsed — гонка лічильника ✅ (20.06.2026)
+> Закрито: атомарний `settings.first_series_claimed` + RPC `claim_first_series` (міграція секція 6), `claimFirstSeries()` в api-retail, спільне джерело для гейта й дисплея. Фолбек на старий метод до застосування міграції.
 **Доказ:** `api-retail.js` рахує використані слоти ПЕРЕД вставкою.
 **Оцінка:** при одночасних замовленнях можливе перевищення на 1-2. На обсягах старту прийнятно; за потреби — атомарний лічильник у settings/RPC.
 
@@ -76,7 +79,7 @@
 - **C3.** Немає favicon на більшості сторінок → додати `/favicon.ico` + `<link rel=icon>` (бренд-монограма).
 - **C4.** Немає `.dev.vars.example` → додати приклад env-змінних (без значень) для онбордингу/документації.
 - **C5.** ✅ (20.06.2026) OpenGraph/мета додано (index/nabir/order/partner) + спільна OG-картка `assets/og/og-cover.jpg` → прев'ю при шерингу в месенджери (фотографи пересилають `nabir?ph=`). Домен `proyav.pages.dev` зашито абсолютно — за зміни find/replace.
-- **C6.** Адмінка використовує `alert()/confirm()/prompt()` для дій (виплата, скидання, видалення) → замінити на нормальні модалки при переході на CRM.
+- **C6.** ✅ (20.06.2026) Усі `confirm()/prompt()` в адмінці (8 місць: масове просування, видалення витрати/складу/завдання, виплата, скидання пароля партнеру/клієнту, ±N складу) → promise-based `confirmModal()/promptModal()` у стилі панелі (реюз `.modal/.action/.action.danger/.input`). Закриття по бекдропу/✕ → resolve як «скасовано» (через `_modalDismiss` у `closeModal`). `alert()` уже не було (паролі — `credModal`).
 - **C7.** Cloudflare Web Analytics (cookieless) ще не підключено (ТЗ П2) — без метрик воронки.
 
 ---
@@ -94,7 +97,7 @@
 ---
 
 ## ⚠️ ДІЇ ВЛАСНИКА (env / інфраструктура)
-1. Виконати **повну міграцію** Supabase (`migrations/proyav_admin.sql`, усі секції 1–8).
+1. Виконати **повну міграцію** Supabase (`migrations/proyav_admin.sql`, усі секції) — **нове: секція 6** (лічильник «Першої серії» + RPC `claim_first_series`, B5). Безпечно повторно. До застосування — старий гонкий метод (працює).
 2. Встановити **`TG_WEBHOOK_SECRET`** і зареєструвати Telegram-webhook із ним (A3).
 3. Сильний **`ADMIN_PASSWORD`** (A2).
 4. Деактивувати старі ключі **EmailJS** (були публічні).

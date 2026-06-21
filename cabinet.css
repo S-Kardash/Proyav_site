@@ -183,7 +183,7 @@ body.pv.pv-scan[data-theme="paper"] .pv-main::before { background: repeating-lin
 .pv-btn--primary:hover { filter: brightness(1.08); }
 .pv-btn--ghost { background: transparent; color: var(--paper); border: 1.5px solid var(--pv-line); border-radius: 999px; }
 .pv-btn--ghost:hover { border-color: var(--paper); }
-.pv-btn--mono { background: transparent; color: var(--paper); border: 1px solid var(--pv-line2); height: 40px; padding: 0 16px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
+.pv-btn--mono { background: transparent; color: var(--paper); border: 1px solid var(--pv-line2); height: 44px; padding: 0 16px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; }
 .pv-btn--mono:hover { background: var(--pv-surf2); border-color: var(--paper); }
 .pv-btn--full { width: 100%; }
 

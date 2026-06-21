@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, rateLimited, tooMany, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, firstSeriesUsed, packagePrice, commissionFor } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, rateLimited, tooMany, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, claimFirstSeries, releaseFirstSeries, packagePrice, commissionFor } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -64,10 +64,9 @@ export async function onRequest(context) {
   // Кожне платне package-замовлення отримує −discountPct, поки слотів < ліміту.
   let firstSeries = false;
   if (FIRST_SERIES.enabled && isPackage && !free && finalTotal > 0) {
-    const used = await firstSeriesUsed(client).catch(() => FIRST_SERIES.slots);
-    if (used < FIRST_SERIES.slots) {
-      firstSeries = true;
-      finalTotal  = Math.round(finalTotal * (100 - FIRST_SERIES.discountPct) / 100);
+    firstSeries = await claimFirstSeries(client); // атомарний claim; ніколи не кидає (внутр. фолбек)
+    if (firstSeries) {
+      finalTotal = Math.round(finalTotal * (100 - FIRST_SERIES.discountPct) / 100);
     }
   }
 
@@ -136,6 +135,19 @@ export async function onRequest(context) {
         console.error('[retail] retry INSERT also failed:', dbError);
       }
     }
+  }
+
+  // Слот «Першої серії» бронюється ДО вставки. Якщо замовлення так і не збереглося —
+  // повертаємо слот, щоб лічильник промо не «зʼїдався» фантомним замовленням (AUDIT B5).
+  if (firstSeries && !order) { await releaseFirstSeries(client); }
+
+  // Операційна страховка (B8): замовлення не записалось у orders → кладемо сирий payload
+  // у failed_orders, щоб власник нічого не загубив, навіть якщо проґавить Telegram-пінг.
+  if (!order && dbError) {
+    await client.query('failed_orders', {
+      method: 'POST',
+      body: { payload: insertBody, error: String(dbError).slice(0, 500), ref: order_ref || null },
+    }).catch(e => console.error('[retail] failed_orders capture:', e.message));
   }
 
   const productLabel = finalType ? (PRODUCT_NAMES[finalType] || finalType) : 'Роздрібний друк';

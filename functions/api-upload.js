@@ -62,17 +62,22 @@ export async function onRequest({ request, env }) {
     return fail('Не вдалося зберегти файл', 502);
   }
 
-  // Реєстр кадру (не фатально — файл уже в R2).
-  client.query('order_photos', {
-    method: 'POST',
-    body: {
-      order_token: token,
-      storage_key: key,
-      color: request.headers.get('X-Color') || null,
-      paper: request.headers.get('X-Paper') || null,
-      qty:   Number(request.headers.get('X-Qty')) || 1,
-    },
-  }).catch(e => console.error('[upload] order_photos:', e.message));
+  // Реєстр кадру — AWAIT (інакше fire-and-forget promise рантайм може скасувати ПІСЛЯ
+  // відповіді → кадр лежить у R2, але невидимий в адмінці/кабінеті, бо лістинг іде з
+  // order_photos). Файл у R2 вже є, тож збій не втрачає кадр; одна повторна спроба
+  // зменшує «orphan»-кадри при тимчасовому збої БД.
+  const photoRow = {
+    order_token: token,
+    storage_key: key,
+    color: request.headers.get('X-Color') || null,
+    paper: request.headers.get('X-Paper') || null,
+    qty:   Number(request.headers.get('X-Qty')) || 1,
+  };
+  let registered = false;
+  for (let attempt = 0; attempt < 2 && !registered; attempt++) {
+    try { await client.query('order_photos', { method: 'POST', body: photoRow }); registered = true; }
+    catch (e) { console.error('[upload] order_photos attempt', attempt + 1, ':', e.message); }
+  }
 
-  return ok({ ok: true, key });
+  return ok({ ok: true, key, registered });
 }

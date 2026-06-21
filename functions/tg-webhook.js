@@ -1,4 +1,4 @@
-import { db } from './_utils.js';
+import { db, randomToken } from './_utils.js';
 
 /**
  * tg-webhook.js — Telegram Bot webhook (MARKETING_CONTEXT 8.4).
@@ -77,7 +77,9 @@ export async function onRequest(context) {
     await client.query('photographers', {
       method:  'PATCH',
       filters: { id: `eq.${ph.id}` },
-      body:    { tg_chat_id: String(chatId) },
+      // Ротуємо link-token після привʼязки: старе посилання більше не зможе перепривʼязати
+      // сповіщення на чужий chat_id, навіть якщо витекло.
+      body:    { tg_chat_id: String(chatId), tg_link_token: randomToken(16) },
     });
 
     await tgSend(env, chatId,

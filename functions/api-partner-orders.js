@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, db, randomToken, commissionFor } from './_utils.js';
+import { ok, fail, preflight, authRequest, db, randomToken, commissionFor, siteOrigin } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -21,25 +21,44 @@ export async function onRequest(context) {
       limit:   200,
     });
 
-    // Tier-based commission — grows with lifetime activity (config.js / _utils).
-    const totalOrders = (orders || []).length;
-    const tier    = commissionFor(totalOrders);
-    const commPct = tier.pct;
-    const now     = new Date();
-    const thisMonth = (orders || []).filter(o => {
-      const d = new Date(o.created_at);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    const monthRevenue   = thisMonth.reduce((s, o) => s + (o.total_amount || 0), 0);
-    const allTimeRevenue = (orders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
+    const all  = orders || [];
+    const paid = all.filter(o => o.status === 'paid');
 
-    // ── Telegram link state (8.4): lazily mint a stable link token so the
-    // cabinet can build t.me/<bot>?start=<token>; report connected status. ──
+    // Фотограф (тариф + tg-стан) — фетчимо ОДИН раз.
+    let me = null;
+    try {
+      me = await client.query('photographers', {
+        select: 'id,tg_chat_id,tg_link_token,commission_pct', filters: { id: `eq.${phId}` }, single: true,
+      });
+    } catch (e) { console.error('[partner-orders] photographer:', e.message); }
+
+    // Тариф = збережений commission_pct (саме його платить адмінка → кабінет показує те
+    // саме число). Рівень (для прогресу) росте з ВИКОНАНИМИ (оплаченими) замовленнями.
+    const commPct = Number(me && me.commission_pct) || commissionFor(paid.length).pct || 12;
+    const tier    = commissionFor(paid.length);
+
+    const now = new Date();
+    const isThisMonth = d => { const x = new Date(d); return x.getMonth() === now.getMonth() && x.getFullYear() === now.getFullYear(); };
+    const paidMonth = paid.filter(o => isThisMonth(o.paid_at || o.created_at));
+
+    // Зароблено — ЛИШЕ з оплачених (2A-1). Очікує — з ще не оплачених.
+    const monthEarned   = Math.round(paidMonth.reduce((s, o) => s + (o.total_amount || 0), 0) * commPct / 100);
+    const alltimeEarned = Math.round(paid.reduce((s, o) => s + (o.total_amount || 0), 0) * commPct / 100);
+    const pendingComm   = Math.round(all.filter(o => o.status !== 'paid').reduce((s, o) => s + (o.total_amount || 0), 0) * commPct / 100);
+
+    // Виплачено партнеру (expenses «Комісія фотографу», прив'язані до нього — секція 7).
+    let paidOut = 0;
+    try {
+      const exp = await client.query('expenses', {
+        select: 'amount', filters: { category: 'eq.Комісія фотографу', photographer_id: `eq.${phId}` },
+      });
+      paidOut = (exp || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    } catch {}
+    const balance = Math.max(0, alltimeEarned - paidOut); // до виплати (net)
+
+    // ── Telegram link state (8.4): lazily mint a stable link token. ──
     let telegram = { connected: false, link_token: null, bot_username: env.TG_BOT_USERNAME || null };
     try {
-      const me = await client.query('photographers', {
-        select: 'id,tg_chat_id,tg_link_token', filters: { id: `eq.${phId}` }, single: true,
-      });
       let linkToken = me && me.tg_link_token;
       if (!linkToken) {
         linkToken = randomToken(16);
@@ -51,16 +70,19 @@ export async function onRequest(context) {
     } catch (e) { console.error('[partner-orders] telegram state:', e.message); }
 
     return ok({
-      orders: orders || [],
+      orders: all,
       telegram,
       stats: {
-        total:              totalOrders,
-        this_month:         thisMonth.length,
+        total:              all.length,
+        paid:               paid.length,
+        this_month:         all.filter(o => isThisMonth(o.created_at)).length,
         commission_pct:     commPct,
         tier:               tier,
-        month_revenue:      monthRevenue,
-        month_commission:   Math.round(monthRevenue * commPct / 100),
-        alltime_commission: Math.round(allTimeRevenue * commPct / 100),
+        month_commission:   monthEarned,
+        alltime_commission: alltimeEarned,
+        pending_commission: pendingComm,
+        paid_out:           paidOut,
+        balance:            balance,
       },
     });
   }
@@ -96,7 +118,7 @@ export async function onRequest(context) {
       },
     });
 
-    const siteUrl = (env.SITE_URL || '').replace(/\/$/, '');
+    const siteUrl = siteOrigin(env, request);
     return ok({ order: data, link: `${siteUrl}/order?t=${token}` }, 201);
   }
 

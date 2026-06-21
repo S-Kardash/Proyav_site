@@ -793,6 +793,15 @@ function renderProfile() {
     </div>`;
 }
 
+// «Як оплатити» — показуємо лише для НЕоплачених замовлень (2B-5).
+function payInfoHTML(o) {
+  if (!o || o.status === 'paid' || !o.total_amount) return '';
+  const pay = (window.PROYAV && PROYAV.payment) || {};
+  const inner = pay.card
+    ? `Сума: <strong style="color:var(--paper)">${o.total_amount} ₴</strong> · переказ на картку <strong style="color:var(--paper)">${pay.card}</strong>${pay.holder ? ` (${pay.holder})` : ''}${pay.cod ? ' або накладений платіж при отриманні' : ''}. У призначенні вкажіть номер замовлення.`
+    : `Оплата при отриманні (накладений платіж Нової Пошти) або переказ на картку — реквізити надішлемо особисто.`;
+  return `<div class="pv-shead"><h2>Як оплатити</h2></div><div class="pv-card" style="font-size:13px;line-height:1.6;color:var(--paper-70)">${inner}</div>`;
+}
 // ─── PAGE: detail ────────────────────────────────────────────────────────────
 function renderDetail(token) {
   const o = ORDERS.find(x => x.token === token);
@@ -880,6 +889,7 @@ function renderDetail(token) {
             <span class="v" style="font-family:var(--font-display);font-style:italic;font-size:20px">${o.total_amount||0} ₴</span>
           </div>
         </div>
+        ${payInfoHTML(o)}
         <div style="display:flex;gap:10px;margin-top:18px">
           <a href="/status?t=${encodeURIComponent(o.token)}" class="pv-btn pv-btn--ghost" style="flex:1;text-decoration:none">Публічний статус</a>
           <button class="pv-btn pv-btn--primary" style="flex:1" data-page="order">Проявити ще →</button>

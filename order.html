@@ -825,7 +825,7 @@
 
       <div class="direct-note" id="direct-note">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
-        <span>Замовляєте напряму, без фотографа? Усе правильно — це поле лише щоб знайти ваше замовлення.</span>
+        <span>Без фотографа, напряму? Усе правильно — впишіть свій Instagram для зв'язку, а решту заповните на наступних кроках.</span>
       </div>
 
       <div class="direct-note" style="margin-top:8px">
@@ -1104,7 +1104,7 @@
 
         <div class="direct-note" style="margin-bottom:8px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>
-          <span>Оплата — при отриманні (накладений платіж Нової Пошти) або переказ на картку після підтвердження. Реквізити надішлемо особисто.</span>
+          <span id="pay-info">Оплата — при отриманні (накладений платіж Нової Пошти) або переказ на картку після підтвердження. Реквізити надішлемо особисто.</span>
         </div>
 
         <div class="post-email" id="post-email-block" style="display:none">
@@ -1434,7 +1434,9 @@ function showPackageBanner(pkgKey) {
   document.getElementById('magic-product').textContent  = pkg.price + '₴ · до ' + pkg.photos + ' фото';
   banner.classList.add('show');
   bannerKind = 'package';
-  document.getElementById('direct-note')?.classList.add('hidden');
+  // Прямий клієнт (без фотографа) має бачити явну нотатку «замовляєте напряму» (8.7);
+  // ховаємо її ЛИШЕ коли замовлення прив'язане до фотографа — там вона недоречна.
+  document.getElementById('direct-note')?.classList.toggle('hidden', !!S.photographerId);
 }
 
 // Безкоштовний пробний відбиток (фотограф тестує якість руками)
@@ -3137,7 +3139,7 @@ async function submitOrder(e) {
 
   // Finalize magic link order in Supabase (non-blocking).
   // Pass the (possibly auto-upgraded) product_type so the order reflects the real set.
-  finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
+  const finalizePromise = finalizeWithToken(S.photos.length, tq, totalAmt, t.productType);
 
   // Save retail order to Supabase FIRST and await it: its token links every
   // archived photo to the order (R2) and feeds the client status link.
@@ -3146,14 +3148,17 @@ async function submitOrder(e) {
     try {
       const res = await saveRetailOrderToSupabase(orderId, tq, totalAmt);
       if (res && res.token) { CURRENT_ORDER_TOKEN = res.token; setStatusLink(res.token); }
-      if (res && typeof res.total_amount === 'number') successTotal = res.total_amount;
-      if (res && res.first_series) successFirstSeries = true;
+      // Server-authoritative сума + мітка першої серії читаються разом (не розʼєднано),
+      // щоб бейдж ніколи не зʼявився поряд із незниженою клієнтською оцінкою.
+      if (res && typeof res.total_amount === 'number') { successTotal = res.total_amount; successFirstSeries = !!res.first_series; }
     } catch (e) {
       console.warn('[submit] retail Supabase save failed:', e.message);
     }
   } else {
     // Magic-link order: the token is already in the URL.
     setStatusLink(MAGIC_TOKEN);
+    // Беремо суму, яку api-finalize перерахував на сервері (C2), а не клієнтську оцінку.
+    try { const fr = await finalizePromise; if (fr && typeof fr.total_amount === 'number') successTotal = fr.total_amount; } catch {}
   }
 
   let tgOk = false;
@@ -3166,8 +3171,15 @@ async function submitOrder(e) {
       const ph  = S.photos[i];
       const pct = Math.round(((i + 1) / S.photos.length) * 100);
       btn.innerHTML = '<div class="btn-spinner"></div> Кадр ' + (i + 1) + '/' + S.photos.length + ' (' + pct + '%)...';
-      try { await uploadPhotoToR2(ph, CURRENT_ORDER_TOKEN); r2Ok++; }
-      catch (err) { r2Fail++; console.warn('[submit] R2 upload', i + 1, 'failed:', err.message); }
+      // Один ретрай при збої (мережеві обриви) — кадри це головний результат, не губимо.
+      let uploaded = false;
+      for (let attempt = 0; attempt < 2 && !uploaded; attempt++) {
+        try { await uploadPhotoToR2(ph, CURRENT_ORDER_TOKEN); r2Ok++; uploaded = true; }
+        catch (err) {
+          if (attempt === 0) { await new Promise(r => setTimeout(r, 800)); }
+          else { r2Fail++; console.warn('[submit] R2 upload', i + 1, 'failed:', err.message); }
+        }
+      }
     }
   }
 
@@ -3200,6 +3212,7 @@ async function submitOrder(e) {
   if (peb) peb.style.display = S.email ? 'none' : '';
   window._lastOrderId = orderId;
   renderSuccessTotal(successTotal, successFirstSeries);
+  renderPaymentInfo(successTotal);
   clearDraft();
   celebrate();
   goTo(5);
@@ -3212,6 +3225,7 @@ function renderSuccessTotal(total, firstSeries) {
   const lblEl  = wrap.querySelector('.lbl');
   const valEl  = document.getElementById('success-total-val');
   const discEl = document.getElementById('success-discount');
+  if (!valEl || !discEl) return;
   if (!total || total <= 0) {
     if (lblEl) lblEl.textContent = 'ПРОБНИЙ ВІДБИТОК';
     valEl.textContent = 'Безкоштовно';
@@ -3219,10 +3233,31 @@ function renderSuccessTotal(total, firstSeries) {
   } else {
     if (lblEl) lblEl.textContent = 'СУМА ЗАМОВЛЕННЯ';
     valEl.textContent = total + ' ₴';
-    if (firstSeries) { discEl.textContent = 'Перша серія · знижку 15% враховано'; discEl.style.display = ''; }
+    // Преміум не кричить про дисконт (конституція Розд. 5): «цінність, не знижка» —
+    // подаємо як ціновий рівень, без слова «знижка» і без хардкоду відсотка.
+    if (firstSeries) { discEl.textContent = 'Застосовано ціну «першої серії»'; discEl.style.display = ''; }
     else discEl.style.display = 'none';
   }
   wrap.style.display = '';
+}
+
+/* ─ Платіжні реквізити на екрані успіху (Ітерація 2): конкретна сума + картка, якщо ─
+   ─ власник заповнив config.payment; інакше лишається дефолтний текст. ─ */
+function renderPaymentInfo(total) {
+  const el = document.getElementById('pay-info');
+  if (!el) return;
+  const pay = (window.PROYAV && PROYAV.payment) || {};
+  if (!total || total <= 0) {
+    el.textContent = 'Це безкоштовний пробний відбиток — оплати немає, ми надішлемо його вам.';
+    return;
+  }
+  if (pay.card) {
+    const holder = pay.holder ? ' (' + pay.holder + ')' : '';
+    const cod = pay.cod ? ' Або накладений платіж при отриманні.' : '';
+    // card/holder — з config.js (довірені, не користувацький ввід) → без esc.
+    el.innerHTML = `Сума до сплати: <strong style="color:var(--paper)">${total} ₴</strong>. Переказ на картку <strong style="color:var(--paper)">${pay.card}</strong>${holder} — у призначенні вкажіть номер замовлення.${cod}`;
+  }
+  // else: лишаємо дефолтний текст «реквізити надішлемо особисто»
 }
 
 /* ─ Post-order email capture (value-add, optional) ─ */
@@ -3242,6 +3277,11 @@ async function submitPostEmail() {
   try {
     await tgSendText('📧 <b>[ПРОЯВ] Клієнт лишив пошту</b>\nЗамовлення: ' + (window._lastOrderId || '—') + '\nEmail: ' + v + '\nІм\'я: ' + (S.name || '—'));
   } catch (e) { /* non-fatal */ }
+
+  // Зберегти email у замовлення (щоб не загубити; token = capability) — 2B-6.
+  if (CURRENT_ORDER_TOKEN) {
+    try { await fetchWithTimeout('/api-order-contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: CURRENT_ORDER_TOKEN, email: v }) }); } catch (e) { /* non-fatal */ }
+  }
 
   // Replace the form with a thank-you
   const block = document.getElementById('post-email-block');
@@ -3447,9 +3487,9 @@ async function validateMagicToken() {
 }
 
 async function finalizeWithToken(photoCount, qtyTotal, totalAmount, productType) {
-  if (!MAGIC_TOKEN) return; // no token = old flow, skip
+  if (!MAGIC_TOKEN) return null; // no token = old flow, skip
   try {
-    await fetchWithTimeout(FINAL_API, {
+    const r = await fetchWithTimeout(FINAL_API, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3460,9 +3500,11 @@ async function finalizeWithToken(photoCount, qtyTotal, totalAmount, productType)
         product_type: productType || null, // (auto-upgraded) набір; бекенд перерахує ціну від нього
       }),
     });
+    return await r.json().catch(() => null); // { total_amount, product_type } — для C2
   } catch (e) {
     console.error('[magic] finalize failed:', e.message);
     // Non-fatal — order still delivered via TG/email
+    return null;
   }
 }
 

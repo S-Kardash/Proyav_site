@@ -48,18 +48,27 @@ export async function onRequest(context) {
     if (!b.date)                       return fail('Потрібна дата');
     if (b.amount == null || b.amount < 0) return fail('Потрібна сума ≥ 0');
 
-    const data = await client.query('expenses', {
-      method: 'POST',
-      single: true,
-      body: {
-        date:     b.date,
-        category: b.category || 'Інше',
-        descr:    b.descr || '',
-        amount:   Number(b.amount),
-        payment:  b.payment || 'Готівка',
-        note:     b.note || '',
-      },
-    });
+    const body = {
+      date:     b.date,
+      category: b.category || 'Інше',
+      descr:    b.descr || '',
+      amount:   Number(b.amount),
+      payment:  b.payment || 'Готівка',
+      note:     b.note || '',
+    };
+    // Виплату комісії лінкуємо до фотографа (для чистого балансу, секція 7 міграції).
+    if (b.photographer_id) body.photographer_id = b.photographer_id;
+    let data;
+    try {
+      data = await client.query('expenses', { method: 'POST', single: true, body });
+    } catch (e) {
+      // Якщо колонку photographer_id ще не додано (міграцію не застосовано) — пишемо
+      // витрату без неї, щоб облік не ламався (graceful degradation).
+      if (body.photographer_id && /photographer_id|column/i.test(e.message || '')) {
+        delete body.photographer_id;
+        data = await client.query('expenses', { method: 'POST', single: true, body });
+      } else { throw e; }
+    }
     const isPayout = (b.category || '') === 'Комісія фотографу';
     await logAudit(env, isPayout ? 'payout' : 'expense', 'expense:' + data.id,
       `${b.category || 'Інше'} ${Number(b.amount)}₴${b.descr ? ' · ' + b.descr : ''}`);
