@@ -47,12 +47,14 @@ export async function onRequest(context) {
     const pendingComm   = Math.round(all.filter(o => o.status !== 'paid').reduce((s, o) => s + (o.total_amount || 0), 0) * commPct / 100);
 
     // Виплачено партнеру (expenses «Комісія фотографу», прив'язані до нього — секція 7).
-    let paidOut = 0;
+    let paidOut = 0, payouts = [];
     try {
       const exp = await client.query('expenses', {
-        select: 'amount', filters: { category: 'eq.Комісія фотографу', photographer_id: `eq.${phId}` },
+        select: 'amount,date', filters: { category: 'eq.Комісія фотографу', photographer_id: `eq.${phId}` },
+        order: 'date.desc',
       });
-      paidOut = (exp || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      payouts = (exp || []).map(e => ({ amount: Number(e.amount) || 0, date: e.date }));
+      paidOut = payouts.reduce((s, p) => s + p.amount, 0);
     } catch {}
     const balance = Math.max(0, alltimeEarned - paidOut); // до виплати (net)
 
@@ -72,6 +74,7 @@ export async function onRequest(context) {
     return ok({
       orders: all,
       telegram,
+      payouts,
       stats: {
         total:              all.length,
         paid:               paid.length,

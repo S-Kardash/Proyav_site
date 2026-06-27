@@ -296,7 +296,10 @@ const STATUS={new:{label:'Нове',short:'Нове'},uploaded:{label:'Фото 
 const FLOW=['new','uploaded','in_progress','sent','paid'];
 const CAT_COLORS=['#C4956C','#6bbf8a','#8A8580','#B23A2C','#9b7bb8','#d9b48c','#7a9bb0','#c98f8f'];
 const STATUS_COLOR={new:'#B5AFA6',uploaded:'#C4956C',in_progress:'#C4956C',sent:'#F3EEE6',paid:'#6bbf8a'};
-const CH={photographer:{label:'Партнер',color:'#C4956C'},package:{label:'Пакет',color:'#9fbdd0'},retail:{label:'Напряму',color:'#8A8580'}};
+// Канал = ЯК прийшло замовлення. package/retail — це прямий клієнт (роздріб вимкнено,
+// тож «Роздріб» зазвичай порожній); photographer — через партнера. Порожні канали
+// ховаємо в донаті (нижче .filter(value>0)), щоб не плутати мертвим «Роздробом».
+const CH={photographer:{label:'Через фотографа',color:'#C4956C'},package:{label:'Напряму',color:'#9fbdd0'},retail:{label:'Роздріб',color:'#8A8580'}};
 
 const NAV=[
   ['dashboard','Огляд','<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="4.5" height="4.5"/><rect x="7.5" y="2" width="4.5" height="4.5"/><rect x="2" y="7.5" width="4.5" height="4.5"/><rect x="7.5" y="7.5" width="4.5" height="4.5"/></svg>'],
@@ -461,7 +464,7 @@ function PAGE_dashboard(){
   const goalTarget=p==='week'?Number(S.settings.weekly_target||0):Number(S.settings.monthly_target||0);
   const pct=goalTarget?Math.min(100,Math.round(revenue/goalTarget*100)):0;
   const fc={};FLOW.forEach(k=>fc[k]=S.orders.filter(o=>o.status===k).length);
-  const ch=Object.keys(CH).map(k=>({label:CH[k].label,value:S.orders.filter(o=>chKey(o)===k).length,color:CH[k].color}));
+  const ch=Object.keys(CH).map(k=>({label:CH[k].label,value:S.orders.filter(o=>chKey(o)===k).length,color:CH[k].color})).filter(c=>c.value>0);
   const ecm={};S.expenses.forEach(e=>{ecm[e.category]=(ecm[e.category]||0)+(Number(e.amount)||0);});
   const ecats=Object.entries(ecm).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,6);
   const phm={};S.orders.forEach(o=>{const n=o.photographers?.name;if(!n)return;phm[n]=phm[n]||{name:n,count:0,rev:0};phm[n].count++;if(o.status==='paid')phm[n].rev+=o.total_amount||0;});
@@ -828,14 +831,18 @@ function phCommission(p){
 function PAGE_photographers(){
   if(!S.loaded.photographers||!S.loaded.expenses)return head('№ 06 · СПІВАВТОРИ','Автори, які <em>з нами</em>')+`<p class="hint">Завантажуємо…</p>`;
   const active=S.photographers.filter(p=>p.active).length;
+  // Активовані = фотографи, що вже привели хоча б одне ОПЛАЧЕНЕ замовлення (здоров'я
+  // каналу №1: скільки зареєстрованих реально конвертують, а не сплять).
+  const activated=S.photographers.filter(p=>S.orders.some(o=>o.photographer_id===p.id&&o.status==='paid')).length;
   const comm=S.photographers.map(p=>phCommission(p));
   const totalAccrued=comm.reduce((s,c)=>s+c.accrued,0);
   const totalPaidOut=comm.reduce((s,c)=>s+c.paidOut,0);
   const totalOwed=comm.reduce((s,c)=>s+c.owed,0);
   const totalEarned=S.orders.filter(o=>o.source==='photographer'&&o.status==='paid').reduce((s,o)=>s+(o.total_amount||0),0);
-  return head('№ 06 · СПІВАВТОРИ','Автори, які <em>з нами</em>',`<span>${active} АКТИВНИХ</span>`,`<button class="action sm" onclick="openPh()">+ Додати партнера</button>`)+`
+  return head('№ 06 · СПІВАВТОРИ','Автори, які <em>з нами</em>',`<span>${activated}/${S.photographers.length} З ПРОДАЖАМИ</span>`,`<button class="action sm" onclick="openPh()">+ Додати партнера</button>`)+`
   <div class="stats">
-    <div class="stat"><span class="stat-key">Виторг через партнерів</span><span class="stat-val green">${money(totalEarned)}<span class="cur">₴</span></span><span class="stat-sub">${S.photographers.length} партнерів · ${active} активних</span></div>
+    <div class="stat"><span class="stat-key">Активовані</span><span class="stat-val sepia">${activated}<span style="font-size:14px;color:var(--paper-50)"> / ${S.photographers.length}</span></span><span class="stat-sub">з оплаченими замовленнями · ${active} увімкнено</span></div>
+    <div class="stat"><span class="stat-key">Виторг через партнерів</span><span class="stat-val green">${money(totalEarned)}<span class="cur">₴</span></span><span class="stat-sub">оплачені замовлення партнерів</span></div>
     <div class="stat"><span class="stat-key">Нараховано комісій</span><span class="stat-val">${money(totalAccrued)}<span class="cur">₴</span></span><span class="stat-sub">виплачено ${money(totalPaidOut)} ₴</span></div>
     <div class="stat"><span class="stat-key">До виплати</span><span class="stat-val sepia">${money(totalOwed)}<span class="cur">₴</span></span><span class="stat-sub">чистий борг (нараховано − виплачено)</span></div>
   </div>

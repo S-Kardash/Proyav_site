@@ -108,6 +108,12 @@
   .kit-principle .num { font-family: var(--font-display); font-style: italic; font-size: 19px; color: var(--acc); flex-shrink: 0; width: 18px; }
   .kit-principle .txt { font-size: 13.5px; line-height: 1.6; color: var(--paper-70); }
   .kit-principle .txt b { color: var(--paper); font-weight: 500; }
+
+  /* ── Історія виплат ── */
+  .pv-payout-row { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--pv-line); }
+  .pv-payout-row:last-child { border-bottom: none; }
+  .pv-payout-date { font-size: 13px; color: var(--paper-70); }
+  .pv-payout-amt { font-family: var(--font-display); font-style: italic; font-size: 16px; color: var(--acc); }
 </style>
 </head>
 <body class="pv pv-scan theme-dark" data-theme="dark">
@@ -121,24 +127,24 @@
     <div id="register-view">
       <h1 class="auth-h">Ваша робота<br>не повинна <em>в'янути</em>.</h1>
       <p class="auth-sub">Ви рекомендуєте — ми проявляємо ваш кадр в оксамиті так, щоб він зберіг задум. Ваш колір недоторканний. Почніть із безкоштовного пробного відбитка.</p>
-      <div class="field"><label>Ім'я</label><input class="inp" id="r-name" placeholder="Олена Кравець" autocomplete="name"></div>
-      <div class="field"><label>Email</label><input class="inp" id="r-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
-      <div class="field"><label>Пароль</label><input class="inp" id="r-pass" type="password" placeholder="мінімум 6 символів" autocomplete="new-password"></div>
-      <div class="field"><label>Місто</label><input class="inp" id="r-city" placeholder="Ваше місто"></div>
-      <div class="field"><label>Телефон <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="r-phone" type="tel" placeholder="+380"></div>
-      <label class="pv-consent"><input type="checkbox" id="r-consent"><span>Погоджуюся з <a href="/partnerstvo" target="_blank">Умовами партнерства</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span></label>
+      <div class="field"><label for="r-name">Ім'я</label><input class="inp" id="r-name" placeholder="Олена Кравець" autocomplete="name" aria-required="true"></div>
+      <div class="field"><label for="r-email">Email</label><input class="inp" id="r-email" type="email" placeholder="you@email.com" autocomplete="email" aria-required="true"></div>
+      <div class="field"><label for="r-pass">Пароль</label><input class="inp" id="r-pass" type="password" placeholder="мінімум 6 символів" autocomplete="new-password" aria-required="true"></div>
+      <div class="field"><label for="r-city">Місто</label><input class="inp" id="r-city" placeholder="Ваше місто"></div>
+      <div class="field"><label for="r-phone">Телефон <span style="opacity:.6">(необов'язково)</span></label><input class="inp" id="r-phone" type="tel" placeholder="+380"></div>
+      <label class="pv-consent"><input type="checkbox" id="r-consent" aria-required="true"><span>Погоджуюся з <a href="/partnerstvo" target="_blank">Умовами партнерства</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span></label>
       <button class="pv-btn pv-btn--primary pv-btn--full" id="r-btn" onclick="register()" style="margin-top:6px">Спробувати безкоштовно →</button>
-      <div class="err" id="r-err"></div>
+      <div class="err" id="r-err" role="alert"></div>
       <div class="auth-toggle">Уже маєте акаунт? <a onclick="showLogin()">Увійти</a></div>
     </div>
 
     <div id="login-view" class="hide">
       <h1 class="auth-h">З поверненням,<br><em>авторе</em>.</h1>
       <p class="auth-sub">Увійдіть, щоб бачити замовлення, комісію і створювати посилання клієнтам.</p>
-      <div class="field"><label>Email</label><input class="inp" id="l-email" type="email" placeholder="you@email.com" autocomplete="username"></div>
-      <div class="field"><label>Пароль</label><input class="inp" id="l-pass" type="password" placeholder="Пароль" autocomplete="current-password"></div>
+      <div class="field"><label for="l-email">Email</label><input class="inp" id="l-email" type="email" placeholder="you@email.com" autocomplete="username" aria-required="true"></div>
+      <div class="field"><label for="l-pass">Пароль</label><input class="inp" id="l-pass" type="password" placeholder="Пароль" autocomplete="current-password" aria-required="true"></div>
       <button class="pv-btn pv-btn--primary pv-btn--full" id="l-btn" onclick="login()" style="margin-top:6px">Увійти</button>
-      <div class="err" id="l-err"></div>
+      <div class="err" id="l-err" role="alert"></div>
       <div class="auth-toggle">Ще не з нами? <a onclick="showRegister()">Спробувати безкоштовно</a></div>
     </div>
 
@@ -208,7 +214,7 @@ const SITE = location.origin;
 let TOKEN   = localStorage.getItem('partner_token');
 let PH_DATA = JSON.parse(localStorage.getItem('partner_data') || 'null');
 
-let DATA = { orders: [], stats: {}, telegram: null };
+let DATA = { orders: [], stats: {}, telegram: null, payouts: [] };
 let curPct = 12;
 let curPage = 'home';
 
@@ -297,6 +303,7 @@ async function loadData(){
     DATA.orders = r.orders || [];
     DATA.stats  = r.stats || {};
     DATA.telegram = r.telegram || null;
+    DATA.payouts = r.payouts || [];
     curPct = (DATA.stats.tier && DATA.stats.tier.pct) || DATA.stats.commission_pct || 12;
     document.getElementById('nav-active').textContent = DATA.orders.filter(o=>ACTIVE_STATUSES.includes(o.status)).length;
     document.getElementById('nav-done').textContent   = DATA.orders.filter(o=>!ACTIVE_STATUSES.includes(o.status)).length;
@@ -422,6 +429,14 @@ function levelCardHTML(){
   </div>`;
 }
 
+// Історія виплат партнеру (з expenses «Комісія фотографу») — прозорість грошей.
+function payoutsHTML(){
+  const p = DATA.payouts || [];
+  if (!p.length) return '';
+  const rows = p.slice(0,12).map(x=>`<div class="pv-payout-row"><span class="pv-payout-date">${fmtDateLong(x.date)}</span><span class="pv-payout-amt">${x.amount} ₴</span></div>`).join('');
+  return `<div class="pv-shead"><h2>Виплати <span class="mono">на картку</span></h2></div><div class="pv-card">${rows}</div>`;
+}
+
 /* ════════ ARCHIVE ════════ */
 function renderArchive(){
   const done = DATA.orders.filter(o=>!ACTIVE_STATUSES.includes(o.status));
@@ -441,6 +456,7 @@ function renderArchive(){
       <div class="pv-stat"><div class="pv-stat-key">Виплачено</div><div class="pv-stat-val">${s.paid_out||0}<span class="u">₴</span></div></div>
       <div class="pv-stat"><div class="pv-stat-key">До виплати</div><div class="pv-stat-val" style="color:var(--acc)">${s.balance||0}<span class="u">₴</span></div></div>
     </div>
+    ${payoutsHTML()}
     ${list}`;
 }
 

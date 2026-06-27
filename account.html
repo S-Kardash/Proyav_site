@@ -113,14 +113,14 @@
     <div id="pv-login-form">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="pv-auth-field">
-          <label>Телефон</label>
-          <input class="pv-auth-input" id="login-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel">
+          <label for="login-phone">Телефон</label>
+          <input class="pv-auth-input" id="login-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel" aria-required="true">
         </div>
         <div class="pv-auth-field">
-          <label>Пароль</label>
-          <input class="pv-auth-input" id="login-password" type="password" placeholder="••••••" autocomplete="current-password">
+          <label for="login-password">Пароль</label>
+          <input class="pv-auth-input" id="login-password" type="password" placeholder="••••••" autocomplete="current-password" aria-required="true">
         </div>
-        <div id="login-err" class="pv-auth-err"></div>
+        <div id="login-err" class="pv-auth-err" role="alert"></div>
         <button class="pv-btn pv-btn--primary pv-btn--full" id="login-btn">Увійти</button>
       </div>
     </div>
@@ -128,22 +128,22 @@
     <div id="pv-register-form" style="display:none">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="pv-auth-field">
-          <label>Ваше ім'я</label>
-          <input class="pv-auth-input" id="reg-name" type="text" placeholder="Оксана Коваль" autocomplete="name">
+          <label for="reg-name">Ваше ім'я</label>
+          <input class="pv-auth-input" id="reg-name" type="text" placeholder="Оксана Коваль" autocomplete="name" aria-required="true">
         </div>
         <div class="pv-auth-field">
-          <label>Телефон</label>
-          <input class="pv-auth-input" id="reg-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel">
+          <label for="reg-phone">Телефон</label>
+          <input class="pv-auth-input" id="reg-phone" type="tel" placeholder="+380 67 123 45 67" autocomplete="tel" aria-required="true">
         </div>
         <div class="pv-auth-field">
-          <label>Пароль</label>
-          <input class="pv-auth-input" id="reg-password" type="password" placeholder="Мінімум 6 символів" autocomplete="new-password">
+          <label for="reg-password">Пароль</label>
+          <input class="pv-auth-input" id="reg-password" type="password" placeholder="Мінімум 6 символів" autocomplete="new-password" aria-required="true">
         </div>
         <label style="display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.5;color:var(--paper-70);cursor:pointer">
-          <input type="checkbox" id="reg-consent" style="width:17px;height:17px;margin-top:1px;flex-shrink:0;accent-color:var(--sepia)">
+          <input type="checkbox" id="reg-consent" aria-required="true" style="width:17px;height:17px;margin-top:1px;flex-shrink:0;accent-color:var(--sepia)">
           <span>Погоджуюся з <a href="/oferta" target="_blank" style="color:var(--sepia)">Офертою</a> та <a href="/privacy" target="_blank" style="color:var(--sepia)">Політикою конфіденційності</a>.</span>
         </label>
-        <div id="reg-err" class="pv-auth-err"></div>
+        <div id="reg-err" class="pv-auth-err" role="alert"></div>
         <button class="pv-btn pv-btn--primary pv-btn--full" id="reg-btn">Зареєструватись</button>
       </div>
     </div>
