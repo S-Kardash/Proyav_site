@@ -838,28 +838,28 @@
         <span id="sla-note">Зазвичай — 48 годин від кадрів до відправки.</span>
       </div>
 
-      <div class="seg" id="ident-seg">
-        <button class="seg-btn active" data-type="instagram" onclick="setIdentType('instagram')">
+      <div class="seg" id="ident-seg" role="group" aria-label="Як знайти ваше замовлення">
+        <button class="seg-btn active" data-type="instagram" aria-pressed="true" onclick="setIdentType('instagram')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>
           Instagram
         </button>
-        <button class="seg-btn" data-type="order" onclick="setIdentType('order')">
+        <button class="seg-btn" data-type="order" aria-pressed="false" onclick="setIdentType('order')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
           Замовлення
         </button>
       </div>
 
       <div class="input-wrap">
-        <label class="label" id="ident-label">Нікнейм Instagram</label>
+        <label class="label" id="ident-label" for="ident-input">Нікнейм Instagram</label>
         <div class="field-row" id="ident-row">
           <span class="order-prefix-badge" id="order-badge">ПРЯ-</span>
           <span class="input-prefix" id="ident-prefix">@</span>
-          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname"
+          <input class="input-field has-prefix" id="ident-input" type="text" placeholder="your_nickname" aria-required="true"
             oninput="onIdentInput()" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="30" inputmode="text">
           <span class="ident-counter" id="ident-counter"></span>
         </div>
         <div class="ident-hint" id="ident-hint"></div>
-        <div class="field-error" id="ident-err"></div>
+        <div class="field-error" id="ident-err" role="alert"></div>
       </div>
 
       <button class="btn-primary" id="btn-step1" onclick="tryStep1(event)" disabled>
@@ -876,47 +876,47 @@
       <div id="magic-locked-wrap" style="display:none"></div>
 
       <div class="input-wrap">
-        <label class="label">Ім'я та прізвище</label>
-        <input class="input-field" id="inp-name" type="text" placeholder="Оксана Коваль"
+        <label class="label" for="inp-name">Ім'я та прізвище</label>
+        <input class="input-field" id="inp-name" type="text" placeholder="Оксана Коваль" aria-required="true"
           oninput="liveValidate('inp-name','name-err',()=>document.getElementById('inp-name').value.trim().length>=2,'Введіть імʼя')" autocomplete="name">
-        <div class="field-error" id="name-err">Введіть ім'я (мінімум 2 символи)</div>
+        <div class="field-error" id="name-err" role="alert">Введіть ім'я (мінімум 2 символи)</div>
       </div>
 
       <div class="input-wrap">
-        <label class="label">Телефон</label>
-        <input class="input-field" id="inp-phone" type="tel" placeholder="+380 67 123 45 67"
+        <label class="label" for="inp-phone">Телефон</label>
+        <input class="input-field" id="inp-phone" type="tel" placeholder="+380 67 123 45 67" aria-required="true"
           oninput="liveValidate('inp-phone','phone-err',()=>isPhone(document.getElementById('inp-phone').value),'Некоректний номер')" autocomplete="tel">
-        <div class="field-error" id="phone-err">Введіть коректний номер телефону</div>
+        <div class="field-error" id="phone-err" role="alert">Введіть коректний номер телефону</div>
       </div>
 
       <div class="input-wrap">
-        <label class="label">Email <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;opacity:.5">(необов'язково)</span></label>
+        <label class="label" for="inp-email">Email <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;opacity:.5">(необов'язково)</span></label>
         <input class="input-field" id="inp-email" type="email" placeholder="you@email.com" oninput="liveEmailValidate()" autocomplete="email">
-        <div class="field-error" id="email-err">Некоректний email</div>
+        <div class="field-error" id="email-err" role="alert">Некоректний email</div>
       </div>
 
       <div class="input-wrap">
         <label class="label">Доставка</label>
-        <div class="seg">
-          <button class="seg-btn active" id="del-nova" data-del="nova" onclick="setDelivery('nova')">Нова Пошта</button>
-          <button class="seg-btn" id="del-self" data-del="self" onclick="setDelivery('self')">Самовивіз</button>
+        <div class="seg" role="group" aria-label="Спосіб доставки">
+          <button class="seg-btn active" id="del-nova" data-del="nova" aria-pressed="true" onclick="setDelivery('nova')">Нова Пошта</button>
+          <button class="seg-btn" id="del-self" data-del="self" aria-pressed="false" onclick="setDelivery('self')">Самовивіз</button>
         </div>
       </div>
 
       <div id="city-wrap">
         <div class="input-wrap np-field" style="margin-bottom:14px">
-          <label class="label">Місто</label>
-          <input class="input-field" id="inp-city" type="text" placeholder="Почніть вводити місто" autocomplete="off" oninput="onCityInput()" onfocus="onCityInput()">
+          <label class="label" for="inp-city">Місто</label>
+          <input class="input-field" id="inp-city" type="text" placeholder="Почніть вводити місто" autocomplete="off" aria-required="true" oninput="onCityInput()" onfocus="onCityInput()">
           <span class="np-picked" id="city-picked"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
           <div class="np-dropdown" id="city-dropdown"></div>
-          <div class="field-error" id="city-err">Оберіть місто зі списку</div>
+          <div class="field-error" id="city-err" role="alert">Оберіть місто зі списку</div>
         </div>
         <div class="input-wrap np-field" style="margin-bottom:0">
-          <label class="label">Відділення / Поштомат</label>
-          <input class="input-field" id="inp-warehouse" type="text" placeholder="Спершу оберіть місто" autocomplete="off" disabled oninput="onWarehouseInput()" onfocus="onWarehouseInput()">
+          <label class="label" for="inp-warehouse">Відділення / Поштомат</label>
+          <input class="input-field" id="inp-warehouse" type="text" placeholder="Спершу оберіть місто" autocomplete="off" aria-required="true" disabled oninput="onWarehouseInput()" onfocus="onWarehouseInput()">
           <span class="np-picked" id="wh-picked"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
           <div class="np-dropdown" id="wh-dropdown"></div>
-          <div class="field-error" id="wh-err">Оберіть відділення зі списку</div>
+          <div class="field-error" id="wh-err" role="alert">Оберіть відділення зі списку</div>
         </div>
       </div>
 
@@ -1026,10 +1026,10 @@
       </div>
 
       <label class="consent" id="consent-order">
-        <input type="checkbox" id="consent-cb" onchange="document.getElementById('consent-err').classList.remove('show')">
+        <input type="checkbox" id="consent-cb" aria-required="true" onchange="document.getElementById('consent-err').classList.remove('show')">
         <span>Я маю право на друк цих кадрів і погоджуюся з <a href="/oferta" target="_blank">Публічною офертою</a> та <a href="/privacy" target="_blank">Політикою конфіденційності</a>.</span>
       </label>
-      <div class="field-error" id="consent-err">Підтвердіть згоду, щоб передати замовлення в роботу</div>
+      <div class="field-error" id="consent-err" role="alert">Підтвердіть згоду, щоб передати замовлення в роботу</div>
 
       <button class="btn-primary" id="btn-submit" onclick="submitOrder(event)">Передати в роботу <span class="arrow">→</span></button>
     </div>
@@ -1576,6 +1576,10 @@ function goTo(step, back=false) {
   }
   renderStepper();
   if (step === 4) renderReview();
+  // A11y: переносимо фокус на заголовок нового кроку — скрінрідер озвучує крок, а фокус
+  // клавіатури не лишається на старій кнопці «Продовжити».
+  const heading = el && el.querySelector('.h-screen, .success-title');
+  if (heading) { heading.setAttribute('tabindex', '-1'); setTimeout(() => { try { heading.focus({ preventScroll: true }); } catch (e) {} }, 60); }
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 
@@ -1634,7 +1638,9 @@ function igErrorMsg(v) {
 
 function setIdentType(type) {
   S.identType = type;
-  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  // Скоупимо до #ident-seg (інакше зачіпало б і кнопки доставки, що не мають data-type)
+  // + синхронізуємо aria-pressed для скрінрідерів.
+  document.querySelectorAll('#ident-seg .seg-btn').forEach(b => { const on = b.dataset.type === type; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
 
   const label   = document.getElementById('ident-label');
   const prefix  = document.getElementById('ident-prefix');
@@ -1897,8 +1903,9 @@ document.addEventListener('click', e => {
 
 function setDelivery(type) {
   S.delivery = type;
-  document.getElementById('del-nova').classList.toggle('active', type==='nova');
-  document.getElementById('del-self').classList.toggle('active', type==='self');
+  const _dn=document.getElementById('del-nova'), _ds=document.getElementById('del-self');
+  _dn.classList.toggle('active', type==='nova'); _dn.setAttribute('aria-pressed', type==='nova'?'true':'false');
+  _ds.classList.toggle('active', type==='self'); _ds.setAttribute('aria-pressed', type==='self'?'true':'false');
   document.getElementById('city-wrap').style.display = type==='nova' ? '' : 'none';
   saveDraft();
 }
