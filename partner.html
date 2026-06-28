@@ -185,7 +185,7 @@
       </span>
     </a>
     <nav class="pv-nav" aria-label="Розділи кабінету">
-      <button class="pv-nav-btn" data-page="home"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>Кадри<span class="pv-nav-count" id="nav-active">0</span></button>
+      <button class="pv-nav-btn" data-page="home"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>Кадри<span class="pv-nav-count" id="nav-active">0</span><span class="pv-nav-dot" id="nav-unread" aria-hidden="true"></span></button>
       <button class="pv-nav-btn" data-page="archive"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/></svg></span>Архів<span class="pv-nav-count" id="nav-done">0</span></button>
       <button class="pv-nav-btn" data-page="order"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg></span>Проявити</button>
       <button class="pv-nav-btn" data-page="kit"><span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 2.2l6.5 3.3L9 8.8 2.5 5.5z"/><path d="M2.5 9L9 12.3 15.5 9"/></svg></span>Матеріали</button>
@@ -214,7 +214,7 @@ const SITE = location.origin;
 let TOKEN   = localStorage.getItem('partner_token');
 let PH_DATA = JSON.parse(localStorage.getItem('partner_data') || 'null');
 
-let DATA = { orders: [], stats: {}, telegram: null, payouts: [] };
+let DATA = { orders: [], stats: {}, telegram: null, payouts: [], notifications: [], unread: 0 };
 let curPct = 12;
 let curPage = 'home';
 
@@ -307,6 +307,9 @@ async function loadData(){
     curPct = (DATA.stats.tier && DATA.stats.tier.pct) || DATA.stats.commission_pct || 12;
     document.getElementById('nav-active').textContent = DATA.orders.filter(o=>ACTIVE_STATUSES.includes(o.status)).length;
     document.getElementById('nav-done').textContent   = DATA.orders.filter(o=>!ACTIVE_STATUSES.includes(o.status)).length;
+    // Сайтові сповіщення — головний надійний канал зворотного зв'язку (Ітер. 10).
+    try{ const n=await apiFetch(`${API}/api-partner-notifications`); DATA.notifications=n.notifications||[]; DATA.unread=n.unread||0; }catch(e){ DATA.notifications=[]; DATA.unread=0; }
+    updateNotifBadge(); checkNewNotifs();
     go(curPage); // re-render current page with fresh data
   }catch(e){ toast('Помилка: '+e.message); }
 }
@@ -365,6 +368,39 @@ function feedHTML(){
   }).join('') + `</div>`;
 }
 
+/* ════════ NOTIFICATIONS (Ітер. 10) ════════ */
+const NKIND = { paid:'var(--acc)', payout:'#5ccb8f', order:'var(--acc)', info:'var(--paper-50)' };
+function updateNotifBadge(){
+  const el=document.getElementById('nav-unread'); if(!el) return;
+  const u=(DATA.notifications||[]).filter(n=>!n.read).length;
+  el.classList.toggle('show', u>0);
+}
+// Тост лише про СПРАВДІ нові (id > останнього показаного). Перший вхід — мовчки
+// запам'ятовуємо максимум, щоб не сипати тостами по історії.
+function checkNewNotifs(){
+  const ns=DATA.notifications||[]; if(!ns.length) return;
+  const maxId=Math.max(...ns.map(n=>Number(n.id)||0));
+  let last; try{ last=localStorage.getItem('pv-notif-toast'); }catch(e){}
+  if(last==null){ try{ localStorage.setItem('pv-notif-toast',String(maxId)); }catch(e){} return; }
+  const lastN=Number(last)||0;
+  const fresh=ns.filter(n=>(Number(n.id)||0)>lastN && !n.read);
+  if(fresh.length){ toast('🔔 '+(fresh[0].title||'Нове сповіщення')); try{ localStorage.setItem('pv-notif-toast',String(maxId)); }catch(e){} }
+}
+function pnotifHTML(){
+  const ns=DATA.notifications||[]; if(!ns.length) return '';
+  const unread=ns.filter(n=>!n.read).length;
+  const head=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="pv-cap" style="color:var(--acc)">Сповіщення${unread?' · '+unread+' '+plural(unread,'нове','нові','нових'):''}</span>${unread?'<button class="pv-link" onclick="markPnotifsRead()">Прочитано</button>':''}</div>`;
+  const rows=ns.slice(0,4).map(n=>{
+    const dot=n.read?'var(--paper-30)':(NKIND[n.kind]||'var(--acc)');
+    return `<div style="padding:9px 0;border-top:1px solid var(--pv-line);display:flex;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:${dot};margin-top:6px;flex-shrink:0"></span><div><div style="font-size:14px;color:var(--paper);line-height:1.45">${n.title?'<b>'+esc(n.title)+'</b> ':''}${esc(n.body||'')}</div><div class="pv-cap" style="margin-top:3px">${fmtDateLong(n.created_at)}</div></div></div>`;
+  }).join('');
+  return `<div class="pv-card" style="margin-bottom:22px;${unread?'border-color:rgba(196,149,108,.4)':''}">${head}${rows}</div>`;
+}
+async function markPnotifsRead(){
+  try{ await apiFetch(`${API}/api-partner-notifications`,{method:'PUT',body:JSON.stringify({all:true})}); }catch(e){}
+  (DATA.notifications||[]).forEach(n=>n.read=true); DATA.unread=0; updateNotifBadge(); go('home');
+}
+
 /* ════════ HOME ════════ */
 function orderCardHTML(o){
   const bc = BADGE[o.status] || 'received';
@@ -393,6 +429,7 @@ function renderHome(){
         <h1 class="pv-ptitle">Кадри <em>в роботі</em></h1></div>
       <div class="pv-pmeta"><span><span class="pv-dot" style="display:inline-block;vertical-align:middle"></span> <strong>${active.length}</strong> активні</span></div>
     </div>
+    ${pnotifHTML()}
     <div class="pv-home-cols">
       <div>
         ${ordersHTML}

@@ -143,6 +143,26 @@ export async function logAudit(env, action, entity, detail, actor = 'admin') {
   } catch (e) { console.error('[audit]', e.message); }
 }
 
+// ── Сайтове сповіщення фотографу (кабінет partner.html) ─────────────────────
+// Дзеркало client_notifications. Головний НАДІЙНИЙ канал зворотного зв'язку
+// (Telegram — бонус). Non-fatal, як logAudit: ніколи не валить основну дію; якщо
+// міграцію (секція 12) ще не застосовано — тихо ковтаємо помилку.
+export async function notifyPhotographer(env, photographerId, { title, body, kind = 'info', orderToken = null } = {}) {
+  if (!photographerId) return;
+  try {
+    await db(env).query('photographer_notifications', {
+      method: 'POST',
+      body: {
+        photographer_id: photographerId,
+        order_token:     orderToken,
+        title:           (title || '').slice(0, 120) || null,
+        body:            (body  || '').slice(0, 1000) || null,
+        kind,
+      },
+    });
+  } catch (e) { console.error('[notifyPhotographer]', e.message); }
+}
+
 // ── JWT (HS256) via Web Crypto ────────────────────────────────────────────
 function b64url(obj) {
   const str = typeof obj === 'string' ? obj : JSON.stringify(obj);

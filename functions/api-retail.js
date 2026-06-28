@@ -1,4 +1,4 @@
-import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, rateLimited, tooMany, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, claimFirstSeries, releaseFirstSeries, packagePrice, commissionFor } from './_utils.js';
+import { ok, fail, preflight, db, randomToken, sheetsAppend, verifyJWT, rateLimited, tooMany, PRODUCT_NAMES, PACKAGES, PRINT_PRICE, RETAIL_ENABLED, FIRST_SERIES, claimFirstSeries, releaseFirstSeries, packagePrice, commissionFor, notifyPhotographer } from './_utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -181,31 +181,42 @@ export async function onRequest(context) {
     }).catch(e => console.error('[retail] TG:', e.message));
   }
 
-  // ── Telegram push to the photographer: a client ordered via their reusable
-  // link (8.4). Skip the free trial (that's the photographer printing their own
-  // sample, not a client order). Only fires if they connected Telegram. ──
+  // ── Сповіщення фотографу: клієнт замовив за його багаторазовим посиланням (8.4).
+  // Сайтове сповіщення в кабінет — завжди (головний надійний канал); Telegram-пінг —
+  // якщо підключив (бонус). Пропускаємо free-trial (це фотограф друкує власний зразок,
+  // не замовлення клієнта). Не блокує відповідь клієнту (best-effort, waitUntil). ──
   const attributedPhId = order && order.photographer_id;
-  if (attributedPhId && !free && env.TG_TOKEN) {
-    try {
-      const ph = await client.query('photographers', {
-        select: 'name,tg_chat_id', filters: { id: `eq.${attributedPhId}` }, single: true,
-      }).catch(() => null);
-      if (ph && ph.tg_chat_id) {
-        const cnt = await client.query('orders', { select: 'id', filters: { photographer_id: `eq.${attributedPhId}` } }).catch(() => []);
-        const pct  = commissionFor((cnt || []).length).pct;
+  if (attributedPhId && !free) {
+    const notifyWork = (async () => {
+      try {
+        const ph = await client.query('photographers', {
+          select: 'name,tg_chat_id,commission_pct', filters: { id: `eq.${attributedPhId}` }, single: true,
+        }).catch(() => null);
+        // Тариф = збережений commission_pct (саме його платить адмінка → кабінет показує те
+        // саме число); фолбек 12% для нового фотографа без збереженого тарифу.
+        const pct  = Number(ph && ph.commission_pct) || commissionFor(0).pct;
         const comm = finalTotal ? Math.round(finalTotal * pct / 100) : 0;
-        const text =
-          `🆕 <b>Замовлення через ваше посилання!</b>\n\n` +
-          `${name.trim()} замовив ${productLabel}${finalTotal ? ` на ${finalTotal}₴` : ''}.\n` +
-          (comm ? `Очікувана комісія: <b>+${comm}₴</b> після оплати.\n` : '') +
-          `\nМи беремо друк і доставку на себе — ви просто завершуєте досвід 🤍`;
-        await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ chat_id: ph.tg_chat_id, text, parse_mode: 'HTML' }),
+        await notifyPhotographer(env, attributedPhId, {
+          kind: 'order', orderToken: token,
+          title: 'Замовлення за вашим посиланням',
+          body: `${name.trim()} замовив ${productLabel}${finalTotal ? ` на ${finalTotal}₴` : ''}.`
+              + (comm ? ` Очікувана комісія +${comm}₴ після оплати.` : ''),
         });
-      }
-    } catch (e) { console.error('[retail] photographer notify:', e.message); }
+        if (ph && ph.tg_chat_id && env.TG_TOKEN) {
+          const text =
+            `🆕 <b>Замовлення через ваше посилання!</b>\n\n` +
+            `${name.trim()} замовив ${productLabel}${finalTotal ? ` на ${finalTotal}₴` : ''}.\n` +
+            (comm ? `Очікувана комісія: <b>+${comm}₴</b> після оплати.\n` : '') +
+            `\nМи беремо друк і доставку на себе — ви просто завершуєте досвід 🤍`;
+          await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ chat_id: ph.tg_chat_id, text, parse_mode: 'HTML' }),
+          });
+        }
+      } catch (e) { console.error('[retail] photographer notify:', e.message); }
+    })();
+    if (context.waitUntil) context.waitUntil(notifyWork); else await notifyWork;
   }
 
   // ── Google Sheets sync — НЕ блокує відповідь (AUDIT B2): waitUntil виконує

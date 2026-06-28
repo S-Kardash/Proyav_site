@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, isOwner, db, logAudit } from './_utils.js';
+import { ok, fail, preflight, authRequest, isOwner, db, logAudit, notifyPhotographer } from './_utils.js';
 
 const CATEGORIES = [
   'Матеріали', 'Доставка', 'Оренда', 'Маркетинг',
@@ -72,6 +72,15 @@ export async function onRequest(context) {
     const isPayout = (b.category || '') === 'Комісія фотографу';
     await logAudit(env, isPayout ? 'payout' : 'expense', 'expense:' + data.id,
       `${b.category || 'Інше'} ${Number(b.amount)}₴${b.descr ? ' · ' + b.descr : ''}`);
+    // N4: помітний зворотний зв'язок фотографу «вам виплачено» (прод-тест: гроші
+    // приходили непомітно). Сайтове сповіщення в кабінет — надійний канал.
+    if (isPayout && b.photographer_id) {
+      await notifyPhotographer(env, b.photographer_id, {
+        kind: 'payout',
+        title: 'Виплата на картку',
+        body: `Вам виплачено ${Number(b.amount)}₴ комісії. Дякуємо, що рекомендуєте Прояв 🤍`,
+      });
+    }
     return ok({ expense: data }, 201);
   }
 

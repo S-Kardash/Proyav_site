@@ -1,4 +1,4 @@
-import { ok, fail, preflight, authRequest, isStaff, db, randomToken, commissionFor, logAudit, siteOrigin } from './_utils.js';
+import { ok, fail, preflight, authRequest, isStaff, db, randomToken, commissionFor, logAudit, siteOrigin, notifyPhotographer } from './_utils.js';
 
 // Пінг фотографу в Telegram при оплаті його замовлення (8.4).
 // Тариф — збережений commission_pct фотографа (саме його платить адмінка → один рахунок).
@@ -156,6 +156,16 @@ export async function onRequest(context) {
             await client.query('photographers', { method: 'PATCH', filters: { id: `eq.${data.photographer_id}` }, body: { commission_pct: pct } });
           }
         } catch (e) { console.error('[api-orders] tier bump:', e.message); }
+      }
+      // Сайтове сповіщення в кабінет автора — головний надійний канал (Telegram — бонус).
+      if (data.photographer_id) {
+        const amount = data.total_amount ? Math.round(data.total_amount * pct / 100) : 0;
+        await notifyPhotographer(env, data.photographer_id, {
+          kind: 'paid', orderToken: data.token,
+          title: 'Оплата отримана',
+          body: `${data.client_name || 'Ваш клієнт'} оплатив набір${data.total_amount ? ` на ${data.total_amount}₴` : ''}.`
+              + (amount ? ` Ваша комісія +${amount}₴ (${pct}%).` : ''),
+        });
       }
       if (env.TG_TOKEN) await notifyPhotographerPaid(env, data, pct);
     }
