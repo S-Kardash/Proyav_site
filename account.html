@@ -82,6 +82,10 @@
   transition: opacity .3s;
 }
 .pv-init-loader.is-gone { opacity: 0; pointer-events: none; }
+/* ── Toast (помітність сповіщень, Ітер. 10) ── */
+.pv-toast { position: fixed; bottom: 92px; left: 50%; transform: translate(-50%, 120px); background: var(--ink-graphite, #2c2a28); color: var(--paper); border: 1px solid var(--pv-line); padding: 12px 22px; border-radius: 999px; font-size: 14px; z-index: 999; transition: transform .3s var(--ease-emerge); pointer-events: none; max-width: 88vw; text-align: center; }
+.pv-toast.show { transform: translate(-50%, 0); }
+@media (min-width: 980px) { .pv-toast { bottom: 24px; } }
 </style>
 </head>
 <body class="pv pv-scan">
@@ -168,6 +172,7 @@
         <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2"/></svg></span>
         Замовлення
         <span class="pv-nav-count" id="nav-count-home"></span>
+        <span class="pv-nav-dot" id="nav-unread-c" aria-hidden="true"></span>
       </button>
       <button class="pv-nav-btn" data-page="history">
         <span class="ic"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/></svg></span>
@@ -319,7 +324,33 @@ function showDashboard() {
   if (cntHome) cntHome.textContent = active || '';
   if (cntHist) cntHist.textContent = done   || '';
 
+  updateNotifBadge();
+  checkNewNotifs();
   go(params.get('p') || 'home');
+}
+
+// ─── Помітність сповіщень (Ітер. 10, N1) ─────────────────────────────────────
+function updateNotifBadge() {
+  const el = document.getElementById('nav-unread-c'); if (!el) return;
+  const u = (NOTIFS || []).filter(n => !n.read).length;
+  el.classList.toggle('show', u > 0);
+}
+// Тост лише про СПРАВДІ нові (id > останнього показаного). Перший вхід — мовчки
+// запам'ятовуємо максимум, щоб не сипати тостами по історії.
+function checkNewNotifs() {
+  const ns = NOTIFS || []; if (!ns.length) return;
+  const maxId = Math.max(...ns.map(n => Number(n.id) || 0));
+  let last; try { last = localStorage.getItem('pv-cnotif-toast'); } catch (e) {}
+  if (last == null) { try { localStorage.setItem('pv-cnotif-toast', String(maxId)); } catch (e) {} return; }
+  const fresh = ns.filter(n => (Number(n.id) || 0) > (Number(last) || 0) && !n.read);
+  if (fresh.length) { toast('🔔 ' + (fresh[0].title || 'Нове сповіщення')); try { localStorage.setItem('pv-cnotif-toast', String(maxId)); } catch (e) {} }
+}
+let _toastTimer;
+function toast(msg) {
+  let el = document.getElementById('pv-toast');
+  if (!el) { el = document.createElement('div'); el.id = 'pv-toast'; el.className = 'pv-toast'; document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_toastTimer); _toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
@@ -554,7 +585,7 @@ function notifHTML() {
   </div>`;
 }
 async function markNotifsRead() {
-  try { await fetch('/api-notifications', { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${TOKEN}` }, body: JSON.stringify({ all:true }) }); NOTIFS.forEach(n => n.read = true); go('home'); } catch {}
+  try { await fetch('/api-notifications', { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${TOKEN}` }, body: JSON.stringify({ all:true }) }); NOTIFS.forEach(n => n.read = true); updateNotifBadge(); go('home'); } catch {}
 }
 
 // ─── PAGE: home ──────────────────────────────────────────────────────────────

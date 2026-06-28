@@ -128,6 +128,19 @@ body.pv.pv-scan[data-theme="paper"] .pv-main::before { background: repeating-lin
   .pv-author { margin-left: auto; }
 }
 
+/* ── Індикатор непрочитаних сповіщень (Ітер. 10) ──
+   Плоска крапка-сафлайт біля іконки. Видима й на десктоп-сайдбарі, і на мобільній
+   нижній панелі (де лічильники nav-count приховані) → сповіщення не проґавити. */
+.pv-nav-btn { position: relative; }
+.pv-nav-dot {
+  position: absolute; top: 6px; left: 26px; right: auto;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--safelight); box-shadow: 0 0 7px var(--safelight);
+  display: none;
+}
+.pv-nav-dot.show { display: block; animation: pvPulse 2.4s ease-in-out infinite; }
+@media (max-width: 979px) { .pv-nav-dot { top: 5px; left: auto; right: calc(50% - 21px); } }
+
 /* ── Author block ── */
 .pv-author { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 @media (min-width: 980px) { .pv-author { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--pv-line); } }

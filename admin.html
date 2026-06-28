@@ -330,6 +330,23 @@ function money(n){return (Math.round(Number(n)||0)).toLocaleString('uk-UA');}
 function fmtD(iso){if(!iso)return'—';const d=new Date(iso);return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}
 function fmtDT(iso){if(!iso)return'—';return new Date(iso).toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 function oid(o){return 'ПРЯ-'+String(o.id||'').replace(/\D/g,'').padStart(6,'0').slice(-6);}
+// U1: ім'я файлу при скачуванні = налаштування друку (оператор бачить параметри, не
+// помиляється). ASCII-токени — кирилиця в store-ZIP побилась би в Windows (немає UTF-8-біта).
+// Напр.: PRYA-000041_03_bw_glossy_x2.jpg
+function photoFileName(o, p, i){
+  const ref = 'PRYA-' + String((o&&o.id)||'').replace(/\D/g,'').padStart(6,'0').slice(-6);
+  const COL = { color:'color', bw:'bw', sepia:'sepia' };
+  const PAP = { mat:'matte', matte:'matte', gloss:'glossy', glossy:'glossy', cotton:'cotton' };
+  const col = COL[p&&p.color] || (p&&p.color) || 'color';
+  const pap = PAP[p&&p.paper] || (p&&p.paper) || 'matte';
+  const qty = Number(p&&p.qty)||1;
+  return `${ref}_${String(i+1).padStart(2,'0')}_${col}_${pap}${qty>1?'_x'+qty:''}.jpg`;
+}
+// U3: домінантне значення серед уже завантажених кадрів — розумний дефолт для дозавантаження.
+function dominantSetting(arr, key){
+  const m={}; (arr||[]).forEach(p=>{ const v=p&&p[key]; if(v) m[v]=(m[v]||0)+(Number(p.qty)||1); });
+  let best=null,bn=0; for(const k in m){ if(m[k]>bn){ bn=m[k]; best=k; } } return best;
+}
 function prodLabel(o){return o.product_type?(PRODUCT_LABEL[o.product_type]||esc(o.product_type)):'Роздрібний друк';}
 function chKey(o){return o.source==='photographer'?'photographer':o.source==='package'?'package':'retail';}
 async function apiFetch(url,opts={}){
@@ -629,6 +646,11 @@ function openOrder(id){
           <button class="action ghost sm" onclick="document.getElementById('adm-upload').click()">↑ Завантажити</button>
           <button class="action ghost sm" id="dl-all" onclick="zipAllPhotos()" style="display:none">↓ ZIP усіх</button>
         </span></div>
+        <div id="upl-settings" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <span class="tsub">Друк нових кадрів:</span>
+          <select class="input" id="upl-color" style="width:auto;padding:5px 9px;font-size:12px"><option value="color">Колір</option><option value="bw">Ч/Б</option></select>
+          <select class="input" id="upl-paper" style="width:auto;padding:5px 9px;font-size:12px"><option value="mat">Мат</option><option value="gloss">Глянець</option></select>
+        </div>
         <input type="file" id="adm-upload" accept="image/*" multiple style="display:none" onchange="adminUploadPhotos(this)">
         <div id="ophotos"><span class="hint">Завантажуємо…</span></div></div>
       <div class="dsec"><div class="dsec-h">Доставка та сума</div><div class="dgrid">
@@ -653,11 +675,19 @@ function openOrder(id){
 function closeDrawer(){document.getElementById('drawer-overlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');document.body.style.overflow='';curOrder=null;}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeLb();closeModal();}});
 let _drawerPhotos=[];
-async function loadOrderPhotos(token){
+async function loadOrderPhotos(token, prefill=true){
   const box=document.getElementById('ophotos');if(!box)return;let photos=[];
   try{const r=await apiFetch(`${API}/api-admin-photos?t=${encodeURIComponent(token)}`);photos=r.photos||[];}catch{}
   if(!box.isConnected)return;
   _drawerPhotos=photos;
+  // U3: дефолт дозавантаження = домінантне налаштування замовлення (оператор може змінити).
+  // Префілимо лише при відкритті drawer, щоб не перебивати вибір оператора після аплоаду.
+  if(prefill&&photos.length){
+    const c=dominantSetting(photos,'color'),p=dominantSetting(photos,'paper');
+    const cs=document.getElementById('upl-color'),ps=document.getElementById('upl-paper');
+    if(cs&&c&&[...cs.options].some(o=>o.value===c))cs.value=c;
+    if(ps&&p){const pn=(p==='glossy'||p==='gloss')?'gloss':(p==='matte'?'mat':p);if([...ps.options].some(o=>o.value===pn))ps.value=pn;}
+  }
   const dlAll=document.getElementById('dl-all');if(dlAll)dlAll.style.display=photos.length?'':'none';
   const pc=document.getElementById('pcount');if(pc)pc.textContent=photos.length?'· '+photos.length+' шт':'';
   if(!photos.length){box.innerHTML=`<span class="hint">Кадрів ще немає. Завантажте з кнопки «↑ Завантажити» або зачекайте, поки клієнт надішле.</span>`;return;}
@@ -667,11 +697,11 @@ async function loadOrderPhotos(token){
   const agg={};let totalQ=0;photos.forEach(p=>{const k=colL(p.color)+'·'+papL(p.paper);const q=Number(p.qty)||1;agg[k]=(agg[k]||0)+q;totalQ+=q;});
   const summary=Object.entries(agg).map(([k,q])=>`<b>${q}×</b> ${k}`).join(' · ');
   box.innerHTML=`<div class="linkbox" style="margin-bottom:8px;border-style:solid;border-color:var(--paper-15)"><span class="card-k" style="display:block;margin-bottom:4px">Друкувати</span><span style="font-size:13px;color:var(--paper)">${summary} <span class="tsub">· разом ${totalQ} відбитків</span></span></div>
-  <div class="dphotos">${photos.map((p,i)=>`<div class="dphoto"><img src="${p.url}" alt="Кадр" loading="lazy" onclick="openLb('${p.url}')"><span style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.65);color:var(--paper);font-size:8px;letter-spacing:.04em;padding:1px 4px;border-radius:2px">${colL(p.color)}·${papL(p.paper)}${(Number(p.qty)||1)>1?' ×'+p.qty:''}</span><a href="${p.url}" download="kadr-${i+1}.jpg" onclick="event.stopPropagation()" title="Завантажити" style="position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:3px;background:rgba(0,0,0,.6);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none">↓</a></div>`).join('')}</div>`;
+  <div class="dphotos">${photos.map((p,i)=>`<div class="dphoto"><img src="${p.url}" alt="Кадр" loading="lazy" onclick="openLb('${p.url}')"><span style="position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.65);color:var(--paper);font-size:8px;letter-spacing:.04em;padding:1px 4px;border-radius:2px">${colL(p.color)}·${papL(p.paper)}${(Number(p.qty)||1)>1?' ×'+p.qty:''}</span><a href="${p.url}" download="${photoFileName(curOrder,p,i)}" onclick="event.stopPropagation()" title="Завантажити ${photoFileName(curOrder,p,i)}" style="position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:3px;background:rgba(0,0,0,.6);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none">↓</a></div>`).join('')}</div>`;
 }
 function downloadAllPhotos(){
   if(!_drawerPhotos.length)return;
-  _drawerPhotos.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=p.url;a.download='kadr-'+(i+1)+'.jpg';document.body.appendChild(a);a.click();a.remove();},i*400));
+  _drawerPhotos.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=p.url;a.download=photoFileName(curOrder,p,i);document.body.appendChild(a);a.click();a.remove();},i*400));
   toast('Завантаження '+_drawerPhotos.length+' кадрів…');
 }
 // ── ZIP (store-метод, без бібліотек) ──
@@ -697,7 +727,7 @@ async function zipAllPhotos(){
   const btn=document.getElementById('dl-all');if(btn){btn.disabled=true;btn.textContent='Готуємо…';}
   try{
     const files=[];
-    for(let i=0;i<_drawerPhotos.length;i++){const r=await fetch(_drawerPhotos[i].url);files.push({name:`kadr-${String(i+1).padStart(2,'0')}.jpg`,data:new Uint8Array(await r.arrayBuffer())});}
+    for(let i=0;i<_drawerPhotos.length;i++){const r=await fetch(_drawerPhotos[i].url);files.push({name:photoFileName(curOrder,_drawerPhotos[i],i),data:new Uint8Array(await r.arrayBuffer())});}
     const blob=buildZip(files);const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${curOrder?oid(curOrder):'order'}-kadry.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     toast('ZIP готовий · '+files.length+' кадрів');
   }catch(e){toast('Помилка ZIP: '+e.message,'err');}
@@ -706,16 +736,19 @@ async function zipAllPhotos(){
 async function adminUploadPhotos(input){
   if(!curOrder||!input.files.length)return;
   const token=curOrder.token,files=[...input.files];input.value='';
+  // U3: дозавантажений кадр успадковує обрані налаштування друку (а не сліпо матове/колір).
+  const color=document.getElementById('upl-color')?.value||'color';
+  const paper=document.getElementById('upl-paper')?.value||'mat';
   const box=document.getElementById('ophotos');if(box)box.innerHTML='<span class="hint">Завантажуємо…</span>';
   let okc=0;
   for(const f of files){
     try{
-      const res=await fetch(`${API}/api-upload?t=${encodeURIComponent(token)}`,{method:'POST',headers:{'Content-Type':f.type||'image/jpeg',Authorization:`Bearer ${TOKEN}`,'X-Filename':encodeURIComponent(f.name)},body:f});
+      const res=await fetch(`${API}/api-upload?t=${encodeURIComponent(token)}`,{method:'POST',headers:{'Content-Type':f.type||'image/jpeg',Authorization:`Bearer ${TOKEN}`,'X-Filename':encodeURIComponent(f.name),'X-Color':color,'X-Paper':paper,'X-Qty':'1'},body:f});
       if(res.ok)okc++;
     }catch{}
   }
   toast(`Завантажено ${okc}/${files.length}`);
-  loadOrderPhotos(token);
+  loadOrderPhotos(token, false);
 }
 async function advance(id,next){
   const o=S.orders.find(x=>String(x.id)===String(id));if(!o)return;

@@ -1295,6 +1295,10 @@ const DRAFT_KEY = 'proyav_draft_v1';
 const DRAFT_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function saveDraft() {
+  // Екран успіху (крок 5) — термінальний: НЕ пересейвити чернетку (U2). Інакше goTo(5)
+  // після submitOrder→clearDraft знову писав чернетку з photosMeta → на поверненні
+  // показувався хибний банер «Незавершене замовлення» для вже виконаного замовлення.
+  if (S.step >= 5) return;
   if (S.step <= 1 && !S.ident) return; // nothing worth saving
   const draft = {
     savedAt:     Date.now(),
