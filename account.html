@@ -330,9 +330,21 @@ function showDashboard() {
 }
 
 // ─── Помітність сповіщень (Ітер. 10, N1) ─────────────────────────────────────
+// Скільки подій у стрічці «нові» (для єдиного індикатора на навігації). ЧИСТЕ читання —
+// без запису (seed/advance робить лише feedHTML при перегляді home). Якщо ключа ще немає
+// (стрічку не відкривали) → 0, щоб не світити по історії до встановлення базової лінії.
+function feedHasNew() {
+  try {
+    const seen = localStorage.getItem(FEED_SEEN_KEY);
+    if (seen == null) return 0;
+    return buildFeed().filter(f => (new Date(f.at).getTime() || 0) > (+seen || 0)).length;
+  } catch (e) { return 0; }
+}
+// Єдиний індикатор «є зміни» = непрочитані сповіщення + нові події стрічки. Видно з будь-якої
+// сторінки кабінету (на home стрічка позначає себе сама й через 3.5с гасне на наступний візит).
 function updateNotifBadge() {
   const el = document.getElementById('nav-unread-c'); if (!el) return;
-  const u = (NOTIFS || []).filter(n => !n.read).length;
+  const u = (NOTIFS || []).filter(n => !n.read).length + feedHasNew();
   el.classList.toggle('show', u > 0);
 }
 // Тост лише про СПРАВДІ нові (id > останнього показаного). Перший вхід — мовчки
@@ -352,6 +364,8 @@ function toast(msg) {
   el.textContent = msg; el.classList.add('show');
   clearTimeout(_toastTimer); _toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
 }
+// Українська множина: pl(1,'нове','нові','нових') → 'нове'
+function pl(n, one, few, many) { const m10=n%10, m100=n%100; if(m10===1&&m100!==11) return one; if(m10>=2&&m10<=4&&(m100<10||m100>=20)) return few; return many; }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
 function mount(html) {
@@ -522,16 +536,27 @@ function buildFeed() {
   ev.sort((a,b) => new Date(b.at) - new Date(a.at));
   return ev.slice(0, 6);
 }
+// Стрічка подій із позначкою «нове / переглянуто» (Ітер. 12). «Нове» = подія, що
+// з'явилась після останнього перегляду стрічки (last-seen у localStorage). Перший
+// візит — тихий seed (нічого не «нове»); після 3.5с переглянуте фіксуємо.
+const FEED_SEEN_KEY = 'pv-acc-feed-seen';
 function feedHTML() {
-  const feed = buildFeed();
+  const feed = buildFeed().map(f => ({ ...f, ts: new Date(f.at).getTime() || 0 }));
   if (!feed.length) return '';
+  const maxTs = feed.reduce((m, f) => Math.max(m, f.ts), 0);
+  let seenRaw; try { seenRaw = localStorage.getItem(FEED_SEEN_KEY); } catch (e) {}
+  const firstVisit = (seenRaw == null);
+  const seen = firstVisit ? maxTs : (+seenRaw || 0);
+  if (firstVisit) { try { localStorage.setItem(FEED_SEEN_KEY, String(maxTs)); } catch (e) {} }
+  const newCount = feed.filter(f => f.ts > seen).length;
+  if (!firstVisit && maxTs > seen) setTimeout(() => { try { const c = +localStorage.getItem(FEED_SEEN_KEY) || 0; if (maxTs > c) localStorage.setItem(FEED_SEEN_KEY, String(maxTs)); } catch (e) {} }, 3500);
   return `
-    <div class="pv-shead"><h2>Стрічка <span class="mono">майстерня</span></h2></div>
-    <div class="pv-feed">${feed.map(f => `
-      <div class="pv-feed-row">
+    <div class="pv-shead"><h2>Стрічка <span class="mono${newCount ? ' has-new' : ''}">${newCount ? newCount + ' ' + pl(newCount, 'нове', 'нові', 'нових') : 'майстерня'}</span></h2></div>
+    <div class="pv-feed">${feed.map(f => { const isNew = f.ts > seen; return `
+      <div class="pv-feed-row${isNew ? ' is-new' : ''}">
         <div class="pv-feed-ic">${FEED_IC[f.ic] || FEED_IC.develop}</div>
-        <div><div class="pv-feed-txt">${f.text}</div><span class="pv-feed-at">${fmtDate(f.at)}</span></div>
-      </div>`).join('')}</div>`;
+        <div style="flex:1"><div class="pv-feed-txt">${f.text}${isNew ? ' <span class="feed-new-pill">нове</span>' : ''}</div><span class="pv-feed-at">${fmtDate(f.at)}</span></div>
+      </div>`; }).join('')}</div>`;
 }
 
 /* ─── Кадри-плівка: рендер реальних мініатюр + клік у лайтбокс ─────────────────── */
@@ -580,7 +605,7 @@ function notifHTML() {
   if (!NOTIFS.length) return '';
   const unread = NOTIFS.filter(n => !n.read).length;
   return `<div class="pv-card" style="border-color:rgba(196,149,108,.3);margin-bottom:22px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="pv-cap" style="color:var(--sepia)">Сповіщення${unread?' · '+unread+' нових':''}</span>${unread?'<button class="pv-link" onclick="markNotifsRead()">Прочитано</button>':''}</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="pv-cap" style="color:var(--sepia)">Сповіщення${unread?' · '+unread+' '+pl(unread,'нове','нові','нових'):''}</span>${unread?'<button class="pv-link" onclick="markNotifsRead()">Прочитано</button>':''}</div>
     ${NOTIFS.slice(0,4).map(n => `<div style="padding:9px 0;border-top:1px solid var(--pv-line);display:flex;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:${n.read?'var(--paper-30)':'var(--sepia)'};margin-top:6px;flex-shrink:0"></span><div><div style="font-size:14px;color:var(--paper);line-height:1.45">${n.title?'<b>'+esc(n.title)+'</b> ':''}${esc(n.body||'')}</div><div class="pv-cap" style="margin-top:3px">${fmtDate(n.created_at)}</div></div></div>`).join('')}
   </div>`;
 }
