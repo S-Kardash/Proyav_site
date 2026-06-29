@@ -176,6 +176,8 @@ td.date{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;color:v
 .lb-name{flex:1;min-width:0;font-size:14px;color:var(--paper);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lb-val{font-family:var(--font-mono);font-size:11px;color:var(--sepia)}
 .act-row{display:flex;gap:11px;padding:10px 0;border-top:1px solid var(--paper-08);align-items:flex-start}.act-row:first-child{border-top:none}
+.act-row.is-new .act-dot{box-shadow:0 0 7px var(--sepia)}
+.act-new-pill{display:inline-block;margin-left:6px;font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-darkroom);background:var(--sepia);border-radius:999px;padding:1px 6px;vertical-align:middle}
 .act-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
 .act-txt{flex:1;font-size:13px;color:var(--paper-70);line-height:1.4}.act-txt b{color:var(--paper)}
 .act-at{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-30);white-space:nowrap}
@@ -487,6 +489,17 @@ function PAGE_dashboard(){
   const phm={};S.orders.forEach(o=>{const n=o.photographers?.name;if(!n)return;phm[n]=phm[n]||{name:n,count:0,rev:0};phm[n].count++;if(o.status==='paid')phm[n].rev+=o.total_amount||0;});
   const topPh=Object.values(phm).sort((a,b)=>b.count-a.count).slice(0,5);
   const recent=[...S.orders].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
+  // Стан «нове / переглянуто» для стрічки активності (Ітер. 12): нове = замовлення,
+  // що з'явилось після останнього перегляду дашборду (last-seen у localStorage).
+  const ACT_KEY='pv-admin-act-seen';
+  const actTs=o=>new Date(o.created_at).getTime()||0;
+  const actMax=recent.reduce((m,o)=>Math.max(m,actTs(o)),0);
+  let actSeenRaw; try{actSeenRaw=localStorage.getItem(ACT_KEY);}catch(e){}
+  const actFirst=(actSeenRaw==null);
+  const actSeen=actFirst?actMax:(+actSeenRaw||0);
+  if(actFirst){try{localStorage.setItem(ACT_KEY,String(actMax));}catch(e){}}
+  const actNew=recent.filter(o=>actTs(o)>actSeen).length;
+  if(!actFirst&&actMax>actSeen)setTimeout(()=>{try{const c=+localStorage.getItem(ACT_KEY)||0;if(actMax>c)localStorage.setItem(ACT_KEY,String(actMax));}catch(e){}},3500);
   // аналітика (весь час): конверсія + час виконання
   const allPaid=S.orders.filter(o=>o.status==='paid').length;
   const conv=S.orders.length?Math.round(allPaid/S.orders.length*100):0;
@@ -525,7 +538,7 @@ function PAGE_dashboard(){
   </div>
   <div class="grid2">
     <div class="panel"><div class="panel-head"><span class="panel-title">Топ партнери</span><span class="panel-meta">за замовленнями</span></div>${topPh.length?topPh.map((x,i)=>`<div class="lb-row"><span class="lb-rank ${i===0?'top':''}">${i+1}</span><span class="lb-name">${esc(x.name)}</span><span class="lb-val">${x.count} зам · ${money(x.rev)}₴</span></div>`).join(''):`<div class="hint">Замовлень від партнерів ще немає</div>`}</div>
-    <div class="panel"><div class="panel-head"><span class="panel-title">Остання активність</span><span class="panel-meta">live</span></div>${recent.length?recent.map(o=>`<div class="act-row"><span class="act-dot" style="background:${STATUS_COLOR[o.status]||'var(--paper-30)'}"></span><span class="act-txt"><b>${esc(o.client_name||'Клієнт')}</b> · ${prodLabel(o)}${o.total_amount?` · ${money(o.total_amount)}₴`:''} <span style="color:var(--paper-30)">(${STATUS[o.status]?.label||o.status})</span></span><span class="act-at">${fmtD(o.created_at)}</span></div>`).join(''):`<div class="hint">Замовлень ще немає</div>`}</div>
+    <div class="panel"><div class="panel-head"><span class="panel-title">Остання активність${actNew?` · <span style="color:var(--sepia)">${actNew} ${actNew===1?'нове':'нових'}</span>`:''}</span><span class="panel-meta">live</span></div>${recent.length?recent.map(o=>{const isNew=actTs(o)>actSeen;return `<div class="act-row${isNew?' is-new':''}"><span class="act-dot" style="background:${STATUS_COLOR[o.status]||'var(--paper-30)'}"></span><span class="act-txt"><b>${esc(o.client_name||'Клієнт')}</b> · ${prodLabel(o)}${o.total_amount?` · ${money(o.total_amount)}₴`:''} <span style="color:var(--paper-30)">(${STATUS[o.status]?.label||o.status})</span>${isNew?' <span class="act-new-pill">нове</span>':''}</span><span class="act-at">${fmtD(o.created_at)}</span></div>`;}).join(''):`<div class="hint">Замовлень ще немає</div>`}</div>
   </div>
   ${(()=>{const t=(S.tasks||[]).filter(x=>!x.done);if(!t.length)return '';const today=new Date().toISOString().slice(0,10);const od=t.filter(x=>x.due&&x.due<=today);const show=(od.length?od:t).slice(0,4);return `<div class="panel" style="margin-bottom:16px"><div class="panel-head"><span class="panel-title">Завдання${od.length?` · <span style="color:var(--safelight)">${od.length} прострочених</span>`:''}</span><button class="action ghost sm" onclick="go('tasks')">Усі →</button></div>${show.map(x=>`<div class="lb-row"><span style="width:8px;height:8px;border-radius:50%;background:${PRIO_COLOR[x.priority]||'var(--sepia)'};flex-shrink:0"></span><span class="lb-name">${esc(x.title)}</span>${x.due?`<span class="act-at" style="color:${x.due<=today?'var(--safelight)':'var(--paper-50)'}">${fmtD(x.due)}</span>`:''}</div>`).join('')}</div>`;})()}
   ${S.lowCount?`<div class="goal" style="border-color:rgba(178,58,44,.4)"><div class="goal-top"><span class="stat-key" style="color:var(--safelight)">⚠ Закінчується · ${S.lowCount} позицій</span><button class="action ghost sm" onclick="go('inventory')">Переглянути</button></div></div>`:''}
@@ -886,6 +899,9 @@ async function payout(id){
   const c=phCommission(p);
   const v=await promptModal({title:`Виплата · ${p.name}`,message:`До виплати (чистий борг): ${money(c.owed)} ₴. Запис піде у витрати («Комісія фотографу») і зменшить борг партнера.`,label:'Сума виплати, ₴',value:String(c.owed),type:'number',confirmLabel:'Виплатити'});
   if(v===null)return;const amount=Number(v);if(!amount||amount<=0)return;
+  // Захист від перевиплати (опечатка/зайвий нуль): сума більша за чистий борг → підтвердити.
+  // Інакше завищена витрата псує облік, а owed мовчки впав би до 0.
+  if(amount>c.owed && !await confirmModal(`Сума ${money(amount)} ₴ перевищує борг партнера (${money(c.owed)} ₴). Схоже на помилку вводу. Все одно записати виплату?`,{title:'Сума більша за борг',confirmLabel:'Так, виплатити',danger:true}))return;
   try{
     await apiFetch(`${API}/api-expenses`,{method:'POST',body:JSON.stringify({date:new Date().toISOString().slice(0,10),amount,category:'Комісія фотографу',payment:'Картка',descr:`Виплата: ${p.name}`,photographer_id:id})});
     // Перевантажуємо витрати, щоб чистий борг одразу перерахувався (інакше «owed» не зменшиться).

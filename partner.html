@@ -351,28 +351,46 @@ function relTime(ms){
   const d=Math.floor(h/24); if(d<7) return d===1?'учора':d+' дн тому';
   return new Date(ms).toLocaleDateString('uk-UA',{day:'2-digit',month:'2-digit'});
 }
+// Стрічка майстерні з позначкою «нове / переглянуто» (Ітер. 12) — той самий last-seen
+// механізм, що в клієнтському кабінеті, для консистентності.
+const FEED_SEEN_KEY = 'pv-partner-feed-seen';
 function feedHTML(){
   const acts = buildActivity(DATA.orders).slice(0,7);
-  if(!acts.length) return `<div class="pv-empty">Тут з'являться події по ваших замовленнях.</div>`;
-  return `<div class="pv-feed">` + acts.map(a=>{
-    const m=ACT_META[a.type]; const name=esc(a.o.client_name||'Клієнт');
+  const maxTs = acts.reduce((m,a)=>Math.max(m, a.ts||0), 0);
+  let seenRaw; try{ seenRaw=localStorage.getItem(FEED_SEEN_KEY); }catch(e){}
+  const firstVisit = (seenRaw==null);
+  const seen = firstVisit ? maxTs : (+seenRaw||0);
+  if(firstVisit){ try{ localStorage.setItem(FEED_SEEN_KEY, String(maxTs)); }catch(e){} }
+  const newCount = acts.filter(a=>a.ts>seen).length;
+  if(!firstVisit && maxTs>seen) setTimeout(()=>{ try{ const c=+localStorage.getItem(FEED_SEEN_KEY)||0; if(maxTs>c) localStorage.setItem(FEED_SEEN_KEY, String(maxTs)); }catch(e){} }, 3500);
+  const head = `<div class="pv-shead"><h2>Стрічка <span class="mono${newCount?' has-new':''}">${newCount?newCount+' '+plural(newCount,'нове','нові','нових'):'майстерня'}</span></h2></div>`;
+  if(!acts.length) return head + `<div class="pv-empty">Тут з'являться події по ваших замовленнях.</div>`;
+  return head + `<div class="pv-feed">` + acts.map(a=>{
+    const m=ACT_META[a.type]; const name=esc(a.o.client_name||'Клієнт'); const isNew=a.ts>seen;
     let txt, extra='';
     if(a.type==='paid'){ const c=orderComm(a.o); txt=`<strong>${name}</strong> — оплачено`; if(c) extra=` · +${c}₴`; }
     else if(a.type==='sent') txt=`Замовлення <strong>${name}</strong> відправлено`;
     else if(a.type==='uploaded') txt=`<strong>${name}</strong> завантажив кадри`;
     else txt=`Нове замовлення — <strong>${name}</strong>`;
-    return `<div class="pv-feed-row">
+    return `<div class="pv-feed-row${isNew?' is-new':''}">
       <div class="pv-feed-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${m.svg}</svg></div>
-      <div style="flex:1"><div class="pv-feed-txt">${txt}${extra}</div><span class="pv-feed-at">${relTime(a.ts)}</span></div>
+      <div style="flex:1"><div class="pv-feed-txt">${txt}${extra}${isNew?' <span class="feed-new-pill">нове</span>':''}</div><span class="pv-feed-at">${relTime(a.ts)}</span></div>
     </div>`;
   }).join('') + `</div>`;
 }
 
 /* ════════ NOTIFICATIONS (Ітер. 10) ════════ */
 const NKIND = { paid:'var(--acc)', payout:'#5ccb8f', order:'var(--acc)', info:'var(--paper-50)' };
+// Скільки подій стрічки «нові» (для єдиного індикатора). Чисте читання — без запису
+// (seed/advance робить лише feedHTML); немає ключа → 0 (базову лінію ще не встановлено).
+function feedHasNew(){
+  try{ const seen=localStorage.getItem(FEED_SEEN_KEY); if(seen==null) return 0;
+    return buildActivity(DATA.orders).slice(0,7).filter(a=>a.ts>(+seen||0)).length; }catch(e){ return 0; }
+}
+// Єдиний індикатор «є зміни» = непрочитані сповіщення + нові події стрічки.
 function updateNotifBadge(){
   const el=document.getElementById('nav-unread'); if(!el) return;
-  const u=(DATA.notifications||[]).filter(n=>!n.read).length;
+  const u=(DATA.notifications||[]).filter(n=>!n.read).length + feedHasNew();
   el.classList.toggle('show', u>0);
 }
 // Тост лише про СПРАВДІ нові (id > останнього показаного). Перший вхід — мовчки
@@ -438,7 +456,6 @@ function renderHome(){
       <div>
         <div class="pv-shead"><h2>Рівень <span class="mono">комісія</span></h2></div>
         ${levelCardHTML()}
-        <div class="pv-shead"><h2>Стрічка <span class="mono">майстерня</span></h2></div>
         ${feedHTML()}
       </div>
     </div>`;
